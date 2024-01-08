@@ -12,6 +12,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Data.SqlClient;
+using System.Data;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading;
+using TDX;
+
 
 namespace wpfTDX
 {
@@ -20,9 +27,630 @@ namespace wpfTDX
     /// </summary>
     public partial class MainWindow : Window
     {
+        public string filepath = @"\\ad01-har.10dynamics.com\share\Files\TDX\tdx.txt";
+        public string sqlServer = "";
+        public string sqlInstance = "";
+        public string DEFAULT_INSTANCE = "SQLEXPRESS";
+        public string sqlServerInstance = "";
+        public string sqlDb = "";
+        public string sqlUser = "";
+        public string sqlPwd = "";
+        public string svrTag = "";
+        public string fixed_pricing;
+        public string default_fund = "";
+        public string HEARTBEAT_MINUTES;
+        public string RUN_RAWDATA_MINUTES;
+        public string RUN_TICKER_UPDATE_MINUTES;
+        public string RUN_BENCH_MINUTES;
+        public string RTL_MINUTES;
+        public string HEARTBEAT_STRING;
+        public string RUN_RAWDATA_STRING;
+        public string RUN_TICKER_UPDATE_STRING;
+        public string RUN_BENCH_STRING;
+        public string RTL_STRING;
+        public string TIMER_MILLISECONDS;
+        public string SERVERS;
+        public string INSTANCES;
+        public List<string> lstSERVERS;
+        public List<string> lstDATABASES;
+        public List<string> lstINSTANCES;
+        public SqlConnection sql_conn;
+        public SqlConnection sql_conn_monitor;
+        //private readonly ImageList statusImageList;
+        private bool stopMonitoring;
+        //DataTable dtHeartBeatsMonitored;
+        List<string> lstProcesses = new List<string>();
+        private readonly object lockObject = new object();
+        Thread monitoringThread;
+        public string VERSION = "TDX version 1.8.5";
+        private Dictionary<TextBlock, UserControl> userControlDictionary = new Dictionary<TextBlock, UserControl>();
+        /// <summary>
+        /// this is the number of columns for tiling effect
+        /// </summary>
+        private const int NumberOfColumns = 3; 
         public MainWindow()
         {
             InitializeComponent();
+            LoadForm();
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                // Handle unobserved exceptions here
+                Exception exception = (Exception)args.ExceptionObject;
+                MessageBox.Show(exception.Message, "Unhandled Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+            };
+
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                // Handle unobserved task exceptions here
+                Exception exception = args.Exception;
+                MessageBox.Show(exception.Message, "Unobserved Task Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+            };
         }
+
+        private async void cboServer_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                await HandleCboServernameSelectedIndexChanged();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Server name change error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        public void LoadForm()
+        {
+            Dictionary<string, string> dict_sql = getConnectionParams();
+            sqlPwd = dict_sql["@pwd"];
+            fixed_pricing = dict_sql["@fixed_pricing"];
+            default_fund = dict_sql["@default_fund"];
+            string[] servernames = dict_sql["@server_names"].Split(',');
+            string[] dbnames = "Oris,Oris_dev,Oris_stage".Split(',');
+            string[] instance_names = dict_sql["@instance_names"].Split(',');
+            //load the server and database list
+            lstSERVERS = new List<string>(servernames);
+            lstDATABASES = new List<string>(dbnames);
+            lstINSTANCES = new List<string>(instance_names);
+            for (int i = 0; i < lstSERVERS.Count; i++)
+            {
+                string server = lstSERVERS[i].ToString();
+                string fullservername = "";
+                if (server == "(local)")
+                {
+                    fullservername = server;//+ @"\sqlexpress";
+                }
+                else
+                {
+                    if (server.ToLower() != Environment.MachineName.ToLower())
+                    {
+                        server = server + ".10dynamics.com";
+                        fullservername = server;// + @"\sqlexpress";
+                    }
+                }
+
+                if (fullservername != "")
+                {
+                    cboServer.Items.Add(fullservername);
+                }
+            }
+            //load the database list
+            for (int i = 0; i < lstSERVERS.Count; i++)
+            {
+                string dbname = lstDATABASES[i].ToString();
+                cboDatabase.Items.Add(dbname);
+            }
+            //load instance names
+            for (int i = 0; i < lstINSTANCES.Count; i++)
+            {
+                string instance = lstINSTANCES[i].ToString();
+                cboInstance.Items.Add(instance);
+            }
+            cboInstance.Text = "sqlexpress";
+            
+        }
+        public Dictionary<string, string> getConnectionParams()
+            {
+                Dictionary<string, string> dictConn = new Dictionary<string, string>();
+                if (File.Exists(filepath))
+                {
+                    StreamReader SR = new StreamReader(filepath);
+                    string strFileText = SR.ReadToEnd();
+                    SR.Close();
+                    SR.Dispose();
+                    string rgxServer = "<SERVER:(.*?)>";
+                    Regex rgSrv = new Regex(rgxServer, RegexOptions.Compiled);
+                    Match mServer = rgSrv.Match(strFileText);
+                    if (mServer.Groups.Count > 0)
+                    {
+                        sqlServer = mServer.Groups[1].Value.ToString();
+                        dictConn.Add("@server", sqlServer);
+                    }
+                    string rgxDB = "<DB:(.*?)>";
+                    Regex rgDB = new Regex(rgxDB, RegexOptions.Compiled);
+                    Match mDB = rgDB.Match(strFileText);
+                    if (mDB.Groups.Count > 0)
+                    {
+                        sqlDb = mDB.Groups[1].Value.ToString();
+                        dictConn.Add("@database", sqlDb);
+                    }
+                    string rgxUname = "<UNAME:(.*?)>";
+                    Regex rgUname = new Regex(rgxUname, RegexOptions.Compiled);
+                    Match mUname = rgUname.Match(strFileText);
+                    if (mUname.Groups.Count > 0)
+                    {
+                        sqlUser = mUname.Groups[1].Value.ToString();
+                        dictConn.Add("@user", sqlUser);
+                    }
+                    string rgxPwd = "<PWD:(.*?)>";
+                    Regex rgPwd = new Regex(rgxPwd, RegexOptions.Compiled);
+                    Match mPwd = rgPwd.Match(strFileText);
+                    if (mPwd.Groups.Count > 0)
+                    {
+                        sqlPwd = mPwd.Groups[1].Value.ToString();
+                        dictConn.Add("@pwd", sqlPwd);
+                    }
+                    string rgxTag = "<TAG:(.*?)>";
+                    Regex rgTag = new Regex(rgxTag, RegexOptions.Compiled);
+                    Match mTag = rgTag.Match(strFileText);
+                    if (mTag.Groups.Count > 0)
+                    {
+                        svrTag = mTag.Groups[1].Value.ToString();
+                        dictConn.Add("@tag", svrTag);
+                    }
+                    string rgxFixed_pricing = "<FIXED_PRICING:(.*?)>";
+                    Regex rgFP = new Regex(rgxFixed_pricing, RegexOptions.Compiled);
+                    Match mFP = rgFP.Match(strFileText);
+                    if (mFP.Groups.Count > 0)
+                    {
+                        fixed_pricing = mFP.Groups[1].Value.ToString();
+                        dictConn.Add("@fixed_pricing", fixed_pricing);
+                    }
+                    string rgxdefault_account = "<DEFAULT_FUND:(.*?)>";
+                    Regex rgDA = new Regex(rgxdefault_account, RegexOptions.Compiled);
+                    Match mDA = rgDA.Match(strFileText);
+                    if (mDA.Groups.Count > 0)
+                    {
+                        default_fund = mDA.Groups[1].Value.ToString();
+                        dictConn.Add("@default_fund", default_fund);
+                    }
+                    string rgxheartbeat = "<HEARTBEAT_MINUTES:(.*?)>";
+                    Regex rgHB = new Regex(rgxheartbeat, RegexOptions.Compiled);
+                    Match mHB = rgHB.Match(strFileText);
+                    if (mHB.Groups.Count > 0)
+                    {
+                        HEARTBEAT_MINUTES = mHB.Groups[1].Value.ToString();
+                        dictConn.Add("@heartbeat_minutes", HEARTBEAT_MINUTES);
+                    }
+                    string rgxheartbeattext = "<HEARTBEAT_STRING:(.*?)>";
+                    Regex rgHBtext = new Regex(rgxheartbeattext, RegexOptions.Compiled);
+                    Match mHBtext = rgHBtext.Match(strFileText);
+                    if (mHBtext.Groups.Count > 0)
+                    {
+                        HEARTBEAT_STRING = mHBtext.Groups[1].Value.ToString();
+                    }
+
+                    string rgxrunupdate = "<RUN_RAWDATA_MINUTES:(.*?)>";
+                    Regex rgUP = new Regex(rgxrunupdate, RegexOptions.Compiled);
+                    Match mUP = rgUP.Match(strFileText);
+                    if (mUP.Groups.Count > 0)
+                    {
+                        RUN_RAWDATA_MINUTES = mUP.Groups[1].Value.ToString();
+                    }
+
+                    string rgxrunupdatetext = "<RUN_RAWDATA_STRING:(.*?)>";
+                    Regex rgUPtext = new Regex(rgxrunupdatetext, RegexOptions.Compiled);
+                    Match mUPtext = rgUPtext.Match(strFileText);
+                    if (mUPtext.Groups.Count > 0)
+                    {
+                        RUN_RAWDATA_STRING = mUPtext.Groups[1].Value.ToString();
+                    }
+                    string rgxrtl = "<RTL_MINUTES:(.*?)>";
+                    Regex rgRTL = new Regex(rgxrtl, RegexOptions.Compiled);
+                    Match mRTL = rgRTL.Match(strFileText);
+                    if (mRTL.Groups.Count > 0)
+                    {
+                        RTL_MINUTES = mRTL.Groups[1].Value.ToString();
+                    }
+
+                    string rgxruntickerupdatetext = "<RUN_TICKER_STRING:(.*?)>";
+                    Regex rgTickUPtext = new Regex(rgxruntickerupdatetext, RegexOptions.Compiled);
+                    Match mTickUPtext = rgTickUPtext.Match(strFileText);
+                    if (mTickUPtext.Groups.Count > 0)
+                    {
+                        RUN_TICKER_UPDATE_STRING = mUPtext.Groups[1].Value.ToString();
+                    }
+                    string rgxtickerupdate = "<RUN_TICKER_MINUTES:(.*?)>";
+                    Regex rgTickupdate = new Regex(rgxtickerupdate, RegexOptions.Compiled);
+                    Match mTickupdate = rgTickupdate.Match(strFileText);
+                    if (mTickupdate.Groups.Count > 0)
+                    {
+                        RUN_TICKER_UPDATE_MINUTES = mTickupdate.Groups[1].Value.ToString();
+                    }
+
+
+                    string rgxrtltext = "<RTL_STRING:(.*?)>";
+                    Regex rgRTLtext = new Regex(rgxrtltext, RegexOptions.Compiled);
+                    Match mRTLtext = rgRTLtext.Match(strFileText);
+                    if (mRTLtext.Groups.Count > 0)
+                    {
+                        RTL_STRING = mRTLtext.Groups[1].Value.ToString();
+                    }
+
+                    string rgxbench = "<RUN_BENCH_MINUTES:(.*?)>";
+                    Regex rgBench = new Regex(rgxbench, RegexOptions.Compiled);
+                    Match mBench = rgBench.Match(strFileText);
+                    if (mBench.Groups.Count > 0)
+                    {
+                        RUN_BENCH_MINUTES = mBench.Groups[1].Value.ToString();
+                    }
+                    string rgxbenchtext = "<RUN_BENCH_STRING:(.*?)>";
+                    Regex rgBenchtext = new Regex(rgxbenchtext, RegexOptions.Compiled);
+                    Match mBenchtext = rgBenchtext.Match(strFileText);
+                    if (mBenchtext.Groups.Count > 0)
+                    {
+                        RUN_BENCH_STRING = mBenchtext.Groups[1].Value.ToString();
+                    }
+
+                    string rgxTimer = "<TIMER_MILLISECONDS:(.*?)>";
+                    Regex rgTimer = new Regex(rgxTimer, RegexOptions.Compiled);
+                    Match mTimer = rgTimer.Match(strFileText);
+                    if (mTimer.Groups.Count > 0)
+                    {
+                        TIMER_MILLISECONDS = mTimer.Groups[1].Value.ToString();
+                    }
+
+                    string rgxServers = "<SERVER_NAMES:(.*?)>";
+                    Regex rgServers = new Regex(rgxServers, RegexOptions.Compiled);
+                    Match mServers = rgServers.Match(strFileText);
+                    if (mServers.Groups.Count > 0)
+                    {
+                        SERVERS = mServers.Groups[1].Value.ToString();
+                        dictConn.Add("@server_names", SERVERS);
+                    }
+
+                    string rgxInstances = "<INSTANCE_NAMES:(.*?)>";
+                    Regex rgInstances = new Regex(rgxInstances, RegexOptions.Compiled);
+                    Match mInstance = rgInstances.Match(strFileText);
+                    if (mInstance.Groups.Count > 0)
+                    {
+                        INSTANCES = mInstance.Groups[1].Value.ToString();
+                        dictConn.Add("@instance_names", INSTANCES);
+                    }
+                }
+                return dictConn;
+            }
+
+        private async void cboDatabase_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                await HandleCboDatabaseSelectedIndexChanged();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Database change error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void ChangeCommandButtonConnectionStatus(bool connected)
+        {
+            if (!connected)
+            {
+                txtStatus.Background = Brushes.Red;
+                txtStatus.Text = "Not connected";
+                //lblConnectedTo.Text = "No Sql connection";
+            }
+            else
+            {
+                txtStatus.Background = Brushes.Green;
+                txtStatus.Text = "Connected";
+                //lblConnectedTo.Text = "connected to: server= " + sqlServerInstance + "; database=" + sqlDb;
+            }
+        }
+        private void DisconnectDatabase()
+        {
+            sql_conn = null;
+            sql_conn_monitor = null;
+            ChangeCommandButtonConnectionStatus(false);
+            StopMonitoring();
+
+        }
+        public SqlConnection connect_database()
+        {
+            sqlServer = cboServer.SelectedItem.ToString();
+            sqlDb = cboDatabase.SelectedItem.ToString();
+            sqlInstance = cboInstance.SelectedItem.ToString();
+            sqlServerInstance = sqlServer + @"\" + sqlInstance;
+            StopMonitoring();
+            if (monitoringThread != null)
+            {
+                monitoringThread.Join(1);
+            }
+            if ((sqlServer != "") && (sqlDb != "") & (sqlInstance != ""))
+            {
+                string str_conn = "Data Source=" + sqlServerInstance + ";" +
+                "Initial Catalog=" + sqlDb + ";" +
+                "User id=" + sqlUser + ";" +
+                "Password=" + sqlPwd + ";" +
+                "Persist Security Info = true;";
+                sql_conn = new SqlConnection(str_conn);
+                sql_conn_monitor = new SqlConnection(str_conn);
+                if ((sql_conn.DataSource != "") && (sql_conn.Database != "") && (db.IsValidConnection(sql_conn)))
+                {
+                    ChangeCommandButtonConnectionStatus(true);
+                }
+                else
+                {
+                    ChangeCommandButtonConnectionStatus(false);
+                }
+            }
+            return sql_conn;
+        }
+        private void processChecker()
+        {
+            try
+            {
+                if (sql_conn_monitor != null)
+                {
+                    if (sql_conn_monitor.State != ConnectionState.Open)
+                    { sql_conn_monitor.Open(); }
+                    {
+                        //StartMonitoring();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Process checker", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void StartMonitoring()
+        {
+            try
+            {
+                if(sql_conn != null)
+                {
+                    ucProcessMonitor procMon = new ucProcessMonitor(sql_conn);
+                    // Set margin to create spacing between user controls
+                    procMon.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                    // Wrap the user control in a Border with a black border color and thickness
+                    Border userControlBorder = new Border
+                    {
+                        BorderBrush = Brushes.Black,
+                        BorderThickness = new Thickness(2),
+                        Child = procMon
+                    };
+
+                    // Add the bordered user control to the WrapPanel
+                    userControlsWrapPanel.Children.Add(userControlBorder);
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message,"error",MessageBoxButton.OK,MessageBoxImage.Error);
+            }
+        }
+        private void StopMonitoring()
+        {
+            lock (lockObject)
+            {
+                stopMonitoring = true;
+            }
+            userControlsWrapPanel.Children.Clear();
+        }
+        private async Task HandleCboDatabaseSelectedIndexChanged()
+        {
+
+            try
+            {
+                if (cboDatabase.SelectedItem != null)
+                {
+                    sqlDb = cboDatabase.SelectedItem.ToString();
+                    if (!string.IsNullOrEmpty(sqlDb))
+                    {
+                        connect_database();
+                        StartMonitoring();
+                        // Run processChecker asynchronously
+                        //await Task.Run(() => ProcessCheckerInBackground());
+                    }
+                    else
+                    {
+                        StopMonitoring();
+                        monitoringThread.Join(1);
+                        ChangeCommandButtonConnectionStatus(false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private async Task ProcessCheckerInBackground()
+        {
+            try
+            {
+                // Perform non-UI-related tasks in the background
+                processChecker();
+
+                // Update the UI-related parts using Invoke
+                if (this.IsInitialized)
+                {
+                    await Task.Run(() =>
+                    {
+                        this.Dispatcher.Invoke(new Action(() =>
+                        {
+                            // Call UI-related methods or update controls here
+                            // Example: UpdateListView(heartbeats.ListHeartBeats);
+                        }));
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "ProcessCheckerInBackground Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task HandleCboServernameSelectedIndexChanged()
+        {
+            try
+            {
+                sqlServer = cboServer.SelectedItem.ToString();
+                sqlDb = null;
+                sqlInstance = DEFAULT_INSTANCE; //set to this as default
+                cboInstance.SelectedItem = DEFAULT_INSTANCE;
+                sqlServerInstance = sqlServer + @"\" + sqlInstance;
+                cboDatabase.Text = null;
+                DisconnectDatabase();
+
+
+                // Run processChecker asynchronously
+                await Task.Run(() => ProcessCheckerInBackground());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Server change error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private  void cboInstance_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                HandlecboInstanceSelectedIndexChanged();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "cboInstance error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private  void HandlecboInstanceSelectedIndexChanged()
+        {
+            try
+            {
+                sqlInstance = cboInstance.SelectedItem.ToString();
+                cboDatabase.SelectedItem = "";
+                cboDatabase.Text = "";
+                DisconnectDatabase();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+        private UserControl CreateNewUserControl(string text)
+        {
+
+                switch (text)
+                {
+                    case "MTM":
+                        return new ucMtm(sql_conn, default_fund);
+                    case "Positions":
+                        return new ucPostions();
+                    // Add other cases for different user controls if needed
+                    default:
+                        return null;
+                }
+
+        }
+
+        private void TextBlock_MouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
+        {
+            if(sql_conn!=null)
+            { 
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    UserControl newUserControl = CreateNewUserControl(textBlock.Text);
+
+                    // Set margin to create spacing between user controls
+                    newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                    // Wrap the user control in a Border with a black border color and thickness
+                    Border userControlBorder = new Border
+                    {
+                        BorderBrush = Brushes.Black,
+                        BorderThickness = new Thickness(2),
+                        Child = newUserControl
+                    };
+
+                    // Add the bordered user control to the WrapPanel
+                    userControlsWrapPanel.Children.Add(userControlBorder);
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was setup", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    ucMtm newUserControl = CreateNewUserControl(textBlock.Text) as ucMtm;
+
+                    if (newUserControl != null)
+                    {
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void YourUserControl_RemoveControlRequested(object sender, EventArgs e)
+        {
+            if (sender is ucMtm mtm)
+            {
+                // Find the Border that wraps the specified ucMtm in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == mtm);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+            else if (sender is ucPostions position)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == position);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+        }
+
+
+
     }
 }
