@@ -7,6 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="1000" d:DesignWidth="1800">
     <StackPanel Margin="2" >
+       
         <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
             
             <Grid>
@@ -39,8 +40,9 @@
                 </StackPanel>
             </Grid>
         </Border>
-        <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
-            <TabControl>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
+            <TabControl >
                 <!-- total pnl data-->
                 <TabItem Header="Total">
                     <StackPanel>
@@ -49,19 +51,101 @@
                 </TabItem>
                 <!-- equities data-->
                 <TabItem Header="Equities">
-                    <StackPanel>
-                        <DataGrid x:Name="dgEquities" AutoGenerateColumns="True">
-                        </DataGrid>
-                        <DataGrid x:Name="dgEquitiesNewDeals" AutoGenerateColumns="True" Margin="1 5 1 5"></DataGrid>
-                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                        <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
+                                    <TextBox IsReadOnly="True" x:Name="txtTotalPnl" Margin="5"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" >
+                                        <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
+                                    <TextBox  IsReadOnly="True" x:Name="txtPosnPnl" Margin="5"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
+                                    <TextBox IsReadOnly="True" x:Name="txtNewDealsPnl" Margin="5"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                        <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
+                                    <TextBox IsReadOnly="True" x:Name="txtCommission" Margin="5"/>
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel >
+                                    <DataGrid x:Name="dgEquities"  
+                                        AutoGenerateColumns="True" Height="200"       
+                                        ScrollViewer.CanContentScroll="True" 
+                                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                        Margin="5">
+
+                                    </DataGrid>
+                                    <DataGrid x:Name="dgEquitiesNewDeals" 
+                                          Height="200"   
+                                          AutoGenerateColumns="True" 
+                                          Margin="5"
+                                                ScrollViewer.CanContentScroll="True" 
+                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                            ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                    </DataGrid>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
                 </TabItem>
                 <!-- fututes data-->
-                <TabItem Header="Futures">
-                    <StackPanel>
-                        <DataGrid x:Name="dgFutures" AutoGenerateColumns="True"></DataGrid>
-                    </StackPanel>
-                </TabItem>
+                    <TabItem Header="Futures">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
+                                    <TextBox IsReadOnly="True" x:Name="txtTotalPnlFutures" Margin="5"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" >
+                                    <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
+                                    <TextBox  IsReadOnly="True" x:Name="txtPosnPnlFutures" Margin="5"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
+                                    <TextBox IsReadOnly="True" x:Name="txtNewDealsPnlFutures" Margin="5"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
+                                    <TextBox IsReadOnly="True" x:Name="txtCommissionFutures" Margin="5"/>
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel>
+                                <DataGrid x:Name="dgFutures" 
+                                AutoGenerateColumns="True" Height="200"     
+                                Margin="5"
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                </DataGrid>
+                                <DataGrid x:Name="dgFuturesNewDeals" 
+                                          Height="200"   
+                                          AutoGenerateColumns="True" 
+                                          Margin="5"
+                                            ScrollViewer.CanContentScroll="True" 
+                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                            ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                </DataGrid>
+                            </StackPanel>
+                        </StackPanel>
+                    </TabItem>
             </TabControl>
         </Border>
+            </ScrollViewer>
     </StackPanel>
 </UserControl>

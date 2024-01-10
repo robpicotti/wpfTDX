@@ -145,8 +145,9 @@ namespace wpfTDX
                 string instance = lstINSTANCES[i].ToString();
                 cboInstance.Items.Add(instance);
             }
-            cboInstance.Text = "sqlexpress";
-            
+            //cboInstance.Text = "SQLEXPRESS";
+            cboInstance.SelectedItem = lstINSTANCES.Find(item => string.Equals(item, "SQLEXPRESS", StringComparison.OrdinalIgnoreCase));
+
         }
         public Dictionary<string, string> getConnectionParams()
             {

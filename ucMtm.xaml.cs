@@ -28,14 +28,24 @@ namespace wpfTDX
         public string DEFAULT_FUND = "";
         TDX.db _db = new TDX.db();
         public event EventHandler RemoveControlRequested;
+        List<string> lstNumericColumns = new List<string>();
+        public DataTable dtEquityPosnPnl;
+        public DataTable dtEquityNewDealsPnl;
+        public DataTable dtFuturesPosnPnl;
+        public DataTable dtFuturesNewDealsPnl;
+
         public ucMtm(SqlConnection conn, string default_fund)
         {
             InitializeComponent();
             gbl_conn = conn;
-            LoadForm();
+            LoadForm();  
         }
         private void LoadForm()
         {
+            dgEquities.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
+            dgEquitiesNewDeals.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
+            dgFutures.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
+            dgFuturesNewDeals.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
             dtAccounts = _db.get_funds(gbl_conn);
             cboFundname.Items.Clear();
             foreach (DataRow row in dtAccounts.Rows)
@@ -43,6 +53,39 @@ namespace wpfTDX
                 cboFundname.Items.Add(row["fundname"].ToString());
             }
             cboFundname.SelectedItem = DEFAULT_FUND;
+            BuildNumericColumnLists();
+
+        }
+        /// <summary>
+        /// populates the list of numeric columns that need to have thousand seperator
+        /// </summary>
+        private void BuildNumericColumnLists()
+        {
+            lstNumericColumns.Add("total_pnl");
+            lstNumericColumns.Add("mtm");
+            lstNumericColumns.Add("mtm_t1");
+            lstNumericColumns.Add("posn_pnl");
+            lstNumericColumns.Add("posn_new_deals");
+            lstNumericColumns.Add("new_deals_pnl");
+            lstNumericColumns.Add("newdeal_pnl");
+            lstNumericColumns.Add("new_deals");
+            lstNumericColumns.Add("new_deals_exchcurr");
+            lstNumericColumns.Add("commission");
+            lstNumericColumns.Add("consideration");
+            lstNumericColumns.Add("new_deal_pnl_exclComm");
+        }
+
+        private void dgEquities_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            if (lstNumericColumns.Contains( e.PropertyName) )
+            {
+                var textColumn = e.Column as DataGridTextColumn;
+                if (textColumn != null)
+                {
+                    // Set the StringFormat to "N" for thousand separator
+                    textColumn.Binding = new Binding(e.PropertyName) { StringFormat = "N" };
+                }
+            }
         }
 
         private void cmdClose_Click(object sender, RoutedEventArgs e)
@@ -58,19 +101,19 @@ namespace wpfTDX
             string fundName = cboFundname.Text;
             if (dtFrom.SelectedDate != null)
             {
-                posn_date = dtFrom.SelectedDate.Value.ToString("yyyy-MM-dd");
-            }
-            else
-            {
-                posn_date = DateTime.Today.ToString("yyyy-MM-dd");
-            }
-            if (dtTo.SelectedDate != null)
-            {
-                posn_date_t1 = dtTo.SelectedDate.Value.ToString("yyyy-MM-dd");
+                posn_date_t1 = dtFrom.SelectedDate.Value.ToString("yyyy-MM-dd");
             }
             else
             {
                 posn_date_t1 = DateTime.Today.ToString("yyyy-MM-dd");
+            }
+            if (dtTo.SelectedDate != null)
+            {
+                posn_date = dtTo.SelectedDate.Value.ToString("yyyy-MM-dd");
+            }
+            else
+            {
+                posn_date = DateTime.Today.ToString("yyyy-MM-dd");
             }
 
             DataSet ds = _db.get_futures_pnl(fundName, posn_date, posn_date_t1, gbl_conn);
@@ -79,6 +122,9 @@ namespace wpfTDX
             {
                 DataView dataView = ds.Tables[1].DefaultView;
                 dgFutures.ItemsSource = dataView;
+                dgFuturesNewDeals.ItemsSource = ds.Tables[0].DefaultView;
+                dtFuturesPosnPnl = ds.Tables[1];
+                dtFuturesNewDealsPnl = ds.Tables[0];
             }
         }
         private void GetEquitiesPnl()
@@ -88,19 +134,19 @@ namespace wpfTDX
             string fundName = cboFundname.Text;
             if (dtFrom.SelectedDate != null)
             {
-                posn_date = dtFrom.SelectedDate.Value.ToString("yyyy-MM-dd");
-            }
-            else
-            {
-                posn_date = DateTime.Today.ToString("yyyy-MM-dd");
-            }
-            if (dtTo.SelectedDate != null)
-            {
-                posn_date_t1 = dtTo.SelectedDate.Value.ToString("yyyy-MM-dd");
+                posn_date_t1 = dtFrom.SelectedDate.Value.ToString("yyyy-MM-dd");
             }
             else
             {
                 posn_date_t1 = DateTime.Today.ToString("yyyy-MM-dd");
+            }
+            if (dtTo.SelectedDate != null)
+            {
+                posn_date = dtTo.SelectedDate.Value.ToString("yyyy-MM-dd");
+            }
+            else
+            {
+                posn_date = DateTime.Today.ToString("yyyy-MM-dd");
             }
             DataSet ds = _db.get_equities_pnl(fundName, posn_date, posn_date_t1, gbl_conn);
             if (ds.Tables.Count > 1)
@@ -108,6 +154,18 @@ namespace wpfTDX
                 DataView dataView = ds.Tables[1].DefaultView;
                 dgEquities.ItemsSource = dataView;
                 dgEquitiesNewDeals.ItemsSource = ds.Tables[0].DefaultView;
+                dtEquityPosnPnl = ds.Tables[1];
+                dtEquityNewDealsPnl = ds.Tables[0];
+            }
+            decimal equity_posn_pnl = 0;
+            decimal equity_new_deals = 0;
+            decimal equity_total_pnl = 0;
+
+            if (dtEquityPosnPnl.Rows.Count > 0)
+            {
+                equity_posn_pnl = Convert.ToDecimal(dtEquityPosnPnl.Compute("SUM(posn_pnl)", String.Empty));
+                equity_new_deals = Convert.ToDecimal(dtEquityPosnPnl.Compute("SUM(new_deals_pnl)", String.Empty));
+                equity_total_pnl = Convert.ToDecimal(dtEquityPosnPnl.Compute("SUM(total_pnl)", String.Empty));
             }
         }
 

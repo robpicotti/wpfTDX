@@ -6,58 +6,61 @@
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
         Title="TDX 2.0" Height="1000" Width="1800">
-    <StackPanel Margin="2">
+    <!--<ScrollViewer VerticalScrollBarVisibility="Auto">-->
+        <StackPanel Margin="2">
 
-        <!-- database connection dashboard-->
-        <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
-            <Grid>
+            <!-- database connection dashboard-->
+            <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+                <Grid>
 
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width ="2*"/>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions >
-                <!-- Servers ComboBox-->
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="server"  FontWeight="Bold" Margin="5 1" />
-                    <ComboBox x:Name="cboServer" SelectionChanged="cboServer_SelectionChanged"  Margin="5 5">
-                    </ComboBox>
-                </StackPanel>
-                <!-- Instance combobox-->
-                <StackPanel Grid.Column="1">
-                    <TextBlock Text="instance" FontWeight="Bold" Margin="5 1"/>
-                    <ComboBox x:Name="cboInstance" Margin="5 5" SelectionChanged="cboInstance_SelectionChanged">
-                    </ComboBox>
-                </StackPanel>
-                <!-- Database combox box-->
-                <StackPanel Grid.Column="2">
-                    <TextBlock Text="database" FontWeight="Bold" Margin="5 1"/>
-                    <ComboBox x:Name="cboDatabase" SelectionChanged="cboDatabase_SelectionChanged" Margin="5 5" ItemsSource="{Binding}">
-                    </ComboBox>
-                </StackPanel>
-                <!-- status textbox -->
-                <StackPanel Grid.Column="3">
-                    <TextBlock Text="status" IsEnabled="False" FontWeight="Bold" Margin="5 1"/>
-                    <TextBox x:Name="txtStatus" IsReadOnly="True" Background="Red" Margin="5" Height="22" />
-                </StackPanel>              
-            </Grid>
-        </Border>
-        
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width ="2*"/>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions >
+                    <!-- Servers ComboBox-->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="server"  FontWeight="Bold" Margin="5 1" />
+                        <ComboBox x:Name="cboServer" SelectionChanged="cboServer_SelectionChanged"  Margin="5 5">
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Instance combobox-->
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="instance" FontWeight="Bold" Margin="5 1"/>
+                        <ComboBox x:Name="cboInstance" Margin="5 5" SelectionChanged="cboInstance_SelectionChanged">
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Database combox box-->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="database" FontWeight="Bold" Margin="5 1"/>
+                        <ComboBox x:Name="cboDatabase" SelectionChanged="cboDatabase_SelectionChanged" Margin="5 5" ItemsSource="{Binding}">
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- status textbox -->
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="status" IsEnabled="False" FontWeight="Bold" Margin="5 1"/>
+                        <TextBox x:Name="txtStatus" IsReadOnly="True" Background="Red" Margin="5" Height="22" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
             <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5 1 5 1">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Accounts"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
-                <TextBlock Text="MTM"  MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
-                <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
-                <TextBlock Text="Ticker Freezer"  FontSize="20" FontWeight="Bold" Margin="5 10 20 10"/>
-            </StackPanel>
-        </Border>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Accounts"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
+                    <TextBlock Text="MTM"  MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
+                    <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
+                    <TextBlock Text="Ticker Freezer"  FontSize="20" FontWeight="Bold" Margin="5 10 20 10"/>
+                </StackPanel>
+            </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        
         <WrapPanel x:Name="userControlsWrapPanel" Orientation="Horizontal" Margin="5 1" />
-
+        </ScrollViewer>
 
     </StackPanel>
-
+    <!--</ScrollViewer>-->
 </Window>
