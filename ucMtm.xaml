@@ -32,11 +32,11 @@
                     <TextBlock Text="to date" FontWeight="Bold" Margin="5 1"/>
                     <DatePicker x:Name="dtTo"/>
                 </StackPanel>
-                <StackPanel Grid.Column="3" Margin="5 25">
+                <StackPanel Grid.Column="3" Margin="5 23">
                     <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4" Margin="5">
-                    <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x" Margin="1 -5 -5 0" Background="Gray" FontWeight="Bold" />
+                    <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x" Margin="1 -5 -5 0" BorderBrush="White" Background="White" FontWeight="Bold" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -46,7 +46,18 @@
                 <!-- total pnl data-->
                 <TabItem Header="Total">
                     <StackPanel>
-                        <DataGrid x:Name="dgTotal" AutoGenerateColumns="True"></DataGrid>
+                            <DataGrid x:Name="dgTotal" AutoGenerateColumns="True"
+                                Height="200"       
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                Margin="5">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                            </DataGrid>
                     </StackPanel>
                 </TabItem>
                 <!-- equities data-->
@@ -84,15 +95,24 @@
                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                         Margin="5">
-
+                                        <DataGrid.ColumnHeaderStyle>
+                                            <Style TargetType="DataGridColumnHeader">
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </Style>
+                                        </DataGrid.ColumnHeaderStyle>
                                     </DataGrid>
                                     <DataGrid x:Name="dgEquitiesNewDeals" 
-                                          Height="200"   
+                                          Height="500"   
                                           AutoGenerateColumns="True" 
                                           Margin="5"
                                                 ScrollViewer.CanContentScroll="True" 
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                                             ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                        <DataGrid.ColumnHeaderStyle>
+                                            <Style TargetType="DataGridColumnHeader">
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </Style>
+                                        </DataGrid.ColumnHeaderStyle>
                                     </DataGrid>
                             </StackPanel>
                         </StackPanel>
@@ -132,6 +152,11 @@
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
                                 </DataGrid>
                                 <DataGrid x:Name="dgFuturesNewDeals" 
                                           Height="200"   
@@ -140,11 +165,16 @@
                                             ScrollViewer.CanContentScroll="True" 
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                                             ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
                                 </DataGrid>
                             </StackPanel>
                         </StackPanel>
                     </TabItem>
-            </TabControl>
+                </TabControl>
         </Border>
             </ScrollViewer>
     </StackPanel>

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
         Title="TDX 2.0" Height="1000" Width="1800">
-    <!--<ScrollViewer VerticalScrollBarVisibility="Auto">-->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 
             <!-- database connection dashboard-->
@@ -57,10 +57,11 @@
                 </StackPanel>
             </Border>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-        
-        <WrapPanel x:Name="userControlsWrapPanel" Orientation="Horizontal" Margin="5 1" />
+
+            <WrapPanel x:Name="userControlsWrapPanel" Orientation="Horizontal" Margin="5 1" >
+            </WrapPanel>
         </ScrollViewer>
 
     </StackPanel>
-    <!--</ScrollViewer>-->
+    </ScrollViewer>
 </Window>

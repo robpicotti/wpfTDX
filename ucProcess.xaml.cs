@@ -38,7 +38,7 @@ namespace wpfTDX
 
             // Initialize and start the timer
             timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMinutes(5);
+            timer.Interval = TimeSpan.FromMinutes(1);
             timer.Tick += Timer_Tick;
             timer.Start();
         }

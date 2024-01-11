@@ -63,11 +63,13 @@ namespace wpfTDX
         private readonly object lockObject = new object();
         Thread monitoringThread;
         public string VERSION = "TDX version 1.8.5";
+        
         private Dictionary<TextBlock, UserControl> userControlDictionary = new Dictionary<TextBlock, UserControl>();
         /// <summary>
         /// this is the number of columns for tiling effect
         /// </summary>
         private const int NumberOfColumns = 3; 
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -98,6 +100,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Server name change error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         public void LoadForm()
         {
             Dictionary<string, string> dict_sql = getConnectionParams();
@@ -145,10 +148,9 @@ namespace wpfTDX
                 string instance = lstINSTANCES[i].ToString();
                 cboInstance.Items.Add(instance);
             }
-            //cboInstance.Text = "SQLEXPRESS";
-            cboInstance.SelectedItem = lstINSTANCES.Find(item => string.Equals(item, "SQLEXPRESS", StringComparison.OrdinalIgnoreCase));
-
+            cboInstance.SelectedIndex = 0;
         }
+        
         public Dictionary<string, string> getConnectionParams()
             {
                 Dictionary<string, string> dictConn = new Dictionary<string, string>();
@@ -332,6 +334,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Database change error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         private void ChangeCommandButtonConnectionStatus(bool connected)
         {
             if (!connected)
@@ -347,6 +350,7 @@ namespace wpfTDX
                 //lblConnectedTo.Text = "connected to: server= " + sqlServerInstance + "; database=" + sqlDb;
             }
         }
+        
         private void DisconnectDatabase()
         {
             sql_conn = null;
@@ -355,6 +359,7 @@ namespace wpfTDX
             StopMonitoring();
 
         }
+        
         public SqlConnection connect_database()
         {
             sqlServer = cboServer.SelectedItem.ToString();
@@ -386,6 +391,7 @@ namespace wpfTDX
             }
             return sql_conn;
         }
+        
         private void processChecker()
         {
             try
@@ -404,6 +410,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Process checker", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         private void StartMonitoring()
         {
             try
@@ -431,6 +438,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message,"error",MessageBoxButton.OK,MessageBoxImage.Error);
             }
         }
+
         private void StopMonitoring()
         {
             lock (lockObject)
@@ -439,6 +447,7 @@ namespace wpfTDX
             }
             userControlsWrapPanel.Children.Clear();
         }
+        
         private async Task HandleCboDatabaseSelectedIndexChanged()
         {
 
@@ -467,6 +476,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         private async Task ProcessCheckerInBackground()
         {
             try
@@ -526,6 +536,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "cboInstance error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private  void HandlecboInstanceSelectedIndexChanged()
         {
             try
@@ -542,52 +553,59 @@ namespace wpfTDX
             }
         }
 
-
         private UserControl CreateNewUserControl(string text)
         {
-
                 switch (text)
                 {
                     case "MTM":
-                        return new ucMtm(sql_conn, default_fund);
+                    ucMtm mtm = new ucMtm(sql_conn, default_fund);
+                    mtm.Width = 600;
+                    return mtm;
                     case "Positions":
-                        return new ucPostions();
+                    ucPostions position = new ucPostions(sql_conn, default);
+                    position.Width = 1000;
+                    return position;
                     // Add other cases for different user controls if needed
                     default:
                         return null;
                 }
-
         }
 
         private void TextBlock_MouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
         {
-            if(sql_conn!=null)
-            { 
+            if (sql_conn != null)
+            {
                 if (sender is TextBlock textBlock)
                 {
                     // Create a new instance of the user control
-                    UserControl newUserControl = CreateNewUserControl(textBlock.Text);
+                    ucPostions newUserControl = CreateNewUserControl(textBlock.Text) as ucPostions;
 
-                    // Set margin to create spacing between user controls
-                    newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                    // Wrap the user control in a Border with a black border color and thickness
-                    Border userControlBorder = new Border
+                    if (newUserControl != null)
                     {
-                        BorderBrush = Brushes.Black,
-                        BorderThickness = new Thickness(2),
-                        Child = newUserControl
-                    };
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
 
-                    // Add the bordered user control to the WrapPanel
-                    userControlsWrapPanel.Children.Add(userControlBorder);
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
                 }
             }
             else
             {
-                MessageBox.Show("No database connection was setup", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -650,8 +668,6 @@ namespace wpfTDX
                 }
             }
         }
-
-
 
     }
 }
