@@ -58,6 +58,9 @@
     <Compile Include="Slippage.cs" />
     <Compile Include="Table.cs" />
     <Compile Include="TickerFreezer.cs" />
+    <Compile Include="ucEMS.xaml.cs">
+      <DependentUpon>ucEMS.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ucMtm.xaml.cs">
       <DependentUpon>ucMtm.xaml</DependentUpon>
     </Compile>
@@ -69,6 +72,12 @@
     </Compile>
     <Compile Include="ucProcessMonitor.xaml.cs">
       <DependentUpon>ucProcessMonitor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ucTickerFreezer.xaml.cs">
+      <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="winScale.xaml.cs">
+      <DependentUpon>winScale.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -87,6 +96,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="ucEMS.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ucMtm.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -100,6 +113,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucProcessMonitor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucTickerFreezer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="winScale.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

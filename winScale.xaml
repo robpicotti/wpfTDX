@@ -1,0 +1,32 @@
+﻿<Window x:Class="wpfTDX.winScale"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:wpfTDX"
+        mc:Ignorable="d"
+        Title="position scaling" Height="200" Width="800">
+    <StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="5">
+                <TextBlock Text="subaccount:" FontWeight="Bold" Margin="5 0 0 0"/>
+                <TextBox x:Name="txtSubaccount" IsReadOnly="True" Margin="5"/>
+                <TextBlock Text="tickername:" Margin="5 10" FontWeight="Bold"/>
+                <TextBox x:Name="txtTickername" IsReadOnly="True" Margin="5 -5 5 0"/>
+                <TextBlock Text="scaled position:" Margin="5 10" FontWeight="Bold"/>
+                <TextBox x:Name="txtScaledPosition" IsReadOnly="True" Margin="5 -5 5 0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="5">
+                <TextBlock Text="step size:" FontWeight="Bold" Margin="5 0 0 0"/>
+                <TextBox x:Name="txtStepSize" Text="0.1" Margin="5"/>
+                <TextBlock Text="scaled target:" Margin="5 10" FontWeight="Bold"/>
+                <TextBox x:Name="txtScaledTarget" Margin="5 -5 5 0"/>
+                <Button Content="update" Margin="5 29" FontWeight="Bold" Click="Button_Click"/>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Window>
