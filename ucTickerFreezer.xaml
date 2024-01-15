@@ -18,19 +18,37 @@
                         x:Name="cmdRefresh" Content="Refresh" Click="Button_Click" Width="100" Margin="5"
                         HorizontalAlignment="Left"
                      />
- 
                     <DataGrid x:Name="dgTickerFreezer" AutoGenerateColumns="True"
                                 Height="500"       
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              MouseRightButtonDown="dgTickerFreezer_MouseRightButtonDown"
                                 Margin="5">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="FontWeight" Value="Bold" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="thaw tad_id?" Click="MenuItem_Click"/>
+                                <MenuItem Header="override tad_id?" Click="MenuItem_Click_1">
+                                    <MenuItem Header="expire at close?" Click="MenuItem_Click_2"/>
+                                    <MenuItem Header="no expiration?" Click="MenuItem_Click_3"/>
+                                </MenuItem>
+                                <MenuItem Header="remove override for this tad_id?" Click="MenuItem_Click_4"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
                     </DataGrid>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock 
+                        x:Name="cmdClose" Text="X" MouseLeftButtonDown="cmdClose_MouseLeftButtonDown" Width="100" 
+                        HorizontalAlignment="Right"
+                        FontWeight="Bold"
+                        Margin="1 5 -80 0"
+                     />
                 </StackPanel>
             </Grid>
         </Border>

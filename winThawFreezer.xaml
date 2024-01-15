@@ -1,0 +1,27 @@
+﻿<Window x:Class="wpfTDX.winThawFreezer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:wpfTDX"
+        mc:Ignorable="d"
+        Title="Thaw" Height="450" Width="800" ResizeMode="NoResize">
+    <StackPanel>
+        
+        <StackPanel>
+            <TextBox x:Name="txtDetails" FontSize="20"/>
+        </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="cmdYes" Content="Yes" Margin="5" Width="50"/>
+                 <Button x:Name="cmdNo" Content="No" Margin="5" Width="50" />
+        </StackPanel>
+
+                
+
+
+    </StackPanel>
+
+
+
+</Window>

@@ -87,6 +87,7 @@ namespace wpfTDX
                 Exception exception = args.Exception;
                 MessageBox.Show(exception.Message, "Unobserved Task Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             };
+
         }
 
         private async void cboServer_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -430,7 +431,8 @@ namespace wpfTDX
                     };
 
                     // Add the bordered user control to the WrapPanel
-                    userControlsWrapPanel.Children.Add(userControlBorder);
+                    //userControlsWrapPanel.Children.Add(userControlBorder);
+                    processCheckerPanel.Children.Add(userControlBorder);
                 }
             }
             catch(Exception ex)
@@ -570,7 +572,11 @@ namespace wpfTDX
                         ucEMS ems = new ucEMS(sql_conn,default_fund);
                         ems.Width = 1000;
                         return ems;
-                    default:
+                case "Ticker Freezer":
+                    ucTickerFreezer tickerFreeze = new ucTickerFreezer(sql_conn, default_fund);
+                    tickerFreeze.Width = 1000;
+                    return tickerFreeze;
+                default:
                         return null;
                 }
         }
@@ -683,6 +689,18 @@ namespace wpfTDX
                     userControlsWrapPanel.Children.Remove(userControlBorder);
                 }
             }
+            else if (sender is ucTickerFreezer tickerFreezer)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == tickerFreezer);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
         }
 
         private void TextBlock_MouseLeftButtonDown_2(object sender, MouseButtonEventArgs e)
@@ -693,6 +711,41 @@ namespace wpfTDX
                 {
                     // Create a new instance of the user control
                     ucEMS newUserControl = CreateNewUserControl(textBlock.Text) as ucEMS;
+
+                    if (newUserControl != null)
+                    {
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TextBlock_MouseLeftButtonDown_3(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    ucTickerFreezer newUserControl = CreateNewUserControl(textBlock.Text) as ucTickerFreezer;
 
                     if (newUserControl != null)
                     {
