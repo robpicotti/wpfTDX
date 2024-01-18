@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="TDX 2.0" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="2" >
+        <StackPanel Margin="2">
 
             <!-- database connection dashboard-->
             <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
@@ -47,7 +47,7 @@
                     </StackPanel>
                 </Grid>
             </Border>
-            
+
             <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5 1 5 1">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Accounts"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
@@ -55,15 +55,16 @@
                     <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
                     <TextBlock Text="Ticker Freezer" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_3" FontSize="20" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="EMS" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
+                    <TextBlock Text="Order Rejections" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_4" FontWeight="Bold" Margin="5 10 20 10"/>
+                    <TextBlock Text="NAV" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
                 </StackPanel>
-            </Border>
-        <!--<ScrollViewer VerticalScrollBarVisibility="Auto">-->
-            <StackPanel x:Name="processCheckerPanel" Orientation="Horizontal" Margin="5">
+            </Border >
+            <Border BorderBrush="Black" BorderThickness="1" Padding="5"  HorizontalAlignment="Stretch" Margin="5 1 5 1">
+                <StackPanel x:Name="processCheckerPanel" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="5">
             </StackPanel>
-                <WrapPanel x:Name="userControlsWrapPanel" Orientation="Horizontal" Margin="5 1" >
-                </WrapPanel>
-         <!--</Scroll-->
-
+            </Border>
+            <WrapPanel x:Name="userControlsWrapPanel" Orientation="Horizontal" Margin="5 1" >
+            </WrapPanel>
         </StackPanel>
     </ScrollViewer>
 </Window>

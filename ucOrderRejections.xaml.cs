@@ -26,19 +26,25 @@ namespace wpfTDX
         db _db = new db();
         DateTime calEnd;
         DateTime calStart;
+        public event EventHandler RemoveControlRequested;
         public ucOrderRejections(SqlConnection conn)
         {
             InitializeComponent();
+            DataContext = this;
             gbl_conn = conn;
+            LoadForm();
 
         }
         private void LoadForm()
         {
             dtFrom.SelectedDate = DateTime.Today;
             dtTo.SelectedDate = DateTime.Today;
-            get_order_rejections();
+            GetOrdeRejections();
         }
-        private void get_order_rejections()
+        /// <summary>
+        /// retrieve all order rejections with selected date range
+        /// </summary>
+        private void GetOrdeRejections()
         {
             try
             {
@@ -48,9 +54,15 @@ namespace wpfTDX
                 }
                 if (calStart != null && calEnd != null)
                 {
-                    DataSet dt = _db.get_order_rejections(calStart.ToString("yyyy-MM-dd HH:mm:ss"), calEnd.ToString("yyyy-MM-dd HH:mm:ss"), gbl_conn);
-                    dgOrderRejections.ItemsSource = dt.Tables[0]; ;
-
+                    DataSet ds = _db.get_order_rejections(calStart.ToString("yyyy-MM-dd HH:mm:ss"), calEnd.ToString("yyyy-MM-dd HH:mm:ss"), gbl_conn);
+                    //List<DataRow> rows = dt.Tables[0].AsEnumerable().ToList();
+                    //dgOrderRejections.ItemsSource = rows;
+                    if (ds.Tables.Count > 0)
+                    {
+                        DataTable dt = ds.Tables[0];
+                        dgOrderRejections.ItemsSource = dt.DefaultView;
+                        dgOrderRejections.Items.Refresh();
+                    }
                 }
                 else
                 {
@@ -61,6 +73,24 @@ namespace wpfTDX
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void cmdRun_Click(object sender, RoutedEventArgs e)
+        {
+            if (dtFrom.SelectedDate != null)
+            { 
+                calStart = dtFrom.SelectedDate.Value;
+            }
+            if (dtTo.SelectedDate != null)
+            {
+                calEnd = dtTo.SelectedDate.Value;
+            }
+            GetOrdeRejections();
+        }
+
+        private void cmdClose_Click(object sender, RoutedEventArgs e)
+        {
+            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 }

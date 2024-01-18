@@ -49,7 +49,6 @@ namespace wpfTDX
 
                 processWrapPanel.Children.Add(userControlBorder); // Add the bordered user control
             }
-
         }
     }
 }

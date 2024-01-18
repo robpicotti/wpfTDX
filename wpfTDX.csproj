@@ -67,6 +67,9 @@
     <Compile Include="ucMtm.xaml.cs">
       <DependentUpon>ucMtm.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ucNav.xaml.cs">
+      <DependentUpon>ucNav.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ucOrderRejections.xaml.cs">
       <DependentUpon>ucOrderRejections.xaml</DependentUpon>
     </Compile>
@@ -110,6 +113,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucMtm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucNav.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

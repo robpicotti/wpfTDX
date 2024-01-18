@@ -154,10 +154,10 @@ namespace TDX
                 }
 
                 // Optionally, you can reorder columns for each DataTable in the DataSet
-                foreach (DataTable dataTable in dsReturn.Tables)
-                {
-                    ReorderDataTableColumns(dataTable, sprocname, conn);
-                }
+                //foreach (DataTable dataTable in dsReturn.Tables)
+                //{
+                //    ReorderDataTableColumns(dataTable, sprocname, conn);
+                //}
 
                 return dsReturn;
             }
