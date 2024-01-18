@@ -585,6 +585,10 @@ namespace wpfTDX
                     ucNav Nav = new ucNav(sql_conn);
                     Nav.Width = 1000;
                     return Nav;
+                case "Slippage":
+                    ucSlippage slipp = new ucSlippage(sql_conn);
+                    slipp.Width = 1000;
+                    return slipp;
                 default:
                         return null;
                 }
@@ -734,6 +738,18 @@ namespace wpfTDX
                     userControlsWrapPanel.Children.Remove(userControlBorder);
                 }
             }
+            else if (sender is ucSlippage slipp)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == slipp);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
         }
 
         private void TextBlock_MouseLeftButtonDown_2(object sender, MouseButtonEventArgs e)
@@ -849,6 +865,41 @@ namespace wpfTDX
                 {
                     // Create a new instance of the user control
                     ucNav newUserControl = CreateNewUserControl(textBlock.Text) as ucNav;
+
+                    if (newUserControl != null)
+                    {
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TextBlock_MouseLeftButtonDown_6(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    ucSlippage newUserControl = CreateNewUserControl(textBlock.Text) as ucSlippage;
 
                     if (newUserControl != null)
                     {

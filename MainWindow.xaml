@@ -57,6 +57,7 @@
                     <TextBlock Text="EMS" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="Order Rejections" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_4" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="NAV" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
+                    <TextBlock Text="Slippage" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_6"  FontWeight="Bold" Margin="5 10 20 10"/>
                 </StackPanel>
             </Border >
             <Border BorderBrush="Black" BorderThickness="1" Padding="5"  HorizontalAlignment="Stretch" Margin="5 1 5 1">

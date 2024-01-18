@@ -82,6 +82,9 @@
     <Compile Include="ucProcessMonitor.xaml.cs">
       <DependentUpon>ucProcessMonitor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ucSlippage.xaml.cs">
+      <DependentUpon>ucSlippage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ucTickerFreezer.xaml.cs">
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
@@ -133,6 +136,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucProcessMonitor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucSlippage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -40,12 +40,13 @@
                 </StackPanel>
             </Grid>
         </Border>
+        <TextBlock Text="Mtm" Margin="5" FontWeight="Bold"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
             <TabControl >
                 <!-- total pnl data-->
                 <TabItem Header="Total">
-                    <StackPanel>
+                        <StackPanel>
                             <DataGrid x:Name="dgTotal" AutoGenerateColumns="True"
                                 Height="200"       
                                 ScrollViewer.CanContentScroll="True" 

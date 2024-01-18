@@ -35,6 +35,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
                 <StackPanel>
+                    <TextBlock Text="postions" FontWeight="Bold" Margin="5"/>
                     <DataGrid x:Name="dgPosition"
                         AutoGenerateColumns="True"
                         Height="500"       
