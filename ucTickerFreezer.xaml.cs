@@ -34,13 +34,20 @@ namespace wpfTDX
         string TICKERNAME = "";
         string EXEC_ACCOUNT_NAME = "";
         string BENCHMARK_NAME = "";
+        string BROKER_CODE_EXEC = "";
+        string EMS_NAME = "";
+        string ERROR_CODE = "";
+        string RUN_TIME = "";
+        string EXPIRATION_DATETIME;
+        TickerFreezer TFR;
         public ucTickerFreezer(SqlConnection conn,string default_fund)
         {
             InitializeComponent();
             gbl_conn = conn;
+            TFR = new TickerFreezer(gbl_conn);
             Refresh();
         }
-        public void Refresh()
+        public  void Refresh()
         {
             Cursor = Cursors.Wait;
             try
@@ -72,8 +79,10 @@ namespace wpfTDX
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
             winThawFreezer thaw = new winThawFreezer(
+                RUN_TIME,
                 FUND_NAME, EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID,
-                TICKERNAME, BENCHMARK_NAME, gbl_conn);
+                TICKERNAME, BENCHMARK_NAME,BROKER_CODE_EXEC,EMS_NAME,
+                ERROR_CODE ,this,gbl_conn);
             thaw.ShowDialog();
         }
 
@@ -84,17 +93,17 @@ namespace wpfTDX
 
         private void MenuItem_Click_2(object sender, RoutedEventArgs e)
         {
-
+            OverrideTadId("After the close");
         }
 
         private void MenuItem_Click_3(object sender, RoutedEventArgs e)
         {
-
+            OverrideTadId("Never");
         }
 
         private void MenuItem_Click_4(object sender, RoutedEventArgs e)
         {
-
+            RemoveOverride();
         }
 
         private void dgTickerFreezer_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -117,6 +126,10 @@ namespace wpfTDX
                     foreach (DataGridColumn column in columns)
                     {
                         // Access column values using reflection
+                        object runTime = rowDataView["runtime"];
+                        DateTime dtRun = (DateTime)runTime;
+                        string strRunTime = dtRun.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                        RUN_TIME = strRunTime;
                         object fundName = rowDataView["fundname"];
                         FUND_NAME = fundName.ToString();
                         object subAccount = rowDataView["subaccountname"];
@@ -129,6 +142,12 @@ namespace wpfTDX
                         EXEC_ACCOUNT_NAME = execaccountname.ToString();
                         object benchmarkname = rowDataView["benchmarkname"];
                         BENCHMARK_NAME = benchmarkname.ToString();
+                        object brokercode_exec = rowDataView["broker_code_exec"];
+                        BROKER_CODE_EXEC = brokercode_exec.ToString();
+                        object emsname = rowDataView["emsname"];
+                        EMS_NAME = emsname.ToString();
+                        object error_code = rowDataView["error_code"];
+                        ERROR_CODE = error_code.ToString();
                     }
                 }
             }
@@ -145,6 +164,46 @@ namespace wpfTDX
             }
 
             return dep as DataGridCell;
+        }
+
+        private void OverrideTadId(string expiration)
+        {
+            try
+            {
+                TFR.Override_freezer(RUN_TIME, EMS_NAME, BROKER_CODE_EXEC, 
+                    FUND_NAME, EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID, 
+                    ERROR_CODE, true, expiration, gbl_conn);
+                MessageBox.Show("tad_id: " + TAD_ID + " has been overridden.", 
+                    "ticker_freezer override", MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                Refresh();
+            }
+        }
+        private void RemoveOverride()
+        {
+            try
+            {
+                TFR.Override_freezer(RUN_TIME, EMS_NAME, BROKER_CODE_EXEC, FUND_NAME,
+                    EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID, ERROR_CODE, false, 
+                    EXPIRATION_DATETIME, gbl_conn);
+                MessageBox.Show("tad_id: " + TAD_ID + " has been removed.", "remove ticker_freezer override", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                Refresh();
+            }
         }
     }
 }

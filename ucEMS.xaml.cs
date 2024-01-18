@@ -64,6 +64,7 @@ namespace wpfTDX
             {
                 GetExecutions();
                 GetTransactions();
+                MessageBox.Show("ems data retrieved", "ems data", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch(Exception ex)
             {

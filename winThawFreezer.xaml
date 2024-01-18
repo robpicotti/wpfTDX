@@ -5,16 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
-        Title="Thaw" Height="450" Width="800" ResizeMode="NoResize">
+        Title="Thaw" Height="330" Width="800" ResizeMode="NoResize">
     <StackPanel>
         
         <StackPanel>
-            <TextBox x:Name="txtDetails" FontSize="20"/>
+            <TextBox x:Name="txtDetails" FontSize="20" Margin="5" IsReadOnly="True"/>
         </StackPanel>
 
-            <StackPanel Orientation="Horizontal">
-                <Button x:Name="cmdYes" Content="Yes" Margin="5" Width="50"/>
-                 <Button x:Name="cmdNo" Content="No" Margin="5" Width="50" />
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <Button x:Name="cmdYes" Content="Yes" Margin="5" Width="50" Click="cmdYes_Click"/>
+                 <Button x:Name="cmdNo" Content="No" Margin="5" Width="50" Click="cmdNo_Click" />
+        </StackPanel>
+        <StackPanel>
+            <TextBox x:Name="txtReason" Height="200" Visibility="Hidden" Margin="5"/>
         </StackPanel>
 
                 

@@ -74,7 +74,7 @@ namespace wpfTDX
         {
             try
             {
-                Cursor = Cursors.Wait;
+                Mouse.OverrideCursor = Cursors.Wait;
                 string fundname = cboFundname.SelectedItem.ToString();
                 if (fundname != null || fundname != "")
                 {
@@ -83,13 +83,14 @@ namespace wpfTDX
                     POSN.positions();
                     dgPosition.ItemsSource = POSN.position.DefaultView;
                     dgCashPosition.ItemsSource = POSN.cash_position.DefaultView;
+                    MessageBox.Show("positions complete", "positions", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "Positions error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally { Cursor = Cursors.Arrow; }
+            finally { Mouse.OverrideCursor = null; }
         }
         private void AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
         {

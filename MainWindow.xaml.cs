@@ -86,8 +86,7 @@ namespace wpfTDX
                 // Handle unobserved task exceptions here
                 Exception exception = args.Exception;
                 MessageBox.Show(exception.Message, "Unobserved Task Exception", MessageBoxButton.OK, MessageBoxImage.Error);
-            };
-
+            }; 
         }
 
         private async void cboServer_SelectionChanged(object sender, SelectionChangedEventArgs e)

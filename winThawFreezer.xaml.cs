@@ -28,9 +28,17 @@ namespace wpfTDX
         string TAD_ID = "";
         string TICKERNAME = "";
         string BENCHMARKNAME = "";
-        public winThawFreezer(string fundname,string execaccountname,
+        string BROKER_CODE_EXEC = "";
+        string EMSNAME = "";
+        string ERROR_CODE = "";
+        string RUN_TIME = "";
+        ucTickerFreezer MAIN_FORM;
+        TickerFreezer TFR;
+        public winThawFreezer(string runtime,string fundname,string execaccountname,
             string subaccountname,string tad_id,string tickername,
-            string benchmarkname, SqlConnection conn)
+            string benchmarkname, string broker_code_exec,
+            string emsname,string error_code,
+            ucTickerFreezer mainForm, SqlConnection conn)
         {
             InitializeComponent();
 
@@ -41,6 +49,12 @@ namespace wpfTDX
             TAD_ID = tad_id;
             TICKERNAME = tickername;
             BENCHMARKNAME = benchmarkname;
+            BROKER_CODE_EXEC = broker_code_exec;
+            EMSNAME = emsname;
+            ERROR_CODE = error_code;
+            MAIN_FORM = mainForm;
+            RUN_TIME = runtime;
+            TFR = new TickerFreezer(gbl_conn);
             LoadForm();
         }
         private void LoadForm()
@@ -62,6 +76,48 @@ namespace wpfTDX
             message += "\r\n";
             txtDetails.Text = message;
         }
+
+        private void cmdYes_Click(object sender, RoutedEventArgs e)
+        {
+            if (cmdYes.Content.ToString() == "Thaw")
+            {
+                Thaw();
+            }
+            else
+            {
+                cmdYes.Content = "Thaw";
+                txtReason.Visibility = Visibility.Visible;
+                cmdNo.Visibility = Visibility.Hidden;
+                this.Height = this.Height + 250;
+            }
+        }
+        /// <summary>
+        /// thawing an asset
+        /// </summary>
+        private void Thaw()
+        {
+            try
+            {
+                TFR.Thaw(RUN_TIME, EMSNAME, BROKER_CODE_EXEC, FUNDNAME, SUBACCOUNTNAME, EXECACCOUNTNAME, TAD_ID, TICKERNAME, ERROR_CODE, BENCHMARKNAME, txtReason.Text, gbl_conn);
+                MessageBox.Show("Item thawed successfully", "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                string message = "Thawing failed with error: " + ex.Message;
+                MessageBox.Show(message);
+            }
+            finally
+            {
+                MAIN_FORM.Refresh();
+                this.Close();
+            }
+        }
+
+        private void cmdNo_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+        
 
     }
 }
