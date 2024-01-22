@@ -202,7 +202,7 @@ namespace TDX
                     sumOfSellsSlippagePnl = dblSellPnl;
                     dtSlippageAnalysis = new DataTable();
                     dtSlippageAnalysis.Clear();
-                    dtSlippageAnalysis.Columns.Add("Average Slippage [price] %");
+                    dtSlippageAnalysis.Columns.Add("AverageSlippagePricePercent");
                     dtSlippageAnalysis.Columns.Add("Max Slippage %");
                     dtSlippageAnalysis.Columns.Add("Min Slippage %");
                     dtSlippageAnalysis.Columns.Add("Slippage PNL");
@@ -212,7 +212,7 @@ namespace TDX
                     dtSlippageAnalysis.Columns.Add("Slippage PNL SELLS");
 
                     DataRow drow = dtSlippageAnalysis.NewRow();
-                    drow["Average Slippage [price] %"] = Math.Round(avg_slippage_price_percent, 3);
+                    drow["AverageSlippagePricePercent"] = Math.Round(avg_slippage_price_percent, 3);
                     drow["Max Slippage %"] = Math.Round(max_slippage_percent, 3);
                     drow["Min Slippage %"] = Math.Round(min_slippage_percent, 3);
                     drow["Slippage PNL"] = Math.Round(pnl_slippage, 0);

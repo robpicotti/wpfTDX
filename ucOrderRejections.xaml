@@ -37,7 +37,9 @@
         </Border>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
+                
                 <StackPanel>
+                    <TextBlock Text="Order Rejections" FontWeight="Bold" Margin="5 1"/>
                     <DataGrid x:Name="dgOrderRejections" AutoGenerateColumns="True"
                                 Height="200"       
                                 ScrollViewer.CanContentScroll="True" 

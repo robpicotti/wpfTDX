@@ -44,17 +44,31 @@ namespace wpfTDX
         {
             InitializeComponent();
             gbl_conn = conn;
-            TFR = new TickerFreezer(gbl_conn);
-            Refresh();
+            try
+            {
+                TFR = new TickerFreezer(gbl_conn);
+                Refresh();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         public  void Refresh()
+        {
+
+                dtTickerFreezer = _db.ticker_freezer("", gbl_conn);
+                dgTickerFreezer.ItemsSource = dtTickerFreezer.DefaultView;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
             Cursor = Cursors.Wait;
             try
             {
-                dtTickerFreezer = _db.ticker_freezer("", gbl_conn);
-                dgTickerFreezer.ItemsSource = dtTickerFreezer.DefaultView;
-            }
+                Refresh();
+                MessageBox.Show("Ticker Freezer data refreshed", "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Information);
+            }  
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -63,11 +77,6 @@ namespace wpfTDX
             {
                 Cursor = Cursors.Arrow;
             }
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Refresh();
         }
 
 

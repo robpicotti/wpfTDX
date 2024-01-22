@@ -40,7 +40,7 @@
                 </StackPanel>
             </Grid>
         </Border>
-        <TextBlock Text="Mtm" Margin="5" FontWeight="Bold"/>
+        <TextBlock Text="MtM" Margin="5" FontWeight="Bold" FontSize="15"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
             <TabControl >
@@ -64,32 +64,36 @@
                 <!-- equities data-->
                 <TabItem Header="Equities">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
+                           
                         <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                        <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
-                                    <TextBox IsReadOnly="True" x:Name="txtTotalPnl" Margin="5"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" >
-                                        <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
-                                    <TextBox  IsReadOnly="True" x:Name="txtPosnPnl" Margin="5"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
-                                    <TextBox IsReadOnly="True" x:Name="txtNewDealsPnl" Margin="5"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="3">
-                                        <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
-                                    <TextBox IsReadOnly="True" x:Name="txtCommission" Margin="5"/>
-                                </StackPanel>
-                            </Grid>
-                            <StackPanel >
+                                <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
+                                            <TextBox IsReadOnly="True" x:Name="txtTotalPnl" Margin="5"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" >
+                                            <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
+                                            <TextBox  IsReadOnly="True" x:Name="txtPosnPnl" Margin="5"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
+                                            <TextBox IsReadOnly="True" x:Name="txtNewDealsPnl" Margin="5"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3">
+                                            <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
+                                            <TextBox IsReadOnly="True" x:Name="txtCommission" Margin="5"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <StackPanel >
+                                    <TextBlock Text="position pnl:" Margin="5" FontWeight="Bold"/>
                                     <DataGrid x:Name="dgEquities"  
                                         AutoGenerateColumns="True" Height="200"       
                                         ScrollViewer.CanContentScroll="True" 
@@ -102,6 +106,7 @@
                                             </Style>
                                         </DataGrid.ColumnHeaderStyle>
                                     </DataGrid>
+                                    <TextBlock Text="new deals pnl:" Margin="5" FontWeight="Bold"/>
                                     <DataGrid x:Name="dgEquitiesNewDeals" 
                                           Height="500"   
                                           AutoGenerateColumns="True" 
@@ -122,31 +127,34 @@
                 <!-- fututes data-->
                     <TabItem Header="Futures">
                         <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
-                                    <TextBox IsReadOnly="True" x:Name="txtTotalPnlFutures" Margin="5"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" >
-                                    <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
-                                    <TextBox  IsReadOnly="True" x:Name="txtPosnPnlFutures" Margin="5"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
-                                    <TextBox IsReadOnly="True" x:Name="txtNewDealsPnlFutures" Margin="5"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="3">
-                                    <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
-                                    <TextBox IsReadOnly="True" x:Name="txtCommissionFutures" Margin="5"/>
-                                </StackPanel>
-                            </Grid>
+                            <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
+                                        <TextBox IsReadOnly="True" x:Name="txtTotalPnlFutures" Margin="5"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" >
+                                        <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
+                                        <TextBox  IsReadOnly="True" x:Name="txtPosnPnlFutures" Margin="5"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
+                                        <TextBox IsReadOnly="True" x:Name="txtNewDealsPnlFutures" Margin="5"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
+                                        <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
+                                        <TextBox IsReadOnly="True" x:Name="txtCommissionFutures" Margin="5"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                             <StackPanel>
+                                <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
                                 <DataGrid x:Name="dgFutures" 
                                 AutoGenerateColumns="True" Height="200"     
                                 Margin="5"
@@ -159,6 +167,7 @@
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
                                 </DataGrid>
+                                <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5" />
                                 <DataGrid x:Name="dgFuturesNewDeals" 
                                           Height="200"   
                                           AutoGenerateColumns="True" 

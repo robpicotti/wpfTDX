@@ -43,7 +43,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
                 <StackPanel>
-                    <TextBlock Text="Slippage summary" FontWeight="Bold" FontSize="15"/>
+                    <TextBlock Text="Slippage summary" FontWeight="Bold" FontSize="15" Margin="5"/>
                     <DataGrid x:Name="dgSummary"   AutoGenerateColumns="True"
                                 Margin="5"
                                 Height="200"       
@@ -64,7 +64,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
                 <StackPanel>
-                    <TextBlock Text="Slippage details" FontWeight="Bold" FontSize="15"/>
+                    <TextBlock Text="Slippage details" FontWeight="Bold" FontSize="15" Margin="5"/>
                     <DataGrid x:Name="dgSlippage" AutoGenerateColumns="True"
                                 Margin="5"
                                 Height="200"       

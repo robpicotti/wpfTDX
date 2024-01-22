@@ -33,6 +33,7 @@
                 </StackPanel>
             </Grid>
         </Border>
+        <TextBlock Text="NAV" FontWeight="Bold" Margin="5"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
                 <StackPanel>
