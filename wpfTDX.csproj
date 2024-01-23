@@ -64,6 +64,9 @@
     <Compile Include="ucCommFeeAdj.xaml.cs">
       <DependentUpon>ucCommFeeAdj.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ucCorpActions.xaml.cs">
+      <DependentUpon>ucCorpActions.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ucDeposits.xaml.cs">
       <DependentUpon>ucDeposits.xaml</DependentUpon>
     </Compile>
@@ -121,6 +124,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="ucCommFeeAdj.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucCorpActions.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
