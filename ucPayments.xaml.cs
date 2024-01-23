@@ -179,28 +179,41 @@ namespace wpfTDX
             try
             {
                 Cursor = Cursors.Wait;
-                string broker_code = cboBrokerCode.SelectedItem.ToString();
-                Broker Brok = new Broker(broker_code, gbl_conn);
-                int broker_id = Brok.broker_id;
-                //get executiing broker
-                string broker_code_exec = cboExecBrokerCode.SelectedItem.ToString();
-                Broker Broker_exec = new Broker(broker_code_exec, gbl_conn);
-                int broker_id_exec = Broker_exec.broker_id;
-                string fund = cboFundname.SelectedItem.ToString();
-                string subaccount = cboSubaccount.SelectedItem.ToString();
-                string broker = Brok.brokername;
-                string currency = cboCurrency.Text;
-                string amount = txtAmount.Text;
-                string txtype_detail = cboTxTypeDetail.Text;
-                bool isnumeric = double.TryParse(amount, out _);
-                string tad_id = txtTadId.Text;
-                DateTime dtmTx_date = (DateTime)dtpTxDate.SelectedDate;
-                string tx_date = dtmTx_date.ToString("yyyy-MM-dd hh: mm:ss");
-                if ((subaccount != "") && (broker != "") && (currency != "") && (txtype_detail != "") && (isnumeric))
+                if ((cboBrokerCode.SelectedItem != null) &&
+                    (cboExecBrokerCode.SelectedItem != null) &&
+                    (cboFundname.SelectedItem != null) &&
+                    (cboCurrency.Text != "") &&
+                    (txtAmount.Text != "") &&
+                    (cboTxTypeDetail.Text != "") )
                 {
-                    addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, "SELL", tx_date, Broker_exec, txtype_detail);
-                    MessageBox.Show("Payment added", "Add payment", MessageBoxButton.OK, MessageBoxImage.Information);
-                    ClearControls();
+                    string broker_code = cboBrokerCode.SelectedItem.ToString();
+                    Broker Brok = new Broker(broker_code, gbl_conn);
+                    int broker_id = Brok.broker_id;
+                    //get executiing broker
+                    string broker_code_exec = cboExecBrokerCode.SelectedItem.ToString();
+                    Broker Broker_exec = new Broker(broker_code_exec, gbl_conn);
+                    int broker_id_exec = Broker_exec.broker_id;
+                    string fund = cboFundname.SelectedItem.ToString();
+                    string subaccount = cboSubaccount.SelectedItem.ToString();
+                    string broker = Brok.brokername;
+                    string currency = cboCurrency.Text;
+                    string amount = txtAmount.Text;
+                    string txtype_detail = cboTxTypeDetail.Text;
+                    bool isnumeric = double.TryParse(amount, out _);
+                    string tad_id = txtTadId.Text;
+                    DateTime dtmTx_date = (DateTime)dtpTxDate.SelectedDate;
+                    string tx_date = dtmTx_date.ToString("yyyy-MM-dd hh: mm:ss");
+                    if ((subaccount != "") && (broker != "") && (currency != "") && (txtype_detail != "") && (isnumeric))
+                    {
+                        addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, "SELL", tx_date, Broker_exec, txtype_detail);
+                        MessageBox.Show("Payment added", "Add payment", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ClearControls();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please select all fields",
+                        "Payments", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)

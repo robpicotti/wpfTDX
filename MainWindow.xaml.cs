@@ -103,6 +103,7 @@ namespace wpfTDX
         
         public void LoadForm()
         {
+            WindowState = WindowState.Maximized;
             Window_Width = this.Width;
             Dictionary<string, string> dict_sql = getConnectionParams();
             sqlPwd = dict_sql["@pwd"];
@@ -559,36 +560,37 @@ namespace wpfTDX
 
         private UserControl CreateNewUserControl(string text)
         {
+            double extra_width = 80;
                 switch (text)
                 {
                     case "MTM":
                     ucMtm mtm = new ucMtm(sql_conn, default_fund);
-                    mtm.Width = Window_Width;
+                    mtm.Width = Window_Width + extra_width;
                     return mtm;
                     case "Positions":
                     ucPostions position = new ucPostions(sql_conn, default);
-                    position.Width = Window_Width;
+                    position.Width = Window_Width + extra_width;
                     return position;
                     // Add other cases for different user controls if needed
                     case "EMS":
                         ucEMS ems = new ucEMS(sql_conn,default_fund);
-                        ems.Width = Window_Width;
+                        ems.Width = Window_Width + 100;
                         return ems;
                 case "Ticker Freezer":
                     ucTickerFreezer tickerFreeze = new ucTickerFreezer(sql_conn, default_fund);
-                    tickerFreeze.Width = Window_Width;
+                    tickerFreeze.Width = Window_Width + extra_width;
                     return tickerFreeze;
                 case "Order Rejections":
                     ucOrderRejections ordRejections = new ucOrderRejections(sql_conn);
-                    ordRejections.Width = Window_Width;
+                    ordRejections.Width = Window_Width + extra_width;
                     return ordRejections;
                 case "NAV":
                     ucNav Nav = new ucNav(sql_conn);
-                    Nav.Width = Window_Width;
+                    Nav.Width = Window_Width + extra_width;
                     return Nav;
                 case "Slippage":
                     ucSlippage slipp = new ucSlippage(sql_conn);
-                    slipp.Width = Window_Width;
+                    slipp.Width = Window_Width + extra_width;
                     return slipp;
                 case "Deposits":
                     ucDeposits depo = new ucDeposits(sql_conn);
