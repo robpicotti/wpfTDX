@@ -51,7 +51,7 @@ namespace wpfTDX
             gbl_conn = conn;
             LoadForm();  
         }
-        private void LoadForm()
+        private void LoadForm() 
         {
             dgEquities.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
             dgEquitiesNewDeals.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;

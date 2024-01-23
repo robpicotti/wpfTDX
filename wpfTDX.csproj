@@ -61,6 +61,9 @@
     <Compile Include="Slippage.cs" />
     <Compile Include="Table.cs" />
     <Compile Include="TickerFreezer.cs" />
+    <Compile Include="ucCommFeeAdj.xaml.cs">
+      <DependentUpon>ucCommFeeAdj.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ucDeposits.xaml.cs">
       <DependentUpon>ucDeposits.xaml</DependentUpon>
     </Compile>
@@ -75,6 +78,9 @@
     </Compile>
     <Compile Include="ucOrderRejections.xaml.cs">
       <DependentUpon>ucOrderRejections.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ucPayments.xaml.cs">
+      <DependentUpon>ucPayments.xaml</DependentUpon>
     </Compile>
     <Compile Include="ucPostions.xaml.cs">
       <DependentUpon>ucPostions.xaml</DependentUpon>
@@ -114,6 +120,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="ucCommFeeAdj.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ucDeposits.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -131,6 +141,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucOrderRejections.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucPayments.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

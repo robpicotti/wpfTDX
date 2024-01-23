@@ -12,16 +12,16 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Data.SqlClient;
 using System.Data;
+using System.Data.SqlClient;
 using TDX;
 
 namespace wpfTDX
 {
     /// <summary>
-    /// Interaction logic for ucDeposits.xaml
+    /// Interaction logic for ucCommFeeAdj.xaml
     /// </summary>
-    public partial class ucDeposits : UserControl
+    public partial class ucCommFeeAdj : UserControl
     {
         public event EventHandler RemoveControlRequested;
         TDX.db _db = new TDX.db();
@@ -32,13 +32,14 @@ namespace wpfTDX
         DataTable dtTadidsMaster;
         private Account _ACC;
         private Subaccount _SUBACC;
-        string TX_TYPE = "cash_depo_pay";
-        public ucDeposits(SqlConnection conn)
+        string TX_TYPE = "comm_fee_adjustment";
+        private const string ACTION = "BOTH";
+        string BUY_OR_SELL = "";
+        public ucCommFeeAdj(SqlConnection conn)
         {
             InitializeComponent();
             gbl_conn = conn;
             LoadForm();
-
         }
         /// <summary>
         /// custom form initializer
@@ -63,7 +64,7 @@ namespace wpfTDX
                 }
             }
             //populate tx types
-            dtTxTypedetails = _db.get_txtype_details("BUY", gbl_conn);
+            dtTxTypedetails = _db.get_txtype_details(ACTION, gbl_conn);
             cboTxtypeDetail.Items.Clear();
             foreach (DataRow row in dtTxTypedetails.Rows)
             {
@@ -106,24 +107,31 @@ namespace wpfTDX
         {
             try
             {
-                string subaccount_name = cboSubaccount.SelectedValue.ToString();
-                _SUBACC = new Subaccount(_ACC, subaccount_name, gbl_conn);
-                cboBrokerCode.Items.Clear();
-                cboExecBrokerCode.Items.Clear();
+                string subaccount_name = "";
+                if (cboSubaccount.SelectedValue != null)
+                {
+                    subaccount_name = cboSubaccount.SelectedValue.ToString();
+                }
                 if (subaccount_name != "")
                 {
-                    if (this._ACC != null)
+                    _SUBACC = new Subaccount(_ACC, subaccount_name, gbl_conn);
+                    cboBrokerCode.Items.Clear();
+                    cboExecBrokerCode.Items.Clear();
+                    if (subaccount_name != "")
                     {
-                        for (int i = 0; i < this._ACC.subaccounts_list.Count; i++)
+                        if (this._ACC != null)
                         {
-                            string subaccont = this._ACC.subaccounts_list[i].subaccount_name;
-                            if (subaccont == subaccount_name)
+                            for (int i = 0; i < this._ACC.subaccounts_list.Count; i++)
                             {
-                                string broker_code = this._ACC.subaccounts_list[i].broker_code;
-                                cboBrokerCode.Items.Add(broker_code);
-                                cboBrokerCode.Text = broker_code;
-                                cboExecBrokerCode.Items.Add(_SUBACC.broker_code_exec);
-                                cboExecBrokerCode.Text = _SUBACC.broker_code_exec;
+                                string subaccont = this._ACC.subaccounts_list[i].subaccount_name;
+                                if (subaccont == subaccount_name)
+                                {
+                                    string broker_code = this._ACC.subaccounts_list[i].broker_code;
+                                    cboBrokerCode.Items.Add(broker_code);
+                                    cboBrokerCode.Text = broker_code;
+                                    cboExecBrokerCode.Items.Add(_SUBACC.broker_code_exec);
+                                    cboExecBrokerCode.Text = _SUBACC.broker_code_exec;
+                                }
                             }
                         }
                     }
@@ -135,12 +143,9 @@ namespace wpfTDX
             }
         }
 
-        private void cboCurrency_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void cmdClose_Click(object sender, RoutedEventArgs e)
         {
-            string tickername = cboCurrency.SelectedItem.ToString();
-            DataTable dtSeltadid = dtTadidsMaster.Copy();
-            dtSeltadid = dtSeltadid.Select("tickername='" + tickername + "'").CopyToDataTable();
-            txtTadId.Text = dtSeltadid.Rows[0]["tad_id"].ToString();
+            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void cmdAdd_Click(object sender, RoutedEventArgs e)
@@ -148,38 +153,60 @@ namespace wpfTDX
             try
             {
                 Cursor = Cursors.Wait;
-                string broker_code = cboBrokerCode.SelectedItem.ToString();
-                Broker Brok = new Broker(broker_code, gbl_conn);
-                int broker_id = Brok.broker_id;
-                //get executiing broker
-                string broker_code_exec = cboExecBrokerCode.SelectedItem.ToString();
-                Broker Broker_exec = new Broker(broker_code_exec, gbl_conn);
-                int broker_id_exec = Broker_exec.broker_id;
-                string fund = cboFundname.SelectedItem.ToString();
-                string subaccount = cboSubaccount.SelectedItem.ToString();
-                string broker = Brok.brokername;
-                string currency = cboCurrency.Text;
-                string amount = txtAmount.Text;
-                string txtype_detail = cboTxtypeDetail.Text;
-                bool isnumeric = double.TryParse(amount, out _);
-                string tad_id = txtTadId.Text;
-                DateTime dtmTx_date = (DateTime)dtpTxDate.SelectedDate;
-                string tx_date = dtmTx_date.ToString("yyyy-MM-dd hh: mm:ss");
-                if ((subaccount != "") && (broker != "") && (currency != "") && (txtype_detail != "") && (isnumeric))
+                if ((cboBrokerCode.SelectedItem != null) &&
+                    (cboExecBrokerCode.SelectedItem != null) &&
+                    (cboFundname.SelectedItem != null) &&
+                    (cboCurrency.Text != "") &&
+                    (txtAmount.Text != "") &&
+                    (cboTxtypeDetail.Text != "") &&
+                    (BUY_OR_SELL !=""))
                 {
-                    addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, "BUY", tx_date, Broker_exec, txtype_detail);
-                    MessageBox.Show("Deposit added", "Add deposit", MessageBoxButton.OK, MessageBoxImage.Information);
-                    ClearControls();
+                    string broker_code = cboBrokerCode.SelectedItem.ToString();
+                    Broker Brok = new Broker(broker_code, gbl_conn);
+                    int broker_id = Brok.broker_id;
+                    //get executiing broker
+                    string broker_code_exec = cboExecBrokerCode.SelectedItem.ToString();
+                    Broker Broker_exec = new Broker(broker_code_exec, gbl_conn);
+                    int broker_id_exec = Broker_exec.broker_id;
+                    string fund = cboFundname.SelectedItem.ToString();
+                    string subaccount = cboSubaccount.SelectedItem.ToString();
+                    string broker = Brok.brokername;
+                    string currency = cboCurrency.Text;
+                    string amount = txtAmount.Text;
+                    string txtype_detail = cboTxtypeDetail.Text;
+                    bool isnumeric = double.TryParse(amount, out _);
+                    string tad_id = txtTadId.Text;
+                    DateTime dtmTx_date = (DateTime)dtpTxDate.SelectedDate;
+                    string tx_date = dtmTx_date.ToString("yyyy-MM-dd hh: mm:ss");
+                    if ((subaccount != "") && (broker != "") && (currency != "") && (txtype_detail != "") && (isnumeric) && (BUY_OR_SELL != ""))
+                    {
+                        addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, BUY_OR_SELL, tx_date, Broker_exec, txtype_detail);
+                        MessageBox.Show("Adjustment added", "Comm fee adjustment", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ClearControls();
+                        ResetParameters();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please fill out all fields", "Comm fee Adjustment", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Add deposit", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(ex.Message, "Comm fee Adjustment", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 Cursor = Cursors.Arrow;
             }
+        }
+
+        private void cboCurrency_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            string tickername = cboCurrency.SelectedItem.ToString();
+            DataTable dtSeltadid = dtTadidsMaster.Copy();
+            dtSeltadid = dtSeltadid.Select("tickername='" + tickername + "'").CopyToDataTable();
+            txtTadId.Text = dtSeltadid.Rows[0]["tad_id"].ToString();
         }
         /// <summary>
         /// clear all the controls once you've added a payment
@@ -187,15 +214,23 @@ namespace wpfTDX
         private void ClearControls()
         {
             UnsubscribeSelectionChangedEvents();
-            cboTxtypeDetail.SelectedIndex = -1;
-            cboFundname.SelectedIndex = -1;
-            cboSubaccount.SelectedIndex = -1;
-            cboBrokerCode.SelectedIndex = -1;
-            cboExecBrokerCode.SelectedIndex = -1;
-            cboCurrency.SelectedIndex = -1;
+            cboTxtypeDetail.Items.Clear();
+            cboFundname.Items.Clear();
+            cboSubaccount.Items.Clear();
+            cboBrokerCode.Items.Clear();
+            cboExecBrokerCode.Items.Clear();
+            cboCurrency.Items.Clear();
             txtTadId.Text = "";
             txtAmount.Text = "";
             SubscribeSelectionChangedEvents();
+            
+        }
+        /// <summary>
+        /// resets variables that are set along the clicking journey
+        /// </summary>
+        private void ResetParameters()
+        {
+            BUY_OR_SELL = "";
         }
         /// <summary>
         /// unsubscribes controls from their change events
@@ -214,10 +249,6 @@ namespace wpfTDX
             cboFundname.SelectionChanged += cboFundname_SelectionChanged;
             cboSubaccount.SelectionChanged += cboSubaccount_SelectionChanged;
             cboCurrency.SelectionChanged += cboCurrency_SelectionChanged;
-        }
-        private void cmdClose_Click(object sender, RoutedEventArgs e)
-        {
-            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
         /// <summary>
         /// method which adds rows to transaction table for deposit
@@ -247,6 +278,18 @@ namespace wpfTDX
                 tickername + "'," + price + "," + executed_qty + ",'" + tx_date + "','" + tx_date + "','" + tx_date + "','" + TX_TYPE + "'," + broker_exec.broker_id.ToString() + ",'" +
                 txtype_detail + "')";
             _db.execSQL_noresults(sql_text, gbl_conn);
+        }
+
+        private void rbDebit_Click(object sender, RoutedEventArgs e)
+        {
+            rbCredit.IsChecked = false;
+            BUY_OR_SELL = "SELL";
+        }
+
+        private void rbCredit_Click(object sender, RoutedEventArgs e)
+        {
+            rbDebit.IsChecked = false;
+            BUY_OR_SELL = "BUY";
         }
     }
 }

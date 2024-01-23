@@ -68,8 +68,8 @@ namespace wpfTDX
         /// <summary>
         /// this is the number of columns for tiling effect
         /// </summary>
-        private const int NumberOfColumns = 3; 
-        
+        private const int NumberOfColumns = 3;
+        double Window_Width;
         public MainWindow()
         {
             InitializeComponent();
@@ -103,6 +103,7 @@ namespace wpfTDX
         
         public void LoadForm()
         {
+            Window_Width = this.Width;
             Dictionary<string, string> dict_sql = getConnectionParams();
             sqlPwd = dict_sql["@pwd"];
             fixed_pricing = dict_sql["@fixed_pricing"];
@@ -562,37 +563,45 @@ namespace wpfTDX
                 {
                     case "MTM":
                     ucMtm mtm = new ucMtm(sql_conn, default_fund);
-                    mtm.Width = 600;
+                    mtm.Width = Window_Width;
                     return mtm;
                     case "Positions":
                     ucPostions position = new ucPostions(sql_conn, default);
-                    position.Width = 1000;
+                    position.Width = Window_Width;
                     return position;
                     // Add other cases for different user controls if needed
                     case "EMS":
                         ucEMS ems = new ucEMS(sql_conn,default_fund);
-                        ems.Width = 1000;
+                        ems.Width = Window_Width;
                         return ems;
                 case "Ticker Freezer":
                     ucTickerFreezer tickerFreeze = new ucTickerFreezer(sql_conn, default_fund);
-                    tickerFreeze.Width = 1000;
+                    tickerFreeze.Width = Window_Width;
                     return tickerFreeze;
                 case "Order Rejections":
                     ucOrderRejections ordRejections = new ucOrderRejections(sql_conn);
-                    ordRejections.Width = 1000;
+                    ordRejections.Width = Window_Width;
                     return ordRejections;
                 case "NAV":
                     ucNav Nav = new ucNav(sql_conn);
-                    Nav.Width = 1000;
+                    Nav.Width = Window_Width;
                     return Nav;
                 case "Slippage":
                     ucSlippage slipp = new ucSlippage(sql_conn);
-                    slipp.Width = 1000;
+                    slipp.Width = Window_Width;
                     return slipp;
                 case "Deposits":
                     ucDeposits depo = new ucDeposits(sql_conn);
                     depo.Width = 1000;
                     return depo;
+                case "Payments":
+                    ucPayments payment = new ucPayments(sql_conn);
+                    payment.Width = 1000;
+                    return payment;
+                case "Comm fee adjustments":
+                    ucCommFeeAdj cfa = new ucCommFeeAdj(sql_conn);
+                    cfa.Width = 1000;
+                    return cfa;
                 default:
                         return null;
                 }
@@ -759,6 +768,30 @@ namespace wpfTDX
                 // Find the Border that wraps the specified ucPostions in the WrapPanel
                 Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
                                                        .FirstOrDefault(border => border.Child == depo);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+            else if (sender is ucPayments payment)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == payment);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+            else if (sender is ucCommFeeAdj cfa)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == cfa);
 
                 // Remove the Border from the WrapPanel
                 if (userControlBorder != null)
@@ -951,6 +984,76 @@ namespace wpfTDX
                 {
                     // Create a new instance of the user control
                     ucDeposits newUserControl = CreateNewUserControl(textBlock.Text) as ucDeposits;
+
+                    if (newUserControl != null)
+                    {
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TextBlock_MouseLeftButtonDown_8(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    ucPayments newUserControl = CreateNewUserControl(textBlock.Text) as ucPayments;
+
+                    if (newUserControl != null)
+                    {
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TextBlock_MouseLeftButtonDown_9(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    ucCommFeeAdj newUserControl = CreateNewUserControl(textBlock.Text) as ucCommFeeAdj;
 
                     if (newUserControl != null)
                     {

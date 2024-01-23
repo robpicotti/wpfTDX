@@ -12,16 +12,16 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Data.SqlClient;
-using System.Data;
 using TDX;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace wpfTDX
 {
     /// <summary>
-    /// Interaction logic for ucDeposits.xaml
+    /// Interaction logic for ucPayments.xaml
     /// </summary>
-    public partial class ucDeposits : UserControl
+    public partial class ucPayments : UserControl
     {
         public event EventHandler RemoveControlRequested;
         TDX.db _db = new TDX.db();
@@ -33,23 +33,16 @@ namespace wpfTDX
         private Account _ACC;
         private Subaccount _SUBACC;
         string TX_TYPE = "cash_depo_pay";
-        public ucDeposits(SqlConnection conn)
+        public ucPayments(SqlConnection conn)
         {
             InitializeComponent();
             gbl_conn = conn;
             LoadForm();
-
         }
-        /// <summary>
-        /// custom form initializer
-        /// </summary>
         private void LoadForm()
         {
             PopulateControls();
         }
-        /// <summary>
-        /// populates all form user controls with data
-        /// </summary>
         private void PopulateControls()
         {
             //populate funds
@@ -63,11 +56,11 @@ namespace wpfTDX
                 }
             }
             //populate tx types
-            dtTxTypedetails = _db.get_txtype_details("BUY", gbl_conn);
-            cboTxtypeDetail.Items.Clear();
+            dtTxTypedetails = _db.get_txtype_details("SELL", gbl_conn);
+            cboTxTypeDetail.Items.Clear();
             foreach (DataRow row in dtTxTypedetails.Rows)
             {
-                cboTxtypeDetail.Items.Add(row["detail"].ToString());
+                cboTxTypeDetail.Items.Add(row["detail"].ToString());
             }
             //populate currencies
             dtCurrencies = _db.get_cash_currencies(gbl_conn);
@@ -80,6 +73,40 @@ namespace wpfTDX
             dtTadidsMaster = _db.get_tad_ids_master(gbl_conn);
             //set current date on datetime picker
             dtpTxDate.SelectedDate = (DateTime)DateTime.Today;
+        }
+        /// <summary>
+        /// clear all the controls once you've added a payment
+        /// </summary>
+        private void ClearControls()
+        {
+            UnsubscribeSelectionChangedEvents();
+            cboTxTypeDetail.SelectedIndex = -1;
+            cboFundname.SelectedIndex = -1;
+            cboSubaccount.SelectedIndex = -1;
+            cboBrokerCode.SelectedIndex = -1;
+            cboExecBrokerCode.SelectedIndex = -1;
+            cboCurrency.SelectedIndex = -1;
+            txtTadId.Text = "";
+            txtAmount.Text = "";
+            SubscribeSelectionChangedEvents();
+        }
+        /// <summary>
+        /// unsubscribes controls from their change events
+        /// </summary>
+        private void UnsubscribeSelectionChangedEvents()
+        {
+            cboFundname.SelectionChanged -= cboFundname_SelectionChanged;
+            cboSubaccount.SelectionChanged -= cboSubaccount_SelectionChanged;
+            cboCurrency.SelectionChanged -= cboCurrency_SelectionChanged;
+        }
+        /// <summary>
+        /// subscribe to the change events
+        /// </summary>
+        private void SubscribeSelectionChangedEvents()
+        {
+            cboFundname.SelectionChanged += cboFundname_SelectionChanged;
+            cboSubaccount.SelectionChanged += cboSubaccount_SelectionChanged;
+            cboCurrency.SelectionChanged += cboCurrency_SelectionChanged;
         }
         private void cboFundname_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -94,7 +121,6 @@ namespace wpfTDX
                 {
                     cboSubaccount.Items.Add(acc.subaccounts_list[i].subaccount_name.ToString());
                 }
-
             }
             catch (Exception ex)
             {
@@ -135,6 +161,11 @@ namespace wpfTDX
             }
         }
 
+        private void cmdClose_Click(object sender, RoutedEventArgs e)
+        {
+            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
+        }
+
         private void cboCurrency_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tickername = cboCurrency.SelectedItem.ToString();
@@ -160,64 +191,26 @@ namespace wpfTDX
                 string broker = Brok.brokername;
                 string currency = cboCurrency.Text;
                 string amount = txtAmount.Text;
-                string txtype_detail = cboTxtypeDetail.Text;
+                string txtype_detail = cboTxTypeDetail.Text;
                 bool isnumeric = double.TryParse(amount, out _);
                 string tad_id = txtTadId.Text;
                 DateTime dtmTx_date = (DateTime)dtpTxDate.SelectedDate;
                 string tx_date = dtmTx_date.ToString("yyyy-MM-dd hh: mm:ss");
                 if ((subaccount != "") && (broker != "") && (currency != "") && (txtype_detail != "") && (isnumeric))
                 {
-                    addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, "BUY", tx_date, Broker_exec, txtype_detail);
-                    MessageBox.Show("Deposit added", "Add deposit", MessageBoxButton.OK, MessageBoxImage.Information);
+                    addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, "SELL", tx_date, Broker_exec, txtype_detail);
+                    MessageBox.Show("Payment added", "Add payment", MessageBoxButton.OK, MessageBoxImage.Information);
                     ClearControls();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Add deposit", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(ex.Message, "Add payment", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 Cursor = Cursors.Arrow;
             }
-        }
-        /// <summary>
-        /// clear all the controls once you've added a payment
-        /// </summary>
-        private void ClearControls()
-        {
-            UnsubscribeSelectionChangedEvents();
-            cboTxtypeDetail.SelectedIndex = -1;
-            cboFundname.SelectedIndex = -1;
-            cboSubaccount.SelectedIndex = -1;
-            cboBrokerCode.SelectedIndex = -1;
-            cboExecBrokerCode.SelectedIndex = -1;
-            cboCurrency.SelectedIndex = -1;
-            txtTadId.Text = "";
-            txtAmount.Text = "";
-            SubscribeSelectionChangedEvents();
-        }
-        /// <summary>
-        /// unsubscribes controls from their change events
-        /// </summary>
-        private void UnsubscribeSelectionChangedEvents()
-        {
-            cboFundname.SelectionChanged -= cboFundname_SelectionChanged;
-            cboSubaccount.SelectionChanged -= cboSubaccount_SelectionChanged;
-            cboCurrency.SelectionChanged -= cboCurrency_SelectionChanged;
-        }
-        /// <summary>
-        /// subscribe to the change events
-        /// </summary>
-        private void SubscribeSelectionChangedEvents()
-        {
-            cboFundname.SelectionChanged += cboFundname_SelectionChanged;
-            cboSubaccount.SelectionChanged += cboSubaccount_SelectionChanged;
-            cboCurrency.SelectionChanged += cboCurrency_SelectionChanged;
-        }
-        private void cmdClose_Click(object sender, RoutedEventArgs e)
-        {
-            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
         /// <summary>
         /// method which adds rows to transaction table for deposit
