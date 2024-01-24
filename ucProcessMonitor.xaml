@@ -5,7 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:wpfTDX"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="1900"  HorizontalAlignment="Stretch" Background="LightBlue">
+             d:DesignHeight="450" d:DesignWidth="1900"  HorizontalAlignment="Stretch" 
+             Background="LightGray">
     <StackPanel Margin="2" HorizontalAlignment="Stretch">
         <TextBlock Text="Process Monitor" FontSize="20" FontWeight="Bold" Margin="20 1 1 1"/>
         <WrapPanel x:Name="processWrapPanel"  

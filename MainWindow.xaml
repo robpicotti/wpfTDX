@@ -29,13 +29,13 @@
                         </ComboBox>
                     </StackPanel>
                     <!-- Instance combobox-->
-                    <StackPanel Grid.Column="1">
+                    <StackPanel Grid.Column="2">
                         <TextBlock Text="instance" FontWeight="Bold" Margin="5 1"/>
                         <ComboBox x:Name="cboInstance" Margin="5 5" SelectionChanged="cboInstance_SelectionChanged">
                         </ComboBox>
                     </StackPanel>
                     <!-- Database combox box-->
-                    <StackPanel Grid.Column="2">
+                    <StackPanel Grid.Column="1">
                         <TextBlock Text="database" FontWeight="Bold" Margin="5 1"/>
                         <ComboBox x:Name="cboDatabase" SelectionChanged="cboDatabase_SelectionChanged" Margin="5 5" ItemsSource="{Binding}">
                         </ComboBox>
@@ -53,7 +53,7 @@
                     <TextBlock Text="Comm fee adjustments" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_9" FontSize="20" FontWeight="Bold" Margin="10 10 20 10" />
                     <TextBlock Text="Deposits" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_7" FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
                     <TextBlock Text="EMS" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="MTM"  MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
+                    <TextBlock Text="MTM" x:Name="txbMtm" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
                     <TextBlock Text="NAV" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="Order Rejections" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_4" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="Payments" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_8" FontWeight="Bold" Margin="5 10 20 10"/>

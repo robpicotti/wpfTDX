@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel Margin="2">
-        <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+        <Border BorderBrush="Black" Background="LightPink"  BorderThickness="1" Padding="5" Margin="5">
 
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -28,6 +28,7 @@
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               MouseRightButtonDown="dgTickerFreezer_MouseRightButtonDown"
+                              IsReadOnly="True"
                                 Margin="5">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">

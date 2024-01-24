@@ -464,9 +464,10 @@ namespace wpfTDX
                     if (!string.IsNullOrEmpty(sqlDb))
                     {
                         connect_database();
+                        //start the process monitor
                         StartMonitoring();
-                        // Run processChecker asynchronously
-                        //await Task.Run(() => ProcessCheckerInBackground());
+                        //we want the Mtm screen on startup
+                        AddMtM("MTM");
                     }
                     else
                     {
@@ -608,7 +609,11 @@ namespace wpfTDX
                         return null;
                 }
         }
-
+        /// <summary>
+        /// positions
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -643,34 +648,63 @@ namespace wpfTDX
                 MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+        private void AddMtM(string textblockText)
+        {
+            // Create a new instance of the user control
+            ucMtm newUserControl = CreateNewUserControl(textblockText) as ucMtm;
+
+            if (newUserControl != null)
+            {
+                newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                // Set margin to create spacing between user controls
+                newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                // Wrap the user control in a Border with a black border color and thickness
+                Border userControlBorder = new Border
+                {
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(2),
+                    Child = newUserControl
+                };
+
+                // Add the bordered user control to the WrapPanel
+                userControlsWrapPanel.Children.Add(userControlBorder);
+            }
+        }
+        /// <summary>
+        /// MtM
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
             {
                 if (sender is TextBlock textBlock)
                 {
+                    AddMtM(textBlock.Text);
                     // Create a new instance of the user control
-                    ucMtm newUserControl = CreateNewUserControl(textBlock.Text) as ucMtm;
+                    //ucMtm newUserControl = CreateNewUserControl(textBlock.Text) as ucMtm;
 
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+                    //if (newUserControl != null)
+                    //{
+                    //    newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
 
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+                    //    // Set margin to create spacing between user controls
+                    //    newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
 
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
+                    //    // Wrap the user control in a Border with a black border color and thickness
+                    //    Border userControlBorder = new Border
+                    //    {
+                    //        BorderBrush = Brushes.Black,
+                    //        BorderThickness = new Thickness(2),
+                    //        Child = newUserControl
+                    //    };
 
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
+                    //    // Add the bordered user control to the WrapPanel
+                    //    userControlsWrapPanel.Children.Add(userControlBorder);
+                    //}
                 }
             }
             else
@@ -802,7 +836,11 @@ namespace wpfTDX
                 }
             }
         }
-
+        /// <summary>
+        /// ems
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_2(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -838,6 +876,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// ticker freezer
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_3(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -873,6 +916,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// order rejections
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_4(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -908,6 +956,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// nav
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_5(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -943,6 +996,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// slippage
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_6(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -978,6 +1036,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// deposits
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_7(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -1013,6 +1076,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// payments
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_8(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
@@ -1048,6 +1116,11 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// comm fee adjustments
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_9(object sender, MouseButtonEventArgs e)
         {
             if (sql_conn != null)
