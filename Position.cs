@@ -25,8 +25,11 @@ namespace TDX
         public Position positions()
         {
             DataSet ds = _db.get_positions(this.subaccount, this.position_date.ToString("yyyy-MM-dd"),gbl_conn);
-            this.position = ds.Tables[0];
-            this.cash_position = ds.Tables[1];
+            if (ds.Tables.Count > 0)
+            {
+                this.position = ds.Tables[0];
+                this.cash_position = ds.Tables[1];
+            }
             return this;
         }
         public Position positions(DateTime posn_date)

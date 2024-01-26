@@ -6,17 +6,131 @@
              xmlns:local="clr-namespace:wpfTDX"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <StackPanel>
-        <TabControl Margin="2">
-            <TabItem Header="Loaded">
-                <StackPanel>
-                    <DataGrid x:Name="dgLoaded" AutoGenerateColumns="True"
-                              Margin="5">
-                        
-                    </DataGrid>
+    <StackPanel Margin="2">
+        <Border BorderBrush="Black" Background="Cornsilk"  BorderThickness="1" Padding="5" Margin="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Corporate actions"
+                               FontWeight="Bold" 
+                               Margin="5 1" />
                 </StackPanel>
-            </TabItem>
-        </TabControl>
-            
+                
+                <StackPanel Grid.Column="9">
+                    <Button x:Name="cmdCloseScreen" Click="cmdClose_Click_1" Content="X"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+            <TabControl >
+                <TabItem Header="Loaded"
+                     FontWeight="Bold">
+                    <StackPanel>
+                        <DataGrid x:Name="dgLoaded" AutoGenerateColumns="True"
+                                Height="400"       
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                IsReadOnly="True"
+                                  FontWeight="Normal"
+                                  Margin="5">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="FontWeight" Value="Bold" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                        </DataGrid>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="Transitions"
+                     FontWeight="Bold">
+                    <StackPanel>
+                        <DataGrid x:Name="dgTransitions"
+                              AutoGenerateColumns="True"
+                                Height="500"       
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  FontWeight="Normal"
+                                IsReadOnly="True"                                 
+                              Margin="5">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="FontWeight" Value="Bold" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                        </DataGrid>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="Upcoming events" 
+                     FontWeight="Bold">
+                    <StackPanel>
+                        <DataGrid x:Name="dgEvents"
+                              AutoGenerateColumns="True"
+                                Height="500"       
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  FontWeight="Normal"
+                                IsReadOnly="True"                                 
+                              Margin="5">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="FontWeight" Value="Bold" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                        </DataGrid>
+                    </StackPanel>
+                </TabItem>
+                <TabItem Header="Cash dividends paid" FontWeight="Bold">
+                    <StackPanel>
+                        <Border 
+                        BorderBrush="Black" 
+                        BorderThickness="1"  
+                        Background="Cornsilk"
+                        Padding="5" Margin="5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="8*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="subaccount name"
+                                       FontWeight="Bold"
+                                       Margin="5 1 2 2"
+                                       />
+                                    <ComboBox x:Name="cboSubaccount"
+                                              FontWeight="Normal"
+                                              SelectionChanged="cboSubaccount_SelectionChanged"
+                                            Margin="5">
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <DataGrid x:Name="dgCDivPaid"
+                              AutoGenerateColumns="True"
+                                  FontWeight="Normal"
+                              Margin="5">
+                        </DataGrid>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </Border>
     </StackPanel>
 </UserControl>

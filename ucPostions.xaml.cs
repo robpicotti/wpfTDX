@@ -81,9 +81,18 @@ namespace wpfTDX
                     POSN = new Position(fundname, gbl_conn);
                     POSN.position_date = dtPickerPostionFrom.SelectedDate.Value;
                     POSN.positions();
-                    dgPosition.ItemsSource = POSN.position.DefaultView;
-                    dgCashPosition.ItemsSource = POSN.cash_position.DefaultView;
-                    MessageBox.Show("positions complete", "positions", MessageBoxButton.OK, MessageBoxImage.Information);
+                    if (POSN.position != null)
+                    {
+                        dgPosition.ItemsSource = POSN.position.DefaultView;
+                        dgCashPosition.ItemsSource = POSN.cash_position.DefaultView;
+                        MessageBox.Show("positions complete", "positions", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("POSN.position is null. Check get_position sproc",
+                            "Position", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    
                 }
             }
             catch(Exception ex)
