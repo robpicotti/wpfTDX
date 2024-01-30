@@ -34,7 +34,7 @@
                     <ComboBox x:Name="cboExecBrokerCode" Margin="5" />
                 </StackPanel>
                 <StackPanel Grid.Column="4">
-                    <Button x:Name="cmdClose"  Click="cmdClose_Click"  Content="X" Margin="1 -5 -5 0" BorderBrush="White" Background="White" FontWeight="Bold" />
+                    <Button x:Name="cmdClose"  Click="cmdClose_Click"  Content="X"  FontWeight="Bold" />
                 </StackPanel>
             </Grid>
         </Border>

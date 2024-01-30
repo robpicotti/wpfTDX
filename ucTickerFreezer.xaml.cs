@@ -80,10 +80,7 @@ namespace wpfTDX
         }
 
 
-        private void cmdClose_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
-        }
+
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -213,6 +210,11 @@ namespace wpfTDX
             {
                 Refresh();
             }
+        }
+
+        private void cmdClose_Click(object sender, RoutedEventArgs e)
+        {
+            RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 }

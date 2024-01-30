@@ -40,7 +40,7 @@
                     <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="8" Margin="5">
-                    <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x" Margin="1 -5 -5 0" BorderBrush="White" Background="White" FontWeight="Bold" />
+                    <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x"  FontWeight="Bold" />
                 </StackPanel>
             </Grid>
         </Border>

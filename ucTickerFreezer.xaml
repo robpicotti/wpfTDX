@@ -48,11 +48,11 @@
                     </DataGrid>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
-                    <TextBlock 
-                        x:Name="cmdClose" Text="X" MouseLeftButtonDown="cmdClose_MouseLeftButtonDown" Width="100" 
+                    <Button
+                        x:Name="cmdClose" Content="X" Click="cmdClose_Click"  
                         HorizontalAlignment="Right"
+                        Width="25"
                         FontWeight="Bold"
-                        Margin="1 5 -80 0"
                      />
                 </StackPanel>
             </Grid>
