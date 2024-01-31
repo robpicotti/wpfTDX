@@ -57,6 +57,7 @@ namespace wpfTDX
                 cboFundname.Items.Add(row["fundname"].ToString());
             }
             cboFundname.SelectedIndex = 0;
+            dtPickerPostionFrom.SelectedDate = DateTime.Today;
         }
 
         /// <summary>

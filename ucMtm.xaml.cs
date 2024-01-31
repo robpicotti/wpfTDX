@@ -85,28 +85,32 @@ namespace wpfTDX
             lstNumericColumns.Add("mtm");
             lstNumericColumns.Add("mtm_t1");
             lstNumericColumns.Add("posn_pnl");
+            lstNumericColumns.Add("position_pnl");
             lstNumericColumns.Add("posn_new_deals");
             lstNumericColumns.Add("new_deals_pnl");
             lstNumericColumns.Add("newdeal_pnl");
-            lstNumericColumns.Add("newdeals_pnl");
             lstNumericColumns.Add("new_deals");
             lstNumericColumns.Add("new_deals_exchcurr");
             lstNumericColumns.Add("commission");
             lstNumericColumns.Add("consideration");
             lstNumericColumns.Add("new_deal_pnl_exclComm");
+            lstNumericColumns.Add("contract_size");
+            lstNumericColumns.Add("_effective_posn");
+            lstNumericColumns.Add("_actual_posn");
         }
 
         private void dgEquities_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
         {
-            if (lstNumericColumns.Contains( e.PropertyName) )
+            if (lstNumericColumns.Contains(e.PropertyName.ToString().ToLower()))
             {
                 var textColumn = e.Column as DataGridTextColumn;
                 if (textColumn != null)
                 {
-                    // Set the StringFormat to "N" for thousand separator
-                    textColumn.Binding = new Binding(e.PropertyName) { StringFormat = "N" };
+                    // Set the StringFormat to "N0" for thousand separator and no decimal places
+                    textColumn.Binding = new Binding(e.PropertyName) { StringFormat = "N0" };
                 }
             }
+
         }
 
         private void cmdClose_Click(object sender, RoutedEventArgs e)

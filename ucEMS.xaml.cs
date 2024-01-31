@@ -83,6 +83,7 @@ namespace wpfTDX
                 cboFundname.Text, dtPickerFrom.SelectedDate.ToString(),
                 endDate.ToString(), gbl_conn);
             dgExecutions.ItemsSource = dtExecutions.DefaultView;
+            tabiExecutions.Header = "Executions - " + dgExecutions.Items.Count.ToString();
         }
         private void GetTransactions()
         {
@@ -92,6 +93,7 @@ namespace wpfTDX
                 cboFundname.Text, dtPickerFrom.SelectedDate.ToString(),
                 endDate.ToString(), gbl_conn);
             dgTransactions.ItemsSource = dtTransactions.DefaultView;
+            tabiTransactions.Header = "Transactions - " + dgTransactions.Items.Count.ToString();
         }
     }
 }

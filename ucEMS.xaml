@@ -45,7 +45,7 @@
         <TextBlock Text="EMS" FontWeight="Bold" Margin="5"/>
         <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
             <TabControl>
-                <TabItem Header="Orders">
+                <TabItem Header="Orders" x:Name="tabiOrders">
                     <StackPanel>
                         <DataGrid x:Name="dgOrders" AutoGenerateColumns="True"
                                 Height="200"       
@@ -62,7 +62,7 @@
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="Executions">
+                <TabItem Header="Executions" x:Name="tabiExecutions">
                     <StackPanel>
                         <DataGrid x:Name="dgExecutions" AutoGenerateColumns="True"
                                 Height="500"       
@@ -79,7 +79,7 @@
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="Transactions">
+                <TabItem Header="Transactions" x:Name="tabiTransactions">
                     <StackPanel>
                         <DataGrid x:Name="dgTransactions" AutoGenerateColumns="True"
                                 Height="500"       

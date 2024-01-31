@@ -376,6 +376,7 @@ namespace TDX
             dt = execSQL(sql_text, conn);
             return dt;
         }
+
         public DataTable ticker_freezer(string subaccount,SqlConnection conn)
         {
             DataTable dt = new DataTable();

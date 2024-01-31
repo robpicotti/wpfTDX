@@ -100,6 +100,9 @@
     <Compile Include="ucTickerFreezer.xaml.cs">
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
+    <Compile Include="winFreezeTadId.xaml.cs">
+      <DependentUpon>winFreezeTadId.xaml</DependentUpon>
+    </Compile>
     <Compile Include="winScale.xaml.cs">
       <DependentUpon>winScale.xaml</DependentUpon>
     </Compile>
@@ -172,6 +175,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucTickerFreezer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="winFreezeTadId.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

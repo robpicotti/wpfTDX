@@ -43,6 +43,11 @@
                                     <MenuItem Header="no expiration?" Click="MenuItem_Click_3"/>
                                 </MenuItem>
                                 <MenuItem Header="remove override for this tad_id?" Click="MenuItem_Click_4"/>
+                                <MenuItem  Click="MenuItem_Click_5"  >
+                                    <MenuItem.Header>
+                                        <TextBlock Text="search any tad_id to freeze?" Foreground="Red"/>
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                     </DataGrid>

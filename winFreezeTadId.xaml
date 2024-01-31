@@ -1,0 +1,48 @@
+﻿<Window x:Class="wpfTDX.winFreezeTadId"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:wpfTDX"
+        mc:Ignorable="d"
+        Title="Freeze tad_id" Height="450" Width="800">
+    <DockPanel>
+
+        <Border DockPanel.Dock="Top" BorderBrush="Black" Background="LightPink"  BorderThickness="1" Padding="5" Margin="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="search tad_id" FontWeight="Bold" Margin="5"/>
+                    <TextBox x:Name="txtSearchTadId"  Margin="5" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <Button x:Name="cmdSearch" Content="Search" Margin="29" Click="cmdSearch_Click" FontWeight="Bold" />
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Grid>
+            <DataGrid x:Name="dgTadIds" Margin="5" AutoGenerateColumns="True"
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                MouseRightButtonDown="dgTadIds_MouseRightButtonDown"
+             >
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="freeze this tad_id" Click="MenuItem_Click" />
+                        <!-- Add more menu items as needed -->
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+            </DataGrid>
+
+        </Grid>
+    </DockPanel>
+</Window>

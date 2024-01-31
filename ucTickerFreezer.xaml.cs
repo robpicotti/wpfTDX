@@ -54,11 +54,10 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public  void Refresh()
+        public void Refresh()
         {
-
-                dtTickerFreezer = _db.ticker_freezer("", gbl_conn);
-                dgTickerFreezer.ItemsSource = dtTickerFreezer.DefaultView;
+            dtTickerFreezer = _db.ticker_freezer("", gbl_conn);
+            dgTickerFreezer.ItemsSource = dtTickerFreezer.DefaultView;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -78,9 +77,6 @@ namespace wpfTDX
                 Cursor = Cursors.Arrow;
             }
         }
-
-
-
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -215,6 +211,24 @@ namespace wpfTDX
         private void cmdClose_Click(object sender, RoutedEventArgs e)
         {
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void MenuItem_Click_5(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Cursor = Cursors.Wait;
+                winFreezeTadId winFreeze = new winFreezeTadId(gbl_conn, this);
+                winFreeze.ShowDialog();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "freeze any tad_id", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
         }
     }
 }

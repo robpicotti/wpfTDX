@@ -112,5 +112,21 @@ namespace TDX
 
             return t_sql;
         }
+        private DataTable SearchTadId(string tad_id_wildcard)
+        {
+            DataTable dtOut = new DataTable();
+            DataTable dtTadIdsMaster;
+            Table tblTadIdsMaster = new Table("tad_ids_master", gbl_conn);
+            dtTadIdsMaster = tblTadIdsMaster.table_data.Copy();
+            var query = from row in dtTadIdsMaster.AsEnumerable()
+                        where row.Field<string>("tad_id").Contains(tad_id_wildcard)
+                        select row;
+            dtOut = dtTadIdsMaster.Clone();
+            foreach (var resultRow in query)
+            {
+                dtOut.ImportRow(resultRow);
+            }
+            return dtOut; 
+        }
     }
 }
