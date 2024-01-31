@@ -64,6 +64,7 @@ namespace wpfTDX
             {
                 GetExecutions();
                 GetTransactions();
+                GetOrders();
                 MessageBox.Show("ems data retrieved", "ems data", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch(Exception ex)
@@ -94,6 +95,18 @@ namespace wpfTDX
                 endDate.ToString(), gbl_conn);
             dgTransactions.ItemsSource = dtTransactions.DefaultView;
             tabiTransactions.Header = "Transactions - " + dgTransactions.Items.Count.ToString();
+        }
+
+        private void GetOrders()
+        {
+            DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
+            endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
+            DateTime startDate = (DateTime)dtPickerFrom.SelectedDate;
+            Order ord = new Order(cboFundname.Text, startDate , endDate, gbl_conn);
+            ord.Get("fundname");
+            dtOrders = ord.dtOrders;
+            dgOrders.ItemsSource = dtOrders.DefaultView;
+            tabiOrders.Header = "Orders - " + dgOrders.Items.Count.ToString();
         }
     }
 }

@@ -58,6 +58,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Order.cs" />
     <Compile Include="Slippage.cs" />
     <Compile Include="Table.cs" />
     <Compile Include="TickerFreezer.cs" />
