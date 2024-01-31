@@ -8,7 +8,7 @@
              d:DesignHeight="450" d:DesignWidth="1900"  HorizontalAlignment="Stretch" 
              Background="LightGray">
     <StackPanel Margin="2" HorizontalAlignment="Stretch">
-        <TextBlock Text="Process Monitor" FontSize="20" FontWeight="Bold" Margin="20 1 1 1"/>
+        <TextBlock Text="** Process Monitor **" FontSize="20" FontWeight="Bold" FontStyle="Italic" Margin="20 1 1 1"/>
         <WrapPanel x:Name="processWrapPanel"  
                        Orientation="Horizontal" Margin="5 1 5 5"
                         Width="1855"
