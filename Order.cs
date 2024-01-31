@@ -21,6 +21,7 @@ namespace wpfTDX
         public DateTime EndDate;
         private SqlConnection gbl_conn { get; set; }
         private db DB = new db();
+
         public Order(string fundName, DateTime startDate,DateTime endDate, SqlConnection conn)
         {
             this.FundName = fundName;
@@ -40,6 +41,11 @@ namespace wpfTDX
                 dtOrders = GetOrdersByFundName(this.FundName);
             }
         }
+        /// <summary>
+        /// get all the orders where the subaccounts are in the fund specified
+        /// </summary>
+        /// <param name="fundname"></param>
+        /// <returns></returns>
         private DataTable GetOrdersByFundName(string fundname)
         {
             DataTable dtOut = new DataTable();
