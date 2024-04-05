@@ -62,7 +62,7 @@ namespace wpfTDX
         List<string> lstProcesses = new List<string>();
         private readonly object lockObject = new object();
         Thread monitoringThread;
-        public string VERSION = "TDX version 1.8.5";
+        public string VERSION = "TDX version 2.0.6";
         
         private Dictionary<TextBlock, UserControl> userControlDictionary = new Dictionary<TextBlock, UserControl>();
         /// <summary>
@@ -609,6 +609,10 @@ namespace wpfTDX
                     ucCorpActions corp = new ucCorpActions(sql_conn);
                     corp.Width = 1875;
                     return corp;
+                case "Orders archive":
+                    ucOrdersArchive ordArch = new ucOrdersArchive(sql_conn);
+                    ordArch.Width = 1892;
+                    return ordArch;
                 default:
                         return null;
                 }
@@ -844,6 +848,18 @@ namespace wpfTDX
                 // Find the Border that wraps the specified ucPostions in the WrapPanel
                 Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
                                                        .FirstOrDefault(border => border.Child == corp);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+            else if (sender is ucOrdersArchive ordArch)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == ordArch);
 
                 // Remove the Border from the WrapPanel
                 if (userControlBorder != null)
@@ -1180,6 +1196,41 @@ namespace wpfTDX
                 {
                     // Create a new instance of the user control
                     ucCorpActions newUserControl = CreateNewUserControl(textBlock.Text) as ucCorpActions;
+
+                    if (newUserControl != null)
+                    {
+                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                        // Set margin to create spacing between user controls
+                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                        // Wrap the user control in a Border with a black border color and thickness
+                        Border userControlBorder = new Border
+                        {
+                            BorderBrush = Brushes.Black,
+                            BorderThickness = new Thickness(2),
+                            Child = newUserControl
+                        };
+
+                        // Add the bordered user control to the WrapPanel
+                        userControlsWrapPanel.Children.Add(userControlBorder);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void TextBlock_MouseLeftButtonDown_11(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    // Create a new instance of the user control
+                    ucOrdersArchive newUserControl = CreateNewUserControl(textBlock.Text) as ucOrdersArchive;
 
                     if (newUserControl != null)
                     {

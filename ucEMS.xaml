@@ -45,6 +45,23 @@
         <TextBlock Text="EMS" FontWeight="Bold" Margin="5"/>
         <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
             <TabControl>
+                <TabItem Header="Open Orders" x:Name="tabiOpenOrders">
+                    <StackPanel>
+                        <DataGrid x:Name="dgOpenOrders" AutoGenerateColumns="True"
+                                Height="200"       
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                IsReadOnly="True"
+                                Margin="5">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="FontWeight" Value="Bold" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                        </DataGrid>
+                    </StackPanel>
+                </TabItem>
                 <TabItem Header="Orders" x:Name="tabiOrders">
                     <StackPanel>
                         <DataGrid x:Name="dgOrders" AutoGenerateColumns="True"

@@ -70,7 +70,7 @@ namespace TDX
 
         }
         /// <summary>
-        /// returns -1 if there is no tickername in merge_positions
+        /// returns -1 if there is no tickername in target_positions
         /// </summary>
         /// <param name="tickername"></param>
         /// <returns></returns>
@@ -78,7 +78,7 @@ namespace TDX
         {
             double dbl_out = -1;
             string _where_clause = "WHERE tickername='" + tickername + "' AND subaccountname='" + this.subaccount + "'";
-            Table tbl = new Table("merge_positions", gbl_conn, _where_clause);
+            Table tbl = new Table("target_positions", gbl_conn, _where_clause);
 
             if(tbl.table_data.Rows.Count>0)
             {

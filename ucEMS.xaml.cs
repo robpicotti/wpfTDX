@@ -31,6 +31,7 @@ namespace wpfTDX
         DataTable dtExecutions;
         DataTable dtTransactions;
         DataTable dtOrders;
+        DataTable dtOpenOrders;
         public ucEMS(SqlConnection conn,string default_fund)
         {
             InitializeComponent();
@@ -106,6 +107,8 @@ namespace wpfTDX
             ord.Get("fundname");
             dtOrders = ord.dtOrders;
             dgOrders.ItemsSource = dtOrders.DefaultView;
+            dtOpenOrders = ord.dtOpenOrders;
+            dgOpenOrders.ItemsSource = dtOpenOrders.DefaultView;
             tabiOrders.Header = "Orders - " + dgOrders.Items.Count.ToString();
         }
     }

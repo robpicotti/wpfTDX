@@ -5,14 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
-        Title="TDX 2.05" Height="1000" Width="1800">
+        Title="TDX 2.0.6" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 
             <!-- database connection dashboard-->
             <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
                 <Grid>
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="4*"/>
                         <ColumnDefinition Width ="4*"/>
@@ -58,6 +57,7 @@
                     <TextBlock Text="EMS" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="MTM" x:Name="txbMtm" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
                     <TextBlock Text="NAV" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
+                    <TextBlock Text="Orders archive" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_11"  FontSize="20" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="Order Rejections" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_4" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="Payments" FontSize="20" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_8" FontWeight="Bold" Margin="5 10 20 10"/>
                     <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="20" FontWeight="Bold" Margin="10 10 20 10"/>
