@@ -47,22 +47,38 @@
             <TabControl>
                 <TabItem Header="Open Orders" x:Name="tabiOpenOrders">
                     <StackPanel>
+                        <StackPanel>
+                            <Button 
+                                x:Name="btnApprove" 
+                                Content="Approve" 
+                                Click="btnApprove_Click" 
+                                Width="100" 
+                                HorizontalAlignment="Left" 
+                                Margin="5" 
+                                FontWeight="Bold"
+                                Visibility="Hidden"
+                                >
+                                
+                            </Button>
+                        </StackPanel>
                         <DataGrid x:Name="dgOpenOrders" AutoGenerateColumns="True"
                                 Height="200"       
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                IsReadOnly="True"
+                                IsReadOnly="false"
+                                CanUserAddRows="False"
                                 Margin="5">
                             <DataGrid.ColumnHeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="FontWeight" Value="Bold" />
                                 </Style>
                             </DataGrid.ColumnHeaderStyle>
+                            
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="Orders" x:Name="tabiOrders">
+                <TabItem Header="Filled Orders" x:Name="tabiOrders">
                     <StackPanel>
                         <DataGrid x:Name="dgOrders" AutoGenerateColumns="True"
                                 Height="200"       

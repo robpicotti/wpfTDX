@@ -109,7 +109,39 @@ namespace wpfTDX
             dgOrders.ItemsSource = dtOrders.DefaultView;
             dtOpenOrders = ord.dtOpenOrders;
             dgOpenOrders.ItemsSource = dtOpenOrders.DefaultView;
-            tabiOrders.Header = "Orders - " + dgOrders.Items.Count.ToString();
+            if(dgOpenOrders.Items.Count > 0) 
+            { btnApprove.Visibility = Visibility.Visible; }
+            else { btnApprove.Visibility = Visibility.Hidden; }
+            tabiOpenOrders.Header = "Open Orders - " + dgOpenOrders.Items.Count.ToString();
+            tabiOrders.Header = "Filled Orders - " + dgOrders.Items.Count.ToString();
+        }
+
+        private void btnApprove_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                foreach(DataRowView rowView in dgOpenOrders.Items)
+                {
+                    DataRow row = rowView.Row;
+                    bool approved = (bool)row["Approved"];
+                    if(approved)
+                    {
+                        string tad_order_id = row["tad_order_id"].ToString();
+                        string orders_key = row["orders_key"].ToString();
+                        string status = "APPROVED";
+                        DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
+                        endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
+                        DateTime startDate = (DateTime)dtPickerFrom.SelectedDate;
+                        Order ord = new Order(cboFundname.Text, startDate, endDate, gbl_conn);
+                        ord.UpdateOrderStatus(tad_order_id, status, orders_key);
+
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Approve orders", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

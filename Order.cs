@@ -73,6 +73,10 @@ namespace wpfTDX
             DataTable dtOut = new DataTable();
             string endDateTime = this.EndDate.ToString("dd-MMM-yyyy HH:mm:ss");
             string startDateTime = this.StartDate.ToString("dd-MMM-yyyy");
+            string out_columns = "ord.runtime, ord.broker,ord.account,ord.subaccounts,ord.allocation_amount,ord.tad_order_id,ord.order_id,";
+            out_columns += "ord.brok_uniq_order_id,ord.action,ord.tad_id,ord.tickername,ord.price,ord.multiplier,ord.size,";
+            out_columns += "ord.tif,ord.order_type,ord.status,ord.status_time,ord.newposition_ids,ord.bbg_figi,ord.trade_allocations,ord.autoexecute,ord.tx_type_detail,";
+            out_columns += "ord.ptval,ord.contract_increment,ord.exch_currency,ord.instrument,ord.orders_key";
             string execSQL = "DECLARE @fundname varchar(100)  IF OBJECT_ID('tempdb..#subaccounts') IS NOT NULL ";
             execSQL += "DROP TABLE #subaccounts ";
             execSQL += "IF OBJECT_ID('tempdb..#all') IS NOT NULL ";
@@ -81,22 +85,82 @@ namespace wpfTDX
             execSQL += "DROP TABLE #max_orders_key  ";
             execSQL += "SET @fundname ='ENBW-testing'  ";
             execSQL += "SELECT subaccountname INTO #subaccounts FROM subaccounts WHERE fundname  = @fundname ";
-            execSQL += "SELECT ord.* into #all FROM orders ord CROSS APPLY string_split(ord.subaccounts,',') s JOIN #subaccounts sub ";
+            execSQL += "SELECT " + out_columns + " into #all FROM orders ord CROSS APPLY string_split(ord.subaccounts,',') s JOIN #subaccounts sub ";
             execSQL += "ON s.value = sub.subaccountname WHERE ord.order_submit_time BETWEEN ";
             execSQL += "'" + startDateTime + "' AND '" + endDateTime + "' ";
             execSQL += "SELECT	tad_order_id,MAX(orders_key) AS max_orders_key ";
             execSQL += "INTO #max_orders_key ";
             execSQL += "FROM #all ";
             execSQL += "GROUP BY tad_order_id ";
-            execSQL += "SELECT status,a.* ";
+            execSQL += "SELECT a.* ";
             execSQL += "FROM #all a ";
             execSQL += "INNER JOIN #max_orders_key m ";
             execSQL += "ON m.max_orders_key = a.orders_key ";
             execSQL += "AND m.tad_order_id = a.tad_order_id ";
             execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED')";
             dtOut = DB.execSQL(execSQL, this.gbl_conn);
+
+            dtOut = SetApprovedFlag(dtOut);
             return dtOut;
         }
+        private DataTable SetApprovedFlag(DataTable dtIn)
+        {
+            // Clone the structure of the input DataTable
+            DataTable dtOutCloned = dtIn.Clone();
 
+            // Create a new DataColumn for the "Approved" column
+            DataColumn approvedColumn = new DataColumn("Approved", typeof(bool));
+            // Add the "Approved" column as the first column
+            dtOutCloned.Columns.Add(approvedColumn);
+            // Set the display index of the "Approved" column to 0
+            approvedColumn.SetOrdinal(0);
+
+
+            // Copy the data from the input DataTable to the cloned DataTable
+            foreach (DataRow row in dtIn.Rows)
+            {
+                DataRow newRow = dtOutCloned.NewRow();
+                // Set the value for the "Approved" column based on the "status" field
+                string status = row["status"].ToString();
+                bool approved = false;
+                if(status == "APPROVED") { approved = true; }
+                newRow["Approved"] = approved;
+
+                // Copy data from original row to new row (except for the "Approved" column)
+                foreach (DataColumn col in dtIn.Columns)
+                {
+                    if (col.ColumnName != "Approved")
+                        newRow[col.ColumnName] = row[col.ColumnName];
+                }
+
+                // Add the new row to the cloned DataTable
+                dtOutCloned.Rows.Add(newRow);
+            }
+
+            return dtOutCloned;
+        }
+        /// <summary>
+        /// reset the order status based on the tad_order_id
+        /// and the orders_key -> we dont want to set the status for all row
+        /// entries for a particular order
+        /// initially used to approve "proposed" orders but technically
+        /// could be used to set any status
+        /// this inserts a new row into orders with the udpated status
+        /// </summary>
+        /// <param name="tad_order_id"></param>
+        /// <param name="status"></param>
+        public void UpdateOrderStatus(string tad_order_id, string status, string orders_key)
+        {
+            Table tbl = new Table("Orders", this.gbl_conn);
+            List<string> tblColumns = tbl.get_table_columns();
+            string execSQL = "IF OBJECT_ID('tempdb..#update') IS NOT NULL ";
+            execSQL += " DROP TABLE #update ";
+            execSQL += " SELECT * INTO #update FROM orders WHERE tad_order_id = '" + tad_order_id + "'";
+            execSQL += " AND orders_key = " + orders_key;
+            execSQL += " UPDATE #update SET runtime = getdate(), status = '" + status + "' ";
+            //loop over table columns and create insert statement for new row
+            execSQL + "";
+            DB.execSQL_noresults(execSQL, this.gbl_conn);
+        }
     }
 }
