@@ -45,7 +45,8 @@ namespace TDX
         /// <param name="where_clause"></param>
         /// <param name="exclude_columns"></param>
         /// <param name="pks">set this if you dont want the select latest to use the tables PKs, and base the select off of a custom PK</param>
-        public Table(string table_name,SqlConnection conn, string where_clause = "",List<string> exclude_columns=null,string pks = "")
+        /// <param name="select_data"></param> if you want to select_latest from this object or not
+        public Table(string table_name,SqlConnection conn, string where_clause = "",List<string> exclude_columns=null,string pks = "",bool select_data=true)
         {
             if (pks != "") { this.custom_pks = pks; } else { this.custom_pks = ""; }
             this.table_name = table_name;
@@ -55,8 +56,12 @@ namespace TDX
             }
             else { this.exclude_cols = new List<string>(); }
             this.gbl_conn = conn;
-            this.select_latest(where_clause);
-            this.edit_columns = this.get_updatable_columns();
+            if (select_data)
+            {
+                this.select_latest(where_clause);
+                this.edit_columns = this.get_updatable_columns();
+            }
+            
             list_numeric_types = new List<string>();
             populate_numericTypes();
         }

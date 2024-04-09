@@ -120,7 +120,11 @@ namespace wpfTDX
         {
             try
             {
-                foreach(DataRowView rowView in dgOpenOrders.Items)
+                DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
+                endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
+                DateTime startDate = (DateTime)dtPickerFrom.SelectedDate;
+                Order ord = new Order(cboFundname.Text, startDate, endDate, gbl_conn);
+                foreach (DataRowView rowView in dgOpenOrders.Items)
                 {
                     DataRow row = rowView.Row;
                     bool approved = (bool)row["Approved"];
@@ -129,10 +133,7 @@ namespace wpfTDX
                         string tad_order_id = row["tad_order_id"].ToString();
                         string orders_key = row["orders_key"].ToString();
                         string status = "APPROVED";
-                        DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
-                        endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
-                        DateTime startDate = (DateTime)dtPickerFrom.SelectedDate;
-                        Order ord = new Order(cboFundname.Text, startDate, endDate, gbl_conn);
+
                         ord.UpdateOrderStatus(tad_order_id, status, orders_key);
 
                     }

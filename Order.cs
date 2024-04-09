@@ -151,15 +151,25 @@ namespace wpfTDX
         /// <param name="status"></param>
         public void UpdateOrderStatus(string tad_order_id, string status, string orders_key)
         {
-            Table tbl = new Table("Orders", this.gbl_conn);
-            List<string> tblColumns = tbl.get_table_columns();
+            Table tbl = new Table("Orders", this.gbl_conn, select_data:false);
+            List<string> lstTblColumns = tbl.get_table_columns();
+            lstTblColumns.Remove("orders_key");
             string execSQL = "IF OBJECT_ID('tempdb..#update') IS NOT NULL ";
             execSQL += " DROP TABLE #update ";
             execSQL += " SELECT * INTO #update FROM orders WHERE tad_order_id = '" + tad_order_id + "'";
             execSQL += " AND orders_key = " + orders_key;
             execSQL += " UPDATE #update SET runtime = getdate(), status = '" + status + "' ";
+            execSQL += " ALTER table #update DROP COLUMN orders_key ";
+            execSQL += "INSERT orders(";
             //loop over table columns and create insert statement for new row
-            execSQL + "";
+            string insert_columns = "";
+            for(int i =0; i < lstTblColumns.Count; i++)
+            {
+                insert_columns += lstTblColumns[i].ToString() + ",";
+            }
+            insert_columns = insert_columns.Substring(0, insert_columns.Length - 1) ;
+            execSQL += insert_columns + ")";
+            execSQL += " SELECT TOP 1 " + insert_columns + " FROM #update";
             DB.execSQL_noresults(execSQL, this.gbl_conn);
         }
     }
