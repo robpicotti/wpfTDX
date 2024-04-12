@@ -58,6 +58,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Limits.cs" />
     <Compile Include="Order.cs" />
     <Compile Include="Slippage.cs" />
     <Compile Include="Table.cs" />
@@ -73,6 +74,9 @@
     </Compile>
     <Compile Include="ucEMS.xaml.cs">
       <DependentUpon>ucEMS.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ucLimits.xaml.cs">
+      <DependentUpon>ucLimits.xaml</DependentUpon>
     </Compile>
     <Compile Include="ucMtm.xaml.cs">
       <DependentUpon>ucMtm.xaml</DependentUpon>
@@ -143,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucEMS.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucLimits.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

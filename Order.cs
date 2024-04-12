@@ -76,7 +76,7 @@ namespace wpfTDX
             string out_columns = "ord.runtime, ord.broker,ord.account,ord.subaccounts,ord.allocation_amount,ord.tad_order_id,ord.order_id,";
             out_columns += "ord.brok_uniq_order_id,ord.action,ord.tad_id,ord.tickername,ord.price,ord.multiplier,ord.size,";
             out_columns += "ord.tif,ord.order_type,ord.status,ord.status_time,ord.newposition_ids,ord.bbg_figi,ord.trade_allocations,ord.autoexecute,ord.tx_type_detail,";
-            out_columns += "ord.ptval,ord.contract_increment,ord.exch_currency,ord.instrument,ord.orders_key";
+            out_columns += "ord.orders_key";
             string execSQL = "DECLARE @fundname varchar(100)  IF OBJECT_ID('tempdb..#subaccounts') IS NOT NULL ";
             execSQL += "DROP TABLE #subaccounts ";
             execSQL += "IF OBJECT_ID('tempdb..#all') IS NOT NULL ";
