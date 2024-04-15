@@ -244,7 +244,7 @@ namespace wpfTDX
 
         public void UpdateFundLimits(string action)
         {
-            string now = DateTime.UtcNow.ToString("dd-MMM-yyyy hh:mm:ss");
+            string now = DateTime.UtcNow.ToString("dd-MMM-yyyy HH:mm:ss");
             Table tbl = new Table("fund_limits", this.gbl_conn, select_data: false);
             List<string> fund_limits_columns = tbl.get_table_columns();
             string insertSQL = "INSERT fund_limits(";
