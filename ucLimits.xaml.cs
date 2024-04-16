@@ -14,6 +14,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Data.SqlClient;
 using System.Data;
+using System.Windows.Markup;
+using System.Globalization;
 
 namespace wpfTDX
 {
@@ -56,6 +58,7 @@ namespace wpfTDX
             dtAll.Columns.Add("metric");
             dtAll.Columns.Add("default");
             dtAll.Columns.Add("custom");
+            dtAll.Columns.Add("action");
             dtAll.Columns.Add("live");
             for(int i=0;i<limits.lstFundLimits.Count;i++)
             {
@@ -117,7 +120,7 @@ namespace wpfTDX
 
         private void btnUpdateCustom_Click(object sender, RoutedEventArgs e)
         {
-            string action = (cboAction.SelectedItem as ComboBoxItem)?.Content.ToString();
+            string action = "";
             if (this.blnValueChanged && action !="")
             {
                 try
@@ -227,6 +230,33 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "update fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
+        }
+    }
+    /// <summary>
+    /// this class allows you to create the static 
+    /// </summary>
+    public class ActionItemsConverter : MarkupExtension, IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            var staticItems = new string[] { "Scale", "Hard" };
+            var dynamicItems = values[0] as IEnumerable<string>;
+
+            var combinedItems = new List<string>(staticItems);
+            if (dynamicItems != null)
+                combinedItems.AddRange(dynamicItems);
+
+            return combinedItems;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override object ProvideValue(IServiceProvider serviceProvider)
+        {
+            return this;
         }
     }
 }

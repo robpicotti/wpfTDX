@@ -22,6 +22,12 @@ namespace wpfTDX
         StressLimitFactor,
         Drawdown
     }
+    public enum ActionType
+    {
+        Default,
+        Scale,
+        Hard
+    }
 
     public class Limits
     {
@@ -111,76 +117,77 @@ namespace wpfTDX
                 //get the live limits data from the postions_target table
                 tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "'");
                 dtLive = tblTargetPositions.table_data;
+                ProcessCustomFundLimits(dtFundLimits);
+                //if (dtFundLimits.Rows.Count > 0)
+                //{
+                //    bool enabled = dtFundLimits.Rows[0]["enabled"] != null ? Convert.ToBoolean(dtFundLimits.Rows[0]["enabled"]) : false;
 
-                if (dtFundLimits.Rows.Count > 0)
-                {
-                    bool enabled = dtFundLimits.Rows[0]["enabled"] != null ? Convert.ToBoolean(dtFundLimits.Rows[0]["enabled"]) : false;
-
-                    if (enabled)
-                    {
-                        string strValue = dtFundLimits.Rows[0]["stk_leverage_limit"].ToString();
-                        double parsedOut;
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.stk_leverage_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["weight_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.weight_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["stk_notional_pct_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.stk_notional_pct_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["fut_notional_pct_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.fut_notional_pct_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["liquidity_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.liquidity_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["stk_leverage_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.stk_leverage_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["fut_leverage_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.fut_leverage_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["leverage_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.leverage_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["var_limit_factor"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.var_limit_factor.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["stress_limit_factor"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.stress_limit_factor.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["drawdown_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.drawdown_limit.customValue = parsedOut;
-                        }
-                        strValue = dtFundLimits.Rows[0]["drawdown_limit"].ToString();
-                        if (Double.TryParse(strValue, out parsedOut))
-                        {
-                            this.drawdown_limit.customValue = parsedOut;
-                        }
-                    }
-                }
+                //    if (enabled)
+                //    {
+                //        string strValue = dtFundLimits.Rows[0]["stk_leverage_limit"].ToString();
+                //        double parsedOut;
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.stk_leverage_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["weight_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.weight_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["stk_notional_pct_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.stk_notional_pct_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["fut_notional_pct_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.fut_notional_pct_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["liquidity_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.liquidity_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["stk_leverage_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.stk_leverage_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["fut_leverage_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.fut_leverage_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["leverage_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.leverage_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["var_limit_factor"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.var_limit_factor.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["stress_limit_factor"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.stress_limit_factor.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["drawdown_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.drawdown_limit.customValue = parsedOut;
+                //        }
+                //        strValue = dtFundLimits.Rows[0]["drawdown_limit"].ToString();
+                //        if (Double.TryParse(strValue, out parsedOut))
+                //        {
+                //            this.drawdown_limit.customValue = parsedOut;
+                //        }
+                //    }
+                //}
+                
                 if (dtFundData.Rows.Count > 0)
                 {
                     string stkLeverageLimitDefault = dtFundData.Rows[0]["stk_leverage_limit"].ToString();
@@ -241,7 +248,116 @@ namespace wpfTDX
                 throw new Exception("FundLimits exception: " + ex.Message);
             }
         }
-
+        public ActionType GetActionType(string action)
+        {
+            switch( action)
+            {
+                case "Hard":
+                    return ActionType.Hard;
+                case "Scale":
+                    return ActionType.Scale;
+                default:
+                    return ActionType.Default;
+            }
+        }
+        /// <summary>
+        /// processes datatable from database of fundlimits
+        /// </summary>
+        /// <returns></returns>
+        public void ProcessCustomFundLimits(DataTable dtIn)
+        {
+            if(dtIn.Rows.Count>0)
+            {
+                try
+                {
+                    for(int i=0;i < dtIn.Rows.Count;i++)
+                    {
+                        string metric = dtIn.Rows[i]["metric"].ToString();
+                        string metricValue = dtIn.Rows[i]["value"].ToString();
+                        string action = dtIn.Rows[i]["action"].ToString();
+                        bool enabled = bool.Parse(dtIn.Rows[i]["enabled"].ToString());
+                        double parsedOut;
+                        switch (metric)
+                        {
+                            case "stk_leverage_limit":
+                                if (Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.stk_leverage_limit.customValue = parsedOut;
+                                    this.stk_leverage_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "weight_limit":
+                                if(Double.TryParse(metricValue,out parsedOut))
+                                {
+                                    this.weight_limit.customValue = parsedOut;
+                                    this.weight_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "stk_notional_pct_limit":
+                                if(Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.stk_notional_pct_limit.customValue = parsedOut;
+                                    this.stk_notional_pct_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "fut_notional_pct_limit":
+                                if(Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.fut_notional_pct_limit.customValue = parsedOut;
+                                    this.fut_notional_pct_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "liquidity_limit":
+                                if(Double.TryParse(metricValue,out parsedOut))
+                                {
+                                    this.liquidity_limit.customValue = parsedOut;
+                                    this.liquidity_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "fut_leverage_limit":
+                                if(Double.TryParse(metricValue,out parsedOut))
+                                {
+                                    this.fut_leverage_limit.customValue = parsedOut;
+                                    this.fut_leverage_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "leverage_limit":
+                                if(Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.leverage_limit.customValue = parsedOut;
+                                    this.leverage_limit.action = GetActionType(action);
+                                }
+                                break;
+                            case "var_limit_factor":
+                                if (Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.var_limit_factor.customValue = parsedOut;
+                                    this.var_limit_factor.action = GetActionType(action);
+                                }
+                                break;
+                            case "stress_limit_factor":
+                                if (Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.stress_limit_factor.customValue = parsedOut;
+                                    this.stress_limit_factor.action = GetActionType(action);
+                                }
+                                break;
+                            case "drawdown_limit":
+                                if (Double.TryParse(metricValue, out parsedOut))
+                                {
+                                    this.drawdown_limit.customValue = parsedOut;
+                                    this.drawdown_limit.action = GetActionType(action);
+                                }
+                                break;
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    throw new Exception("ProcessFundLimitsError: " + ex.Message);
+                }
+            }
+        }
         public void UpdateFundLimits(string action)
         {
             string now = DateTime.UtcNow.ToString("dd-MMM-yyyy HH:mm:ss");
@@ -278,70 +394,70 @@ namespace wpfTDX
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class FuturesLeverageLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class LeverageLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class VarLimitFactor
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class StressLimitFactor
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class DrawDownLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class StockNotionalPctLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class FuturesNotionalPctLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class LiquidityLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
     public class WeightLimit
     {
         public double? defaultValue { get; set; }
         public double? customValue { get; set; }
-        public string action { get; set; }
+        public ActionType action { get; set; }
         public double? liveValue { get; set; }
     }
 }
