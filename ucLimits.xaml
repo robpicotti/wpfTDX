@@ -39,7 +39,7 @@
                         <Button x:Name="btnUpdateCustom" Click="btnUpdateCustom_Click" 
                                 Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
                                 Visibility="Hidden"
-                                Background="Beige"
+                                FontWeight="Bold"
                                 
                                 />
                         <DataGrid x:Name="dgFundLimits" AutoGenerateColumns="False" Margin="5" CellEditEnding="dgFundLimits_CellEditEnding">
@@ -50,6 +50,7 @@
                                 <DataGridComboBoxColumn Header="Action" SelectedItemBinding="{Binding action}">
                                     <DataGridComboBoxColumn.ElementStyle>
                                         <Style TargetType="ComboBox">
+                                            <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged"/>
                                             <Setter Property="ItemsSource">
                                                 <Setter.Value>
                                                     <MultiBinding Converter="{local:ActionItemsConverter}">
