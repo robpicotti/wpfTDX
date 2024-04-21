@@ -27,9 +27,12 @@ namespace wpfTDX
         public event EventHandler RemoveControlRequested;
         public SqlConnection gbl_conn;
         DataTable dtFunds;
+        DataTable dtMergedData;
         Limits limits;
         string FundName;
+        TickerLimits tickerLimits;
         bool blnValueChanged = false;
+        bool blnTickerLimitChanged = false;
         TDX.db _db = new TDX.db();
 
         public ucLimits(SqlConnection conn)
@@ -52,12 +55,14 @@ namespace wpfTDX
         private void cboFundName_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             RefreshFundLimits();
+            RefreshTickerLimits();
         }
         private void RefreshFundLimits()
         {
             this.blnValueChanged = false;
             btnUpdateCustom.Visibility = Visibility.Hidden;
             this.FundName = cboFundName.SelectedValue.ToString();
+            //set up the fund limits
             this.limits = new Limits(this.FundName, this.gbl_conn);
             DataTable dtAll = new DataTable();
             dtAll.Columns.Add("metric");
@@ -96,37 +101,211 @@ namespace wpfTDX
                         row["default"] = limits.fundLimits.stk_leverage_limit.defaultValue;
                         row["custom"] = limits.fundLimits.stk_leverage_limit.customValue;
                         row["action"] = limits.fundLimits.stk_leverage_limit.action;
+                        row["live"] = limits.fundLimits.stk_leverage_limit.liveValue;
                         break;
                     case "fut_leverage_limit":
                         row["default"] = limits.fundLimits.fut_leverage_limit.defaultValue;
                         row["custom"] = limits.fundLimits.fut_leverage_limit.customValue;
                         row["action"] = limits.fundLimits.fut_leverage_limit.action;
+                        row["live"] = limits.fundLimits.fut_leverage_limit.liveValue;
                         break;
                     case "leverage_limit":
                         row["default"] = limits.fundLimits.leverage_limit.defaultValue;
                         row["custom"] = limits.fundLimits.leverage_limit.customValue;
                         row["action"] = limits.fundLimits.leverage_limit.action;
+                        row["live"] = limits.fundLimits.leverage_limit.liveValue;
                         break;
                     case "var_limit_factor":
                         row["default"] = limits.fundLimits.var_limit_factor.defaultValue;
                         row["custom"] = limits.fundLimits.var_limit_factor.customValue;
                         row["action"] = limits.fundLimits.var_limit_factor.action;
+                        row["live"] = limits.fundLimits.var_limit_factor.liveValue;
                         break;
                     case "stress_limit_factor":
                         row["default"] = limits.fundLimits.stress_limit_factor.defaultValue;
                         row["custom"] = limits.fundLimits.stress_limit_factor.customValue;
                         row["action"] = limits.fundLimits.stress_limit_factor.action;
+                        row["live"] = limits.fundLimits.stress_limit_factor.liveValue;
                         break;
                     case "drawdown_limit":
                         row["default"] = limits.fundLimits.drawdown_limit.defaultValue;
                         row["custom"] = limits.fundLimits.drawdown_limit.customValue;
                         row["action"] = limits.fundLimits.drawdown_limit.action;
+                        row["live"] = limits.fundLimits.drawdown_limit.liveValue;
                         break;
                 }
                 dtAll.Rows.Add(row);
             }
             dgFundLimits.ItemsSource = dtAll.DefaultView;
+
         }
+       
+        private void RefreshTickerLimits()
+        {
+            this.blnTickerLimitChanged = false;
+            btnUpdateTickerLimits.Visibility = Visibility.Hidden;
+            DataTable dtNotional = new DataTable();
+            DataTable dtLiquidity = new DataTable();
+            DataTable dtWeights = new DataTable();
+            this.FundName = cboFundName.SelectedValue.ToString();
+            //set up the ticker limits based on the fund
+            this.tickerLimits = new TickerLimits(this.FundName,this.limits.fundLimits, this.gbl_conn);
+            dtNotional = populateNotionalTickerLimits();
+            dtLiquidity = populateTickerLiquidityLimits();
+            dtWeights = populateTickerWeightLimits();
+            dtMergedData = MergeDataTables(dtNotional, dtLiquidity, dtWeights);
+            util
+            dgTickerLimits.ItemsSource = dtMergedData.DefaultView;
+        }
+        
+        private DataTable populateTickerWeightLimits()
+        {
+            try
+            {
+                DataTable dtWeight = new DataTable();
+                dtWeight.Columns.Add("benchmarkname");
+                dtWeight.Columns.Add("tickername");
+                dtWeight.Columns.Add("Weight-Default");
+                dtWeight.Columns.Add("Weight-Custom");
+                dtWeight.Columns.Add("Weight-Live");
+                dtWeight.Columns.Add("Weight-Action");
+                foreach (TickerWeightLimits weight in this.tickerLimits.TickerWeightLimitsList)
+                {
+                    DataRow row = dtWeight.NewRow();
+                    row["benchmarkname"] = this.tickerLimits.benchmarkName;
+                    row["tickername"] = weight.tickerName;
+                    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
+                    // attached from the portfolio_weights table or join back to tickers?? :-(
+                    //row["defaultValue"] =this.tickerLimits.fund.  
+                    //row["defaultValue"] = null;
+                    row["Weight-Custom"] = weight.customLimit;
+                    row["Weight-Live"] = weight.liveValue;
+                    row["Weight-action"] = weight.action;
+                    dtWeight.Rows.Add(row);
+                }
+                return dtWeight;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("populateNotionalTickerLimits error: " + ex.Message);
+            }
+        }
+        
+        private DataTable populateTickerLiquidityLimits()
+        {
+            try
+            {
+                DataTable dtLiquidity = new DataTable();
+                dtLiquidity.Columns.Add("benchmarkname");
+                dtLiquidity.Columns.Add("tickername");
+                dtLiquidity.Columns.Add("Liquidity-Default");
+                dtLiquidity.Columns.Add("Liquidity-Custom");
+                dtLiquidity.Columns.Add("Liquidity-Live");
+                dtLiquidity.Columns.Add("Liquidity-Action");
+                foreach (TickerLiquidityLimits liquid in this.tickerLimits.TickerLiquidityLimitsList)
+                {
+                    DataRow row = dtLiquidity.NewRow();
+                    row["benchmarkname"] = this.tickerLimits.benchmarkName;
+                    row["tickername"] = liquid.tickerName;
+                    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
+                    // attached from the portfolio_weights table or join back to tickers?? :-(
+                    //row["defaultValue"] =this.tickerLimits.fund.  
+                    //row["defaultValue"] = null;
+                    row["Liquidity-Custom"] = liquid.customLimit;
+                    row["Liquidity-Live"] = liquid.liveValue;
+                    row["Liquidity-action"] = liquid.action;
+                    dtLiquidity.Rows.Add(row);
+                }
+                return dtLiquidity;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("populateNotionalTickerLimits error: " + ex.Message);
+            }
+        }
+        
+        private DataTable populateNotionalTickerLimits()
+        {
+            try
+            {
+                DataTable dtNotional = new DataTable();
+                dtNotional.Columns.Add("benchmarkname");
+                dtNotional.Columns.Add("tickername");
+                dtNotional.Columns.Add("Notional-Default");
+                dtNotional.Columns.Add("Notional-Custom");
+                dtNotional.Columns.Add("Notional-Live");
+                dtNotional.Columns.Add("Notional-Action");
+                foreach (TickerNotionalLimits notional in this.tickerLimits.TickerNotionalLimitsList)
+                {
+                    DataRow row = dtNotional.NewRow();
+                    row["benchmarkname"] = this.tickerLimits.benchmarkName;
+                    row["tickername"] = notional.tickerName;
+                    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
+                    // attached from the portfolio_weights table or join back to tickers?? :-(
+                    //row["defaultValue"] =this.tickerLimits.fund.  
+                    //row["defaultValue"] = null;
+                    row["Notional-Custom"] = notional.customLimit;
+                    row["Notional-Live"] = notional.liveValue;
+                    row["Notional-action"] = notional.action;
+                    dtNotional.Rows.Add(row);
+                }
+                return dtNotional;
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("populateNotionalTickerLimits error: " + ex.Message);
+            }
+
+        }
+
+        /// <summary>
+        /// merges multiple datatables into one
+        /// </summary>
+        /// <param name="tables"></param>
+        /// <returns></returns>
+        public DataTable MergeDataTables(params DataTable[] tables)
+        {
+            // Create a new DataTable to hold the merged data
+            DataTable mergedTable = new DataTable();
+
+            // Add columns to the merged table
+            mergedTable.Columns.Add("tickerName");
+
+            // Add columns from each DataTable in the array
+            foreach (var table in tables)
+            {
+                foreach (DataColumn column in table.Columns)
+                {
+                    if (!mergedTable.Columns.Contains(column.ColumnName))
+                    {
+                        mergedTable.Columns.Add(column.ColumnName);
+                    }
+                }
+            }
+
+            // Merge the data
+            foreach (var table in tables)
+            {
+                foreach (DataRow row in table.Rows)
+                {
+                    DataRow newRow = mergedTable.NewRow();
+
+                    // Copy TickerName from current table
+                    newRow["tickerName"] = row["tickerName"];
+
+                    // Copy data from current table to the merged table
+                    foreach (DataColumn column in table.Columns)
+                    {
+                        newRow[column.ColumnName] = row[column.ColumnName];
+                    }
+
+                    mergedTable.Rows.Add(newRow);
+                }
+            }
+
+            return mergedTable;
+        }
+
         private void cmdClose_Click(object sender, RoutedEventArgs e)
         {
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
@@ -320,6 +499,21 @@ namespace wpfTDX
         }
 
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void btnUpdateTickerLimits_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void dgTickerLimits_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+
+        }
+
+        private void ComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
 
         }

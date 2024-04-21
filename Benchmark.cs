@@ -10,7 +10,7 @@ using System.Reflection;
 
 namespace TDX
 {
-    class Benchmark
+    public class Benchmark
     {
         private TDX.db _db = new TDX.db();
         public Benchmark(string benchmarkname, SqlConnection conn)

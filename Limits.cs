@@ -61,14 +61,155 @@ namespace wpfTDX
         }
 
     }
-
-    class WeightLimits
+    public class TickerLiquidityLimits
     {
-
+        public double? customLimit { get; set; }
+        public double? liveValue { get; set; }
+        public ActionType action { get; set; }
+        public string tickerName { get; set; }
     }
-    class NotionalLimits
+    public class TickerWeightLimits
+    {
+        public double? customLimit { get; set; }
+        public double? liveValue { get; set; }
+        public ActionType action { get; set; }
+        public string tickerName { get; set; }
+    }
+    public class TickerNotionalLimits
     {
 
+        /// custom limit for the ticker will be the custom limit set in the notional limits table
+        /// </summary>
+        public double? customLimit { get; set; }
+        /// <summary>
+        /// this will the live value for this ticker from the
+        /// target_positions table
+        /// </summary>
+        public double? liveValue { get; set; }
+        public ActionType action { get; set; }
+        public string tickerName { get; set; }
+    }
+
+    public class TickerLimits
+    {
+        private string fundName { get; set; }
+        public List<TickerWeightLimits> TickerWeightLimitsList { get; set; }
+        public List<TickerNotionalLimits> TickerNotionalLimitsList { get; set; }
+        public List<TickerLiquidityLimits> TickerLiquidityLimitsList { get; set; }
+        private SqlConnection gbl_conn { get; set; }
+        private db DB = new db();
+        private Table tblPortfolioWeights { get; set; }
+        private Table tblNotionalLimits { get; set; }
+        private Table tblLiquidityLimits { get; set; }
+        private Table tblWeighLimits { get; set; }
+        private DataTable dtPortfolioWeights { get; set; }
+        private DataTable dtNotionalLimits { get; set; }
+        private DataTable dtLiquidityLimits { get; set; }
+        private DataTable dtWeightLimits { get; set; }
+        public Fund fund { get; set; }
+        public string benchmarkName {get;set;}
+        public List<string> ListOfTickerNames { get; set; }
+        public FundLimits fundLimit { get; set; }
+        public TickerLimits(string fundname,FundLimits fundlimit, SqlConnection conn)
+        {
+            this.fundName = fundname;
+            this.gbl_conn = conn;
+            this.fund = new Fund(this.fundName, this.gbl_conn);
+            this.fundLimit = fundlimit;
+            this.benchmarkName = this.fund.benchmarkName;
+            this.TickerWeightLimitsList = new List<TickerWeightLimits>();
+            this.TickerNotionalLimitsList = new List<TickerNotionalLimits>();
+            this.TickerLiquidityLimitsList = new List<TickerLiquidityLimits>();
+            PopulateTickerLimitDataTables();
+            PopulateTickerNamesList();
+            ProcessTickerNotionalLimits();
+            
+        }
+        /// <summary>
+        /// populates the Table class objects with respect tables for limits
+        /// also populates datatables for each Table object 
+        /// </summary>
+        private void PopulateTickerLimitDataTables()
+        {
+            //portfolio weights
+            tblPortfolioWeights = new Table("portfolio_weights", this.gbl_conn, "WHERE portfolioname='" + this.fund.benchmarkName + "'");
+            this.dtPortfolioWeights = tblPortfolioWeights.table_data;
+            //notional limits
+            tblNotionalLimits = new Table("notional_limits", this.gbl_conn, "WHERE fundname='" + this.fundName + "'");
+            dtNotionalLimits = tblNotionalLimits.table_data;
+            //liquidity limits
+            tblLiquidityLimits = new Table("liquidity_limits", this.gbl_conn, "WHERE fundname= '" + this.fundName + "'");
+            dtLiquidityLimits = tblLiquidityLimits.table_data;
+            //weight limits
+            tblWeighLimits = new Table("weight_limits", this.gbl_conn, "WHERE fundname ='" + this.fundName + "'");
+            dtWeightLimits = tblWeighLimits.table_data;
+        }
+        private void PopulateTickerNamesList()
+        {
+            ListOfTickerNames = this.dtPortfolioWeights.AsEnumerable()
+                                            .Select(row => row.Field<string>("tickername"))
+                                            .ToList();
+        }
+        /// <summary>
+        /// sets the ticker's weight limits and values
+        /// </summary>
+        private void ProcessTickerWeightLimits()
+        {
+            foreach (string tickername in ListOfTickerNames)
+            {
+                DataRow[] row = dtWeightLimits.Select("tickername= '" + tickername + "'");
+                if (row.Length > 0)
+                {
+                    double weightLimit = (double)row[0]["weight_limit"];
+                    string action = row[0]["action"].ToString();
+                    TickerWeightLimits twl = new TickerWeightLimits();
+                    twl.tickerName = tickername;
+                    twl.customLimit = weightLimit;
+                    twl.action = this.fundLimit.GetActionType(action);
+                    this.TickerWeightLimitsList.Add(twl);
+                }
+            }
+        }
+        /// <summary>
+        /// sets the ticker's liquidity limits and values
+        /// </summary>
+        private void ProcessTickerLiquidityLimits()
+        {
+            foreach(string tickername in ListOfTickerNames)
+            {
+                DataRow[] row = dtLiquidityLimits.Select("tickername= '" + tickername + "'");
+                if(row.Length>0)
+                {
+                    double liquidityLimit = (double)row[0]["liquidity_limit"];
+                    string action = row[0]["action"].ToString();
+                    TickerLiquidityLimits tll = new TickerLiquidityLimits();
+                    tll.tickerName = tickername;
+                    tll.customLimit = liquidityLimit;
+                    tll.action = this.fundLimit.GetActionType(action);
+                    this.TickerLiquidityLimitsList.Add(tll);
+                }
+            }
+        }
+        /// <summary>
+        /// sets the ticker's notional limits and values
+        /// </summary>
+        private void ProcessTickerNotionalLimits()
+        {
+          foreach(string tickername in ListOfTickerNames)
+           {
+                DataRow[] row = dtNotionalLimits.Select("tickername= '" + tickername + "'");
+                if (row.Length > 0)
+                {
+                    double notionalLimit = (double)row[0]["notional_pct_limit"];
+                    string action = row[0]["action"].ToString();
+                    TickerNotionalLimits tnl = new TickerNotionalLimits();
+                    tnl.tickerName = tickername;
+                    tnl.customLimit = notionalLimit;
+                    tnl.action = this.fundLimit.GetActionType(action) ;
+                    this.TickerNotionalLimitsList.Add(tnl);
+                }
+           }
+        }
     }
     public class FundLimits
     {
@@ -118,7 +259,63 @@ namespace wpfTDX
                 tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "'");
                 dtLive = tblTargetPositions.table_data;
                 ProcessCustomFundLimits(dtFundLimits);
-                
+                ProcessDefaultFundLimits(dtFundData);
+                ProcessLiveFundValues(dtLive);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("FundLimits exception: " + ex.Message);
+            }
+        }
+        /// <summary>
+        /// processes all the live values for fund.
+        /// data comes from target_positions table
+        /// </summary>
+        private void ProcessLiveFundValues(DataTable dtIn)
+        {
+            try
+            {
+                if(dtIn.Rows.Count > 0)
+                {
+                    this.stk_leverage_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_leverage_equities");
+                    this.fut_leverage_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_leverage_futures");
+                    this.leverage_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_leverage");
+                    this.var_limit_factor.liveValue = GetMaxLiveValue(dtIn, "portfolio_var");
+                    this.stress_limit_factor.liveValue = GetMaxLiveValue(dtIn, "portfolio_stress");
+                    this.drawdown_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_dd");
+                 }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("ProcessLiveFundValues error: " + ex.Message);
+            }
+        }
+        private double? GetMaxLiveValue(DataTable dtIn, string columnName)
+        {
+            double parsedOut;
+            try
+            {
+                var maxValue = dtIn.AsEnumerable()
+                         .Max(row => row.Field<double?>(columnName));
+                if (Double.TryParse(maxValue.ToString(), out parsedOut))
+                {
+                    return Math.Round(parsedOut,4);
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("GetMaxLiveValue error: " + ex.Message);
+            }
+            return parsedOut;
+        }
+        /// <summary>
+        /// process default fund limits from input datatable of data that comes from database
+        /// </summary>
+        /// <param name="dtFundData"></param>
+        private void ProcessDefaultFundLimits(DataTable dtFundData)
+        {
+            try
+            {
                 if (dtFundData.Rows.Count > 0)
                 {
                     string stkLeverageLimitDefault = dtFundData.Rows[0]["stk_leverage_limit"].ToString();
@@ -176,7 +373,7 @@ namespace wpfTDX
             }
             catch(Exception ex)
             {
-                throw new Exception("FundLimits exception: " + ex.Message);
+                throw new Exception("ProcessDefaultFundLimits error: " + ex.Message);
             }
         }
         public ActionType GetActionType(string action)
@@ -209,7 +406,7 @@ namespace wpfTDX
             this.weight_limit.updated = false;
         }
         /// <summary>
-        /// processes datatable from database of fundlimits
+        /// processes datatable from database of custom fundlimits
         /// </summary>
         /// <returns></returns>
         public void ProcessCustomFundLimits(DataTable dtIn)
@@ -306,6 +503,7 @@ namespace wpfTDX
                 }
             }
         }
+     
         public void UpdateFundLimits()
         {
             string execSQL = "";

@@ -75,33 +75,52 @@
                                 <DataGridTextColumn Header="Live" Binding="{Binding live}"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <!--<DataGrid x:Name="dgFundLimits"
-                                   AutoGenerateColumns="True"
-                                    Height="300"       
-                                    ScrollViewer.CanContentScroll="True" 
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                    IsReadOnly="false"
-                                    CanUserAddRows="False"
-                                    Margin="5" 
-                                  CellEditEnding="dgFundLimits_CellEditEnding">
-                            <DataGrid.Columns>
-                                --><!-- Other columns --><!--
-                                <DataGridTemplateColumn Header="action">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox SelectedItem="{Binding action}" SelectedValue="{Binding action, Mode=TwoWay}">
-                                                <ComboBoxItem Content="Scale"/>
-                                                <ComboBoxItem Content="Hard"/>
-                                            </ComboBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                --><!-- Other columns --><!--
-                            </DataGrid.Columns>
-                        </DataGrid>-->
                     </StackPanel>
      
+                </TabItem>
+
+                <TabItem Header="Ticker Limits" FontWeight="Bold" >
+                    <StackPanel>
+                    <Button x:Name="btnUpdateTickerLimits" Click="btnUpdateTickerLimits_Click"
+                            Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
+                            Visibility="Hidden"
+                            FontWeight="Bold" />
+                        <DataGrid x:Name="dgTickerLimits"  AutoGenerateColumns="False" Margin="5" CellEditEnding="dgTickerLimits_CellEditEnding">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
+                                <DataGridTextColumn Header="tickername" Binding="{Binding tickername}"/>
+                                <DataGridTextColumn Header="Notional-Default" Binding="{Binding Notional-Default}"/>
+                                <DataGridTextColumn Header="Notional-Custom" Binding="{Binding Notional-Custom}"/>
+                                <DataGridComboBoxColumn Header="Notional-Action" SelectedItemBinding="{Binding Notional-Action}">
+                                    <DataGridComboBoxColumn.ElementStyle>
+                                        <Style TargetType="ComboBox">
+                                            <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged_1"/>
+                                            <Setter Property="ItemsSource">
+                                                <Setter.Value>
+                                                    <MultiBinding Converter="{local:ActionItemsConverter}">
+                                                        <Binding Path="Notional-Action" />
+                                                    </MultiBinding>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </DataGridComboBoxColumn.ElementStyle>
+                                    <DataGridComboBoxColumn.EditingElementStyle>
+                                        <Style TargetType="ComboBox">
+                                            <Setter Property="ItemsSource">
+                                                <Setter.Value>
+                                                    <MultiBinding Converter="{local:ActionItemsConverter}">
+                                                        <Binding Path="action" />
+                                                    </MultiBinding>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </DataGridComboBoxColumn.EditingElementStyle>
+                                </DataGridComboBoxColumn>
+                                <DataGridTextColumn Header="Notional-Live" Binding="{Binding Notional-Live}"/>
+                            </DataGrid.Columns>
+                            
+                        </DataGrid>
+                    </StackPanel>
                 </TabItem>
             </TabControl>
         </Border>
