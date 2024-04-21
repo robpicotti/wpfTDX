@@ -154,7 +154,6 @@ namespace wpfTDX
             dtLiquidity = populateTickerLiquidityLimits();
             dtWeights = populateTickerWeightLimits();
             dtMergedData = MergeDataTables(dtNotional, dtLiquidity, dtWeights);
-            util
             dgTickerLimits.ItemsSource = dtMergedData.DefaultView;
         }
         
