@@ -262,13 +262,15 @@ namespace wpfTDX
         /// </summary>
         /// <param name="tables"></param>
         /// <returns></returns>
+
         public DataTable MergeDataTables(params DataTable[] tables)
         {
             // Create a new DataTable to hold the merged data
             DataTable mergedTable = new DataTable();
 
             // Add columns to the merged table
-            mergedTable.Columns.Add("tickerName");
+            mergedTable.Columns.Add("benchmarkname");
+            mergedTable.Columns.Add("tickername");
 
             // Add columns from each DataTable in the array
             foreach (var table in tables)
@@ -282,24 +284,45 @@ namespace wpfTDX
                 }
             }
 
-            // Merge the data
-            foreach (var table in tables)
+            // Create a dictionary to store column indices
+            var columnIndices = new Dictionary<string, int>();
+            for (int i = 0; i < mergedTable.Columns.Count; i++)
             {
-                foreach (DataRow row in table.Rows)
+                columnIndices.Add(mergedTable.Columns[i].ColumnName, i);
+            }
+
+            // Merge the data using full outer join
+            var mergedRows = tables.SelectMany(table => table.AsEnumerable())
+                                   .GroupBy(row => new { benchmarkname = row["benchmarkname"], tickername = row["tickername"] })
+                                   .Select(group => new
+                                   {
+                                       benchmarkname = group.Key.benchmarkname,
+                                       tickername = group.Key.tickername,
+                                       rowData = group.SelectMany(row => row.ItemArray),
+                                       columns = group.SelectMany(row => row.Table.Columns.Cast<DataColumn>().Select(col => col.ColumnName))
+                                   });
+
+            foreach (var mergedRow in mergedRows)
+            {
+                DataRow newRow = mergedTable.NewRow();
+
+                // Set benchmarkname and tickername values
+                newRow["benchmarkname"] = mergedRow.benchmarkname;
+                newRow["tickername"] = mergedRow.tickername;
+
+                // Map data from the merged row to the new DataRow
+                var dataEnumerator = mergedRow.rowData.GetEnumerator();
+                var columnsEnumerator = mergedRow.columns.GetEnumerator();
+                while (dataEnumerator.MoveNext() && columnsEnumerator.MoveNext())
                 {
-                    DataRow newRow = mergedTable.NewRow();
-
-                    // Copy TickerName from current table
-                    newRow["tickerName"] = row["tickerName"];
-
-                    // Copy data from current table to the merged table
-                    foreach (DataColumn column in table.Columns)
+                    string columnName = columnsEnumerator.Current.ToString();
+                    if (columnIndices.ContainsKey(columnName))
                     {
-                        newRow[column.ColumnName] = row[column.ColumnName];
+                        newRow[columnIndices[columnName]] = dataEnumerator.Current;
                     }
-
-                    mergedTable.Rows.Add(newRow);
                 }
+
+                mergedTable.Rows.Add(newRow);
             }
 
             return mergedTable;
@@ -509,10 +532,120 @@ namespace wpfTDX
 
         private void dgTickerLimits_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
+            try
+            {
+                if (e.EditAction == DataGridEditAction.Commit)
+                {
+                    // Get the column and row indices of the cell being edited
+                    int columnIndex = e.Column.DisplayIndex;
+                    int rowIndex = e.Row.GetIndex();
+                    string tickername = "";
+                    DataRowView rowView = null;
+   
+                    if (dgTickerLimits.Items[rowIndex] is DataRowView)
+                    {
+                        rowView = (DataRowView)dgTickerLimits.Items[rowIndex]; // Assign the DataRowView object to rowView
+                    }
+                    var editedValueAfter = "";
+                    if (e.EditingElement is ComboBox)
+                    {
+                        if (e.EditingElement != null)
+                        {
+                            editedValueAfter = (e.EditingElement as ComboBox).SelectedItem.ToString();
+                        }
+                    }
+                    else if (e.EditingElement is TextBox)
+                    {
+                        editedValueAfter = (e.EditingElement as TextBox).Text;
+                    }
+                    // Get the column name
+                    string columnName = e.Column.Header.ToString();
+                    tickername = rowView["tickername"].ToString();
+                    UpdateTickerLimits(tickername,columnName,rowView,editedValueAfter);
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void UpdateTickerLimits(string tickername,string columnName,DataRowView rowView, string afterEditValue)
+        {
+            //if you are at this point you arent updating the action field.
+            //so you need to get the value of the action field for the data insert
+            string action = "";
+            object customValue = null;
+            string insertSQL = "INSERT ";
+            string runtime = DateTime.UtcNow.ToString("dd-MMM-yyyy HH:mm:ss");
 
+            if(columnName.Contains("Notional"))
+            {
+                if(columnName == "Notional-Custom")
+                {
+                    customValue = afterEditValue;
+                    action = rowView["Notional-Action"].ToString();
+                }
+                else if (columnName == "Notional-Action")
+                {
+                    action = afterEditValue;
+                    customValue = rowView["Notional-Custom"];
+                }
+                insertSQL += "notional_limits ";
+
+            }
+            else if(columnName.Contains("Weight"))
+            {
+                if(columnName == "Weight-Custom")
+                {
+                    customValue = afterEditValue;
+                    action = rowView["Weight-Action"].ToString();
+                }
+                else if (columnName == "Weight-Action")
+                {
+                    action = afterEditValue;
+                    customValue = rowView["Weight-Custom"];
+                }
+                insertSQL += "weight_limits ";
+            }
+            else if(columnName.Contains("Liquidity"))
+            {
+                if(columnName == "Liquidity-Custom")
+                {
+                    customValue = afterEditValue;
+                    action = rowView["Liquidity-Action"].ToString();
+                }
+                else if(columnName == "Liquidity-Action")
+                {
+                    action = afterEditValue;
+                    customValue = rowView["Liquidity-Custom"];
+                }
+                insertSQL += "liquidity_limits ";                
+            }
+            double parsedOut;
+            if (Double.TryParse(customValue.ToString(), out parsedOut))
+            {
+                insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + parsedOut.ToString() + ",'" + action + "')";
+                this._db.execSQL_noresults(insertSQL, this.gbl_conn);
+                RefreshTickerLimits();
+            }
+        }
+        private void UpdateTickerLimits(string tickername, string columnName, string columnValue,DataRowView rowView)
+        {
+
+            RefreshTickerLimits();
         }
 
         private void ComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void ComboBox_SelectionChanged_3(object sender, SelectionChangedEventArgs e)
         {
 
         }
