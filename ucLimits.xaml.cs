@@ -31,7 +31,7 @@ namespace wpfTDX
         Limits limits;
         string FundName;
         TickerLimits tickerLimits;
-        bool blnValueChanged = false;
+        bool blnValueChanged = false; 
         bool blnTickerLimitChanged = false;
         TDX.db _db = new TDX.db();
 
@@ -230,24 +230,54 @@ namespace wpfTDX
                 DataTable dtNotional = new DataTable();
                 dtNotional.Columns.Add("benchmarkname");
                 dtNotional.Columns.Add("tickername");
-                dtNotional.Columns.Add("Notional-Default");
-                dtNotional.Columns.Add("Notional-Custom");
-                dtNotional.Columns.Add("Notional-Live");
-                dtNotional.Columns.Add("Notional-Action");
-                foreach (TickerNotionalLimits notional in this.tickerLimits.TickerNotionalLimitsList)
+                dtNotional.Columns.Add("Default");
+                dtNotional.Columns.Add("Custom");
+                dtNotional.Columns.Add("Live");
+                dtNotional.Columns.Add("Action");
+                //loop over all tickers in the benchmark
+                foreach(var kvp in this.tickerLimits.dictOfTickers)
                 {
+                    string tickername = kvp.Key.ToString();
+                    string instrument = kvp.Value.ToString();
                     DataRow row = dtNotional.NewRow();
+                    // Check if the tickername exists in the list of TickerNotionalLimits
+                    TickerNotionalLimits tickerLimits = this.tickerLimits.TickerNotionalLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
-                    row["tickername"] = notional.tickerName;
-                    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
-                    // attached from the portfolio_weights table or join back to tickers?? :-(
-                    //row["defaultValue"] =this.tickerLimits.fund.  
-                    //row["defaultValue"] = null;
-                    row["Notional-Custom"] = notional.customLimit;
-                    row["Notional-Live"] = notional.liveValue;
-                    row["Notional-action"] = notional.action;
+                    row["tickername"] = tickername;
+                    if (tickerLimits != null)
+                    {
+                        row["Custom"] = tickerLimits.customLimit;
+                        row["Live"] = tickerLimits.liveValue;
+                        row["action"] = tickerLimits.action;
+                    }
+                    else
+                    {
+                        if(instrument=="equity" || instrument=="etf")
+                        {
+                            row["Default"] = this.tickerLimits.fundLimit.stk_notional_pct_limit.defaultValue;
+                        }
+                        else if(instrument == "future" )
+                        {
+                            row["Default"] = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue;
+                        }
+                    }
                     dtNotional.Rows.Add(row);
+
                 }
+                //foreach (TickerNotionalLimits notional in this.tickerLimits.TickerNotionalLimitsList)
+                //{
+                //    DataRow row = dtNotional.NewRow();
+                //    row["benchmarkname"] = this.tickerLimits.benchmarkName;
+                //    row["tickername"] = notional.tickerName;
+                //    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
+                //    // attached from the portfolio_weights table or join back to tickers?? :-(
+                //    //row["defaultValue"] =this.tickerLimits.fund.  
+                //    //row["defaultValue"] = null;
+                //    row["Custom"] = notional.customLimit;
+                //    row["Live"] = notional.liveValue;
+                //    row["action"] = notional.action;
+                //    dtNotional.Rows.Add(row);
+                //}
                 return dtNotional;
             }
             catch(Exception ex)
@@ -529,7 +559,11 @@ namespace wpfTDX
         {
 
         }
-
+        /// <summary>
+        /// this updates the notional limits
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void dgTickerLimits_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             try
@@ -561,7 +595,7 @@ namespace wpfTDX
                     // Get the column name
                     string columnName = e.Column.Header.ToString();
                     tickername = rowView["tickername"].ToString();
-                    UpdateTickerLimits(tickername,columnName,rowView,editedValueAfter);
+                    UpdateTickerLimits("Notional",tickername,columnName,rowView,editedValueAfter);
                 }
             }
             catch(Exception ex)
@@ -569,7 +603,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private void UpdateTickerLimits(string tickername,string columnName,DataRowView rowView, string afterEditValue)
+        private void UpdateTickerLimits(string limitType,string tickername,string columnName,DataRowView rowView, string afterEditValue)
         {
             //if you are at this point you arent updating the action field.
             //so you need to get the value of the action field for the data insert
@@ -578,57 +612,44 @@ namespace wpfTDX
             string insertSQL = "INSERT ";
             string runtime = DateTime.UtcNow.ToString("dd-MMM-yyyy HH:mm:ss");
 
-            if(columnName.Contains("Notional"))
+            if (columnName == "Custom")
             {
-                if(columnName == "Notional-Custom")
-                {
-                    customValue = afterEditValue;
-                    action = rowView["Notional-Action"].ToString();
-                }
-                else if (columnName == "Notional-Action")
-                {
-                    action = afterEditValue;
-                    customValue = rowView["Notional-Custom"];
-                }
-                insertSQL += "notional_limits ";
-
+                customValue = afterEditValue;
+                action = rowView["Action"].ToString();
             }
-            else if(columnName.Contains("Weight"))
+            else if (columnName == "Action")
             {
-                if(columnName == "Weight-Custom")
-                {
-                    customValue = afterEditValue;
-                    action = rowView["Weight-Action"].ToString();
-                }
-                else if (columnName == "Weight-Action")
-                {
-                    action = afterEditValue;
-                    customValue = rowView["Weight-Custom"];
-                }
-                insertSQL += "weight_limits ";
+                action = afterEditValue;
+                customValue = rowView["Custom"];
             }
-            else if(columnName.Contains("Liquidity"))
+            switch(limitType)
             {
-                if(columnName == "Liquidity-Custom")
-                {
-                    customValue = afterEditValue;
-                    action = rowView["Liquidity-Action"].ToString();
-                }
-                else if(columnName == "Liquidity-Action")
-                {
-                    action = afterEditValue;
-                    customValue = rowView["Liquidity-Custom"];
-                }
-                insertSQL += "liquidity_limits ";                
+                case "Notional":
+                    insertSQL += "notional_limits ";
+                    break;
+                case "Weight":
+                    insertSQL += "weight_limits ";
+                    break;
+                case "Liquidity":
+                    insertSQL += "liquidity_limits ";
+                    break;
             }
-            double parsedOut;
-            if (Double.TryParse(customValue.ToString(), out parsedOut))
+            if (customValue != null)
             {
-                insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + parsedOut.ToString() + ",'" + action + "')";
-                this._db.execSQL_noresults(insertSQL, this.gbl_conn);
-                RefreshTickerLimits();
+                double parsedOut;
+                if (Double.TryParse(customValue.ToString(), out parsedOut))
+                {
+                    insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + parsedOut.ToString() + ",'" + action + "')";
+                    this._db.execSQL_noresults(insertSQL, this.gbl_conn);
+                    RefreshTickerLimits();
+                }
+            }
+            else
+            {
+                MessageBox.Show("No custom value was set", "update limits error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+       
         private void UpdateTickerLimits(string tickername, string columnName, string columnValue,DataRowView rowView)
         {
 

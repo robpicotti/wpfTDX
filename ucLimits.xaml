@@ -32,6 +32,7 @@
             </Grid>
         </Border>
         <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
             <TabControl>
                 <TabItem Header="Fund Limits" FontWeight="Bold" >
 
@@ -79,27 +80,32 @@
      
                 </TabItem>
 
-                <TabItem Header="Ticker Limits" FontWeight="Bold" >
+                <TabItem Header="Notional Limits" FontWeight="Bold" >
+
                     <StackPanel>
-                    <Button x:Name="btnUpdateTickerLimits" Click="btnUpdateTickerLimits_Click"
+                        <Button x:Name="btnUpdateTickerLimits" Click="btnUpdateTickerLimits_Click"
                             Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
                             Visibility="Hidden"
                             FontWeight="Bold" />
-                        <DataGrid x:Name="dgTickerLimits"  AutoGenerateColumns="False" Margin="5" CellEditEnding="dgTickerLimits_CellEditEnding">
+                        <DataGrid x:Name="dgTickerLimits"  AutoGenerateColumns="False" Margin="5" 
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+               
+                                  CellEditEnding="dgTickerLimits_CellEditEnding">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
                                 <DataGridTextColumn Header="tickername" Binding="{Binding tickername}"/>
                                 <!--Notional data-->
-                                <DataGridTextColumn Header="Notional-Default" Binding="{Binding Notional-Default}"/>
-                                <DataGridTextColumn Header="Notional-Custom" Binding="{Binding Notional-Custom}"/>
-                                <DataGridComboBoxColumn Header="Notional-Action" SelectedItemBinding="{Binding Notional-Action}">
+                                <DataGridTextColumn Header="Default" Binding="{Binding Default}"/>
+                                <DataGridTextColumn Header="Custom" Binding="{Binding Custom}"/>
+                                <DataGridComboBoxColumn Header="Action" SelectedItemBinding="{Binding Action}">
                                     <DataGridComboBoxColumn.ElementStyle>
                                         <Style TargetType="ComboBox">
                                             <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged_1"/>
                                             <Setter Property="ItemsSource">
                                                 <Setter.Value>
                                                     <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                        <Binding Path="Notional-Action" />
+                                                        <Binding Path="Action" />
                                                     </MultiBinding>
                                                 </Setter.Value>
                                             </Setter>
@@ -110,78 +116,22 @@
                                             <Setter Property="ItemsSource">
                                                 <Setter.Value>
                                                     <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                        <Binding Path="Notional-Action" />
+                                                        <Binding Path="Action" />
                                                     </MultiBinding>
                                                 </Setter.Value>
                                             </Setter>
                                         </Style>
                                     </DataGridComboBoxColumn.EditingElementStyle>
                                 </DataGridComboBoxColumn>
-                                <DataGridTextColumn Header="Notional-Live" Binding="{Binding Notional-Live}"/>
-                                <!--Liquidity data-->
-                                <DataGridTextColumn Header="Liquidity-Default" Binding="{Binding Liquidity-Default}"/>
-                                <DataGridTextColumn Header="Liquidity-Custom" Binding="{Binding Liquidity-Custom}"/>
-                                <DataGridComboBoxColumn Header="Liquidity-Action" SelectedItemBinding="{Binding Liquidity-Action}">
-                                    <DataGridComboBoxColumn.ElementStyle>
-                                        <Style TargetType="ComboBox">
-                                            <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged_2"/>
-                                            <Setter Property="ItemsSource">
-                                                <Setter.Value>
-                                                    <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                        <Binding Path="Liquidity-Action" />
-                                                    </MultiBinding>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </DataGridComboBoxColumn.ElementStyle>
-                                    <DataGridComboBoxColumn.EditingElementStyle>
-                                        <Style TargetType="ComboBox">
-                                            <Setter Property="ItemsSource">
-                                                <Setter.Value>
-                                                    <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                        <Binding Path="Liquidity-Action" />
-                                                    </MultiBinding>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </DataGridComboBoxColumn.EditingElementStyle>
-                                </DataGridComboBoxColumn>
-                                <DataGridTextColumn Header="Liquidity-Live" Binding="{Binding Liquidity-Live}"/>
-                                <!--weights data-->
-                                <DataGridTextColumn Header="Weight-Default" Binding="{Binding Weight-Default}"/>
-                                <DataGridTextColumn Header="Weight-Custom" Binding="{Binding Weight-Custom}"/>
-                                <DataGridComboBoxColumn Header="Weight-Action" SelectedItemBinding="{Binding Weight-Action}">
-                                    <DataGridComboBoxColumn.ElementStyle>
-                                        <Style TargetType="ComboBox">
-                                            <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged_3"/>
-                                            <Setter Property="ItemsSource">
-                                                <Setter.Value>
-                                                    <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                        <Binding Path="Weight-Action" />
-                                                    </MultiBinding>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </DataGridComboBoxColumn.ElementStyle>
-                                    <DataGridComboBoxColumn.EditingElementStyle>
-                                        <Style TargetType="ComboBox">
-                                            <Setter Property="ItemsSource">
-                                                <Setter.Value>
-                                                    <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                        <Binding Path="Weight-Action" />
-                                                    </MultiBinding>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </DataGridComboBoxColumn.EditingElementStyle>
-                                </DataGridComboBoxColumn>
-                                <DataGridTextColumn Header="Weight-Live" Binding="{Binding Weight-Live}"/>
+                                <DataGridTextColumn Header="Live" Binding="{Binding Notional-Live}"/>
+
                             </DataGrid.Columns>
-                            
+
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
             </TabControl>
+                </ScrollViewer>
         </Border>
     </StackPanel>
 </UserControl>

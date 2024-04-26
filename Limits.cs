@@ -102,13 +102,16 @@ namespace wpfTDX
         private Table tblNotionalLimits { get; set; }
         private Table tblLiquidityLimits { get; set; }
         private Table tblWeighLimits { get; set; }
+        private Table tblTickers { get; set; }
         private DataTable dtPortfolioWeights { get; set; }
         private DataTable dtNotionalLimits { get; set; }
         private DataTable dtLiquidityLimits { get; set; }
         private DataTable dtWeightLimits { get; set; }
+        private DataTable dtTickers { get; set; }
         public Fund fund { get; set; }
         public string benchmarkName {get;set;}
         public List<string> ListOfTickerNames { get; set; }
+        public Dictionary<string,string> dictOfTickers { get; set; }
         public FundLimits fundLimit { get; set; }
         public TickerLimits(string fundname,FundLimits fundlimit, SqlConnection conn)
         {
@@ -122,6 +125,7 @@ namespace wpfTDX
             this.TickerLiquidityLimitsList = new List<TickerLiquidityLimits>();
             PopulateTickerLimitDataTables();
             PopulateTickerNamesList();
+            PopulateTickernameInstrumentDictionary(this.ListOfTickerNames,dtTickers);
             ProcessTickerNotionalLimits();
             ProcessTickerWeightLimits();
             ProcessTickerLiquidityLimits();
@@ -133,6 +137,9 @@ namespace wpfTDX
         /// </summary>
         private void PopulateTickerLimitDataTables()
         {
+            //tickers --need this to get the instrument type
+            tblTickers = new Table("tickers", this.gbl_conn);
+            dtTickers = tblTickers.table_data;
             //portfolio weights
             tblPortfolioWeights = new Table("portfolio_weights", this.gbl_conn, "WHERE portfolioname='" + this.fund.benchmarkName + "'");
             this.dtPortfolioWeights = tblPortfolioWeights.table_data;
@@ -149,8 +156,28 @@ namespace wpfTDX
         private void PopulateTickerNamesList()
         {
             ListOfTickerNames = this.dtPortfolioWeights.AsEnumerable()
+                                            .Where(row => !row.IsNull("weight"))
                                             .Select(row => row.Field<string>("tickername"))
                                             .ToList();
+        }
+        /// <summary>
+        /// populates the dictOftickers with tickername and instrument type
+        /// </summary>
+        /// <param name="lstTickers"></param>
+        /// <param name="dtTickerInstrument"></param>
+        private void PopulateTickernameInstrumentDictionary(List<string> lstTickers, DataTable dtTickerInstrument)
+        {
+            HashSet<string> tickerSet = new HashSet<string>(lstTickers);
+            this.dictOfTickers = new Dictionary<string, string>();
+            foreach (DataRow row in dtTickerInstrument.Rows)
+            {
+                string tickername = row.Field<string>("tickername");
+                if (tickerSet.Contains(tickername))
+                {
+                    string instrument = row.Field<string>("instrument");
+                    this.dictOfTickers[tickername] = instrument;
+                }
+            }
         }
         /// <summary>
         /// sets the ticker's weight limits and values
