@@ -60,6 +60,7 @@ namespace wpfTDX
         private void RefreshFundLimits()
         {
             this.blnValueChanged = false;
+           
             btnUpdateCustom.Visibility = Visibility.Hidden;
             this.FundName = cboFundName.SelectedValue.ToString();
             //set up the fund limits
@@ -153,8 +154,11 @@ namespace wpfTDX
             dtNotional = populateNotionalTickerLimits();
             dtLiquidity = populateTickerLiquidityLimits();
             dtWeights = populateTickerWeightLimits();
-            dtMergedData = MergeDataTables(dtNotional, dtLiquidity, dtWeights);
-            dgTickerLimits.ItemsSource = dtMergedData.DefaultView;
+            //dtMergedData = MergeDataTables(dtNotional, dtLiquidity, dtWeights);
+            //dgTickerLimits.ItemsSource = dtMergedData.DefaultView;
+            dgTickerLimits.ItemsSource = dtNotional.DefaultView;
+            dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
+            dgWeightLimits.ItemsSource = dtWeights.DefaultView;
         }
         
         private DataTable populateTickerWeightLimits()
@@ -164,23 +168,31 @@ namespace wpfTDX
                 DataTable dtWeight = new DataTable();
                 dtWeight.Columns.Add("benchmarkname");
                 dtWeight.Columns.Add("tickername");
-                dtWeight.Columns.Add("Weight-Default");
-                dtWeight.Columns.Add("Weight-Custom");
-                dtWeight.Columns.Add("Weight-Live");
-                dtWeight.Columns.Add("Weight-Action");
-                foreach (TickerWeightLimits weight in this.tickerLimits.TickerWeightLimitsList)
+                dtWeight.Columns.Add("Default");
+                dtWeight.Columns.Add("Custom");
+                dtWeight.Columns.Add("Live");
+                dtWeight.Columns.Add("Action");
+                foreach (var kvp in this.tickerLimits.dictOfTickers)
                 {
+                    string tickername = kvp.Key.ToString();
+                    string instrument = kvp.Value.ToString();
                     DataRow row = dtWeight.NewRow();
+                    // Check if the tickername exists in the list of TickerNotionalLimits
+                    TickerWeightLimits tickerLimits = this.tickerLimits.TickerWeightLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
-                    row["tickername"] = weight.tickerName;
-                    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
-                    // attached from the portfolio_weights table or join back to tickers?? :-(
-                    //row["defaultValue"] =this.tickerLimits.fund.  
-                    //row["defaultValue"] = null;
-                    row["Weight-Custom"] = weight.customLimit;
-                    row["Weight-Live"] = weight.liveValue;
-                    row["Weight-action"] = weight.action;
+                    row["tickername"] = tickername;
+                    if (tickerLimits != null)
+                    {
+                        row["Custom"] = tickerLimits.customLimit;
+                        row["Live"] = tickerLimits.liveValue;
+                        row["Action"] = tickerLimits.action;
+                    }
+                    else
+                    {
+                        row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
+                    }
                     dtWeight.Rows.Add(row);
+
                 }
                 return dtWeight;
             }
@@ -197,29 +209,37 @@ namespace wpfTDX
                 DataTable dtLiquidity = new DataTable();
                 dtLiquidity.Columns.Add("benchmarkname");
                 dtLiquidity.Columns.Add("tickername");
-                dtLiquidity.Columns.Add("Liquidity-Default");
-                dtLiquidity.Columns.Add("Liquidity-Custom");
-                dtLiquidity.Columns.Add("Liquidity-Live");
-                dtLiquidity.Columns.Add("Liquidity-Action");
-                foreach (TickerLiquidityLimits liquid in this.tickerLimits.TickerLiquidityLimitsList)
+                dtLiquidity.Columns.Add("Default");
+                dtLiquidity.Columns.Add("Custom");
+                dtLiquidity.Columns.Add("Live");
+                dtLiquidity.Columns.Add("Action");
+                foreach (var kvp in this.tickerLimits.dictOfTickers)
                 {
+                    string tickername = kvp.Key.ToString();
+                    string instrument = kvp.Value.ToString();
                     DataRow row = dtLiquidity.NewRow();
+                    // Check if the tickername exists in the list of TickerNotionalLimits
+                    TickerLiquidityLimits tickerLimits = this.tickerLimits.TickerLiquidityLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
-                    row["tickername"] = liquid.tickerName;
-                    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
-                    // attached from the portfolio_weights table or join back to tickers?? :-(
-                    //row["defaultValue"] =this.tickerLimits.fund.  
-                    //row["defaultValue"] = null;
-                    row["Liquidity-Custom"] = liquid.customLimit;
-                    row["Liquidity-Live"] = liquid.liveValue;
-                    row["Liquidity-action"] = liquid.action;
+                    row["tickername"] = tickername;
+                    if (tickerLimits != null)
+                    {
+                        row["Custom"] = tickerLimits.customLimit;
+                        row["Live"] = tickerLimits.liveValue;
+                        row["Action"] = tickerLimits.action;
+                    }
+                    else
+                    {
+                        row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
+                    }
                     dtLiquidity.Rows.Add(row);
+
                 }
                 return dtLiquidity;
             }
             catch (Exception ex)
             {
-                throw new Exception("populateNotionalTickerLimits error: " + ex.Message);
+                throw new Exception("populateLiquidityTickerLimits error: " + ex.Message);
             }
         }
         
@@ -264,20 +284,7 @@ namespace wpfTDX
                     dtNotional.Rows.Add(row);
 
                 }
-                //foreach (TickerNotionalLimits notional in this.tickerLimits.TickerNotionalLimitsList)
-                //{
-                //    DataRow row = dtNotional.NewRow();
-                //    row["benchmarkname"] = this.tickerLimits.benchmarkName;
-                //    row["tickername"] = notional.tickerName;
-                //    //would this be the stk_notional_pct_limit for the fund if stock for e.g.? then we need the instrument type
-                //    // attached from the portfolio_weights table or join back to tickers?? :-(
-                //    //row["defaultValue"] =this.tickerLimits.fund.  
-                //    //row["defaultValue"] = null;
-                //    row["Custom"] = notional.customLimit;
-                //    row["Live"] = notional.liveValue;
-                //    row["action"] = notional.action;
-                //    dtNotional.Rows.Add(row);
-                //}
+
                 return dtNotional;
             }
             catch(Exception ex)
@@ -667,6 +674,91 @@ namespace wpfTDX
         }
 
         private void ComboBox_SelectionChanged_3(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void dgLiquidityLimits_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            try
+            {
+                if (e.EditAction == DataGridEditAction.Commit)
+                {
+                    // Get the column and row indices of the cell being edited
+                    int columnIndex = e.Column.DisplayIndex;
+                    int rowIndex = e.Row.GetIndex();
+                    string tickername = "";
+                    DataRowView rowView = null;
+
+                    if (dgLiquidityLimits.Items[rowIndex] is DataRowView)
+                    {
+                        rowView = (DataRowView)dgLiquidityLimits.Items[rowIndex]; // Assign the DataRowView object to rowView
+                    }
+                    var editedValueAfter = "";
+                    if (e.EditingElement is ComboBox)
+                    {
+                        if (e.EditingElement != null)
+                        {
+                            editedValueAfter = (e.EditingElement as ComboBox).SelectedItem.ToString();
+                        }
+                    }
+                    else if (e.EditingElement is TextBox)
+                    {
+                        editedValueAfter = (e.EditingElement as TextBox).Text;
+                    }
+                    // Get the column name
+                    string columnName = e.Column.Header.ToString();
+                    tickername = rowView["tickername"].ToString();
+                    UpdateTickerLimits("Liquidity", tickername, columnName, rowView, editedValueAfter);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void dgWeightLimits_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            try
+            {
+                if (e.EditAction == DataGridEditAction.Commit)
+                {
+                    // Get the column and row indices of the cell being edited
+                    int columnIndex = e.Column.DisplayIndex;
+                    int rowIndex = e.Row.GetIndex();
+                    string tickername = "";
+                    DataRowView rowView = null;
+
+                    if (dgWeightLimits.Items[rowIndex] is DataRowView)
+                    {
+                        rowView = (DataRowView)dgWeightLimits.Items[rowIndex]; // Assign the DataRowView object to rowView
+                    }
+                    var editedValueAfter = "";
+                    if (e.EditingElement is ComboBox)
+                    {
+                        if (e.EditingElement != null)
+                        {
+                            editedValueAfter = (e.EditingElement as ComboBox).SelectedItem.ToString();
+                        }
+                    }
+                    else if (e.EditingElement is TextBox)
+                    {
+                        editedValueAfter = (e.EditingElement as TextBox).Text;
+                    }
+                    // Get the column name
+                    string columnName = e.Column.Header.ToString();
+                    tickername = rowView["tickername"].ToString();
+                    UpdateTickerLimits("Weight", tickername, columnName, rowView, editedValueAfter);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ComboBox_SelectionChanged_4(object sender, SelectionChangedEventArgs e)
         {
 
         }

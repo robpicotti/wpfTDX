@@ -156,7 +156,7 @@ namespace wpfTDX
             decimal futuresNewDeals = 0;
             decimal futuresPosnPnl = 0;
             object futuresNewDealsObject = DBNull.Value;
-            if (dtFuturesNewDealsPnl.Rows.Count > 0)
+            if ((dtFuturesNewDealsPnl != null) && dtFuturesNewDealsPnl.Rows.Count > 0)
             {
                 futuresNewDealsObject = Math.Round(Convert.ToDecimal(dtFuturesNewDealsPnl.Compute("SUM(new_deals)", String.Empty)), 0);
                 if (futuresNewDealsObject != DBNull.Value)

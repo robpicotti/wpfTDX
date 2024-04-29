@@ -155,10 +155,31 @@ namespace wpfTDX
         }
         private void PopulateTickerNamesList()
         {
+            //get list of tickers from portfolio weights 
             ListOfTickerNames = this.dtPortfolioWeights.AsEnumerable()
                                             .Where(row => !row.IsNull("weight"))
                                             .Select(row => row.Field<string>("tickername"))
                                             .ToList();
+            //get distinct list of tickers from the notional limits table for benchmark
+            var NotionalTickers = this.dtNotionalLimits.AsEnumerable()
+                .Where(row => row.Field<string>("fundname") == this.fundName)
+                .Select(row => row.Field<string>("tickername"))
+                .Distinct();
+            ListOfTickerNames.AddRange(NotionalTickers.Except(ListOfTickerNames));
+
+            //get distinct list of tickers from liquidity weights table
+            var LiquidityTickers = this.dtLiquidityLimits.AsEnumerable()
+                .Where(row => row.Field<string>("fundname") == this.fundName)
+                .Select(row => row.Field<string>("tickername"))
+                .Distinct();
+            ListOfTickerNames.AddRange(LiquidityTickers.Except(ListOfTickerNames));
+
+            //get distinct list of tickers from weight limits table
+            var WeightTickers = this.dtWeightLimits.AsEnumerable()
+                .Where(row => row.Field<string>("fundname") == this.fundName)
+                .Select(row => row.Field<string>("tickername"))
+                .Distinct();
+            ListOfTickerNames.AddRange(WeightTickers.Except(ListOfTickerNames));
         }
         /// <summary>
         /// populates the dictOftickers with tickername and instrument type
@@ -224,6 +245,7 @@ namespace wpfTDX
         /// </summary>
         private void ProcessTickerNotionalLimits()
         {
+            //add any
           foreach(string tickername in ListOfTickerNames)
            {
                 DataRow[] row = dtNotionalLimits.Select("tickername= '" + tickername + "'");
