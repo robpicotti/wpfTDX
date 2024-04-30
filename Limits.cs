@@ -210,7 +210,7 @@ namespace wpfTDX
                 DataRow[] row = dtWeightLimits.Select("tickername= '" + tickername + "'");
                 if (row.Length > 0)
                 {
-                    double weightLimit = (double)row[0]["weight_limit"];
+                    double? weightLimit = row[0].Field<double?>("weight_limit");
                     string action = row[0]["action"].ToString();
                     TickerWeightLimits twl = new TickerWeightLimits();
                     twl.tickerName = tickername;
@@ -230,7 +230,7 @@ namespace wpfTDX
                 DataRow[] row = dtLiquidityLimits.Select("tickername= '" + tickername + "'");
                 if(row.Length>0)
                 {
-                    double liquidityLimit = (double)row[0]["liquidity_limit"];
+                    double? liquidityLimit = row[0].Field<double?>("liquidity_limit");
                     string action = row[0]["action"].ToString();
                     TickerLiquidityLimits tll = new TickerLiquidityLimits();
                     tll.tickerName = tickername;
@@ -251,7 +251,7 @@ namespace wpfTDX
                 DataRow[] row = dtNotionalLimits.Select("tickername= '" + tickername + "'");
                 if (row.Length > 0)
                 {
-                    double notionalLimit = (double)row[0]["notional_pct_limit"];
+                    double? notionalLimit = row[0].Field<double?>("notional_pct_limit");
                     string action = row[0]["action"].ToString();
                     TickerNotionalLimits tnl = new TickerNotionalLimits();
                     tnl.tickerName = tickername;

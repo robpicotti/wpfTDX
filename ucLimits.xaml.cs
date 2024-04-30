@@ -181,7 +181,7 @@ namespace wpfTDX
                     TickerWeightLimits tickerLimits = this.tickerLimits.TickerWeightLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null)
+                    if (tickerLimits != null && tickerLimits.customLimit != null)
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
@@ -222,7 +222,7 @@ namespace wpfTDX
                     TickerLiquidityLimits tickerLimits = this.tickerLimits.TickerLiquidityLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null)
+                    if (tickerLimits != null && tickerLimits.customLimit != null)
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
@@ -264,7 +264,7 @@ namespace wpfTDX
                     TickerNotionalLimits tickerLimits = this.tickerLimits.TickerNotionalLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null)
+                    if (tickerLimits != null && tickerLimits.customLimit != null)
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
@@ -622,12 +622,26 @@ namespace wpfTDX
             if (columnName == "Custom")
             {
                 customValue = afterEditValue;
-                action = rowView["Action"].ToString();
+                if (customValue == null || customValue.ToString() == "")
+                {
+                    action = "Default";
+                }
+                else
+                {
+                    action = "Hard"; //defaults to hard if you change a custom value
+                }
             }
             else if (columnName == "Action")
             {
                 action = afterEditValue;
-                customValue = rowView["Custom"];
+                if (action == "Default")
+                {
+                    customValue = null;
+                }
+                else
+                {
+                    customValue = rowView["Custom"];
+                }
             }
             switch(limitType)
             {
@@ -641,20 +655,43 @@ namespace wpfTDX
                     insertSQL += "liquidity_limits ";
                     break;
             }
-            if (customValue != null)
+            string stringParsedCustomValue = "";
+            if(customValue.ToString() == "" || customValue == null)
+            {
+                stringParsedCustomValue = "NULL";
+            }
+            else
             {
                 double parsedOut;
                 if (Double.TryParse(customValue.ToString(), out parsedOut))
                 {
-                    insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + parsedOut.ToString() + ",'" + action + "')";
-                    this._db.execSQL_noresults(insertSQL, this.gbl_conn);
-                    RefreshTickerLimits();
+                    stringParsedCustomValue = parsedOut.ToString();
+                }
+                else
+                {
+                    MessageBox.Show("No custom value was set", "update limits error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            else
+            if(stringParsedCustomValue !="")
             {
-                MessageBox.Show("No custom value was set", "update limits error", MessageBoxButton.OK, MessageBoxImage.Error);
+                insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + stringParsedCustomValue + ",'" + action + "')";
+                this._db.execSQL_noresults(insertSQL, this.gbl_conn);
+                RefreshTickerLimits();
             }
+            //if (customValue != null)
+            //{
+            //double parsedOut;
+            //if (Double.TryParse(customValue.ToString(), out parsedOut))
+            //{
+            //    insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + parsedOut.ToString() + ",'" + action + "')";
+            //    this._db.execSQL_noresults(insertSQL, this.gbl_conn);
+            //    RefreshTickerLimits();
+            //}
+            //}
+            //else
+            //{
+            //    MessageBox.Show("No custom value was set", "update limits error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //}
         }
        
         private void UpdateTickerLimits(string tickername, string columnName, string columnValue,DataRowView rowView)
