@@ -280,6 +280,10 @@ namespace wpfTDX
                         {
                             row["Default"] = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue;
                         }
+                        else if (instrument =="spread")
+                        {
+                            row["Default"] = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue * 1.5; //hard coding spread notionals to 1.5 times fund default
+                        }
                     }
                     dtNotional.Rows.Add(row);
 
