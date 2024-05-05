@@ -187,10 +187,7 @@ namespace wpfTDX
                         row["Live"] = tickerLimits.liveValue;
                         row["Action"] = tickerLimits.action;
                     }
-                    else
-                    {
-                        row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
-                    }
+                    row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
                     dtWeight.Rows.Add(row);
 
                 }
@@ -228,10 +225,9 @@ namespace wpfTDX
                         row["Live"] = tickerLimits.liveValue;
                         row["Action"] = tickerLimits.action;
                     }
-                    else
-                    {
-                        row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
-                    }
+
+                    row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
+
                     dtLiquidity.Rows.Add(row);
 
                 }
@@ -270,8 +266,8 @@ namespace wpfTDX
                         row["Live"] = tickerLimits.liveValue;
                         row["action"] = tickerLimits.action;
                     }
-                    else
-                    {
+                    //else
+                    //{
                         if(instrument=="equity" || instrument=="etf")
                         {
                             row["Default"] = this.tickerLimits.fundLimit.stk_notional_pct_limit.defaultValue;
@@ -284,7 +280,7 @@ namespace wpfTDX
                         {
                             row["Default"] = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue * 1.5; //hard coding spread notionals to 1.5 times fund default
                         }
-                    }
+                    //}
                     dtNotional.Rows.Add(row);
 
                 }
