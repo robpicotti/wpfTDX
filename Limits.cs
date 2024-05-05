@@ -108,6 +108,7 @@ namespace wpfTDX
         private DataTable dtLiquidityLimits { get; set; }
         private DataTable dtWeightLimits { get; set; }
         private DataTable dtTickers { get; set; }
+        private DataTable dtLiveValues { get; set; }
         public Fund fund { get; set; }
         public string benchmarkName {get;set;}
         public List<string> ListOfTickerNames { get; set; }
@@ -119,6 +120,7 @@ namespace wpfTDX
             this.gbl_conn = conn;
             this.fund = new Fund(this.fundName, this.gbl_conn);
             this.fundLimit = fundlimit;
+            this.dtLiveValues = this.fundLimit.dtLive.Copy();
             this.benchmarkName = this.fund.benchmarkName;
             this.TickerWeightLimitsList = new List<TickerWeightLimits>();
             this.TickerNotionalLimitsList = new List<TickerNotionalLimits>();
@@ -157,7 +159,7 @@ namespace wpfTDX
         {
             //get list of tickers from portfolio weights 
             ListOfTickerNames = this.dtPortfolioWeights.AsEnumerable()
-                                            .Where(row => !row.IsNull("weight"))
+                                            .Where(row => !row.IsNull("weight") && !string.IsNullOrEmpty(row.Field<string>("tickername")))
                                             .Select(row => row.Field<string>("tickername"))
                                             .ToList();
             //get distinct list of tickers from the notional limits table for benchmark
@@ -180,6 +182,7 @@ namespace wpfTDX
                 .Select(row => row.Field<string>("tickername"))
                 .Distinct();
             ListOfTickerNames.AddRange(WeightTickers.Except(ListOfTickerNames));
+            ListOfTickerNames = ListOfTickerNames.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
         }
         /// <summary>
         /// populates the dictOftickers with tickername and instrument type
@@ -207,17 +210,33 @@ namespace wpfTDX
         {
             foreach (string tickername in ListOfTickerNames)
             {
+                TickerWeightLimits twl = new TickerWeightLimits();
+                twl.tickerName = tickername;
                 DataRow[] row = dtWeightLimits.Select("tickername= '" + tickername + "'");
                 if (row.Length > 0)
                 {
                     double? weightLimit = row[0].Field<double?>("weight_limit");
                     string action = row[0]["action"].ToString();
-                    TickerWeightLimits twl = new TickerWeightLimits();
-                    twl.tickerName = tickername;
                     twl.customLimit = weightLimit;
                     twl.action = this.fundLimit.GetActionType(action);
-                    this.TickerWeightLimitsList.Add(twl);
                 }
+                //get the live weight pct value
+                var matchingRows = this.dtLiveValues.AsEnumerable()
+                                    .Where(liverow => liverow.Field<string>("tickername") == tickername);
+                if (matchingRows.Any())
+                {
+                    var maxWeight = matchingRows.Max(liverow => liverow.Field<double?>("weight"));
+                    if (maxWeight != null)
+                    {
+                        twl.liveValue = Math.Round(Convert.ToDouble(maxWeight), 5);
+                    }
+                    else
+                    {
+                        twl.liveValue = maxWeight;
+                    }
+                }
+
+                this.TickerWeightLimitsList.Add(twl);
             }
         }
         /// <summary>
@@ -227,17 +246,32 @@ namespace wpfTDX
         {
             foreach(string tickername in ListOfTickerNames)
             {
+                TickerLiquidityLimits tll = new TickerLiquidityLimits();
+                tll.tickerName = tickername;
                 DataRow[] row = dtLiquidityLimits.Select("tickername= '" + tickername + "'");
                 if(row.Length>0)
                 {
                     double? liquidityLimit = row[0].Field<double?>("liquidity_limit");
                     string action = row[0]["action"].ToString();
-                    TickerLiquidityLimits tll = new TickerLiquidityLimits();
-                    tll.tickerName = tickername;
                     tll.customLimit = liquidityLimit;
                     tll.action = this.fundLimit.GetActionType(action);
-                    this.TickerLiquidityLimitsList.Add(tll);
                 }
+                //get the live liquidity  pct value
+                var matchingRows = this.dtLiveValues.AsEnumerable()
+                                    .Where(liverow => liverow.Field<string>("tickername") == tickername);
+                if (matchingRows.Any())
+                {
+                    var maxLiquidity = matchingRows.Max(liverow => liverow.Field<double?>("liquidity"));
+                    if (maxLiquidity != null)
+                    {
+                        tll.liveValue = Math.Round(Convert.ToDouble(maxLiquidity), 5);
+                    }
+                    else
+                    {
+                        tll.liveValue = maxLiquidity;
+                    }
+                }
+                this.TickerLiquidityLimitsList.Add(tll);
             }
         }
         /// <summary>
@@ -248,18 +282,33 @@ namespace wpfTDX
             //add any
           foreach(string tickername in ListOfTickerNames)
            {
+                TickerNotionalLimits tnl = new TickerNotionalLimits();
+                tnl.tickerName = tickername;
                 DataRow[] row = dtNotionalLimits.Select("tickername= '" + tickername + "'");
                 if (row.Length > 0)
                 {
                     double? notionalLimit = row[0].Field<double?>("notional_pct_limit");
                     string action = row[0]["action"].ToString();
-                    TickerNotionalLimits tnl = new TickerNotionalLimits();
-                    tnl.tickerName = tickername;
                     tnl.customLimit = notionalLimit;
                     tnl.action = this.fundLimit.GetActionType(action) ;
-                    this.TickerNotionalLimitsList.Add(tnl);
                 }
-           }
+                //get the live notional pct value
+                var matchingRows = this.dtLiveValues.AsEnumerable()
+                                    .Where(liverow => liverow.Field<string>("tickername") == tickername);
+                if (matchingRows.Any())
+                {
+                    var maxNotional = matchingRows.Max(liverow => liverow.Field<double?>("adj_notional_pct"));
+                    if (maxNotional != null)
+                    {
+                        tnl.liveValue = Math.Round(Convert.ToDouble(maxNotional),5);
+                    }
+                    else
+                    {
+                        tnl.liveValue = maxNotional;
+                    }
+                }
+                this.TickerNotionalLimitsList.Add(tnl);
+            }
         }
     }
     public class FundLimits
@@ -281,7 +330,7 @@ namespace wpfTDX
         private SqlConnection gbl_conn { get; set; }
         private DataTable dtFundData { get; set; }
         private DataTable dtFundLimits { get; set; }
-        private DataTable dtLive { get; set; }
+        public DataTable dtLive { get; set; }
         private db DB = new db();
         public FundLimits(string fundname, SqlConnection conn)
         {

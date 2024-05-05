@@ -181,7 +181,7 @@ namespace wpfTDX
                     TickerWeightLimits tickerLimits = this.tickerLimits.TickerWeightLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null && tickerLimits.customLimit != null)
+                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue!=null))
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
@@ -222,7 +222,7 @@ namespace wpfTDX
                     TickerLiquidityLimits tickerLimits = this.tickerLimits.TickerLiquidityLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null && tickerLimits.customLimit != null)
+                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue !=null))
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
@@ -264,7 +264,7 @@ namespace wpfTDX
                     TickerNotionalLimits tickerLimits = this.tickerLimits.TickerNotionalLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null && tickerLimits.customLimit != null)
+                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue != null))
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
