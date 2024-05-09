@@ -156,6 +156,7 @@ namespace TDX
             {
                 if (ds.Tables[0].Rows.Count > 0)
                 {
+                   
                     //util.dataTableToCsv(ds.Tables[0], @"c:\TDX\App\Log\avg_calc.csv"); //for debug
                     //avg_slippage = (double)ds.Tables[0].Compute("AVG(slippage)", "") ;
                     avg_slippage_price_percent = (double)ds.Tables[0].Compute("AVG(slippage_price)", "")*100;

@@ -67,6 +67,8 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public ActionType action { get; set; }
         public string tickerName { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     public class TickerWeightLimits
     {
@@ -74,6 +76,8 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public ActionType action { get; set; }
         public string tickerName { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     public class TickerNotionalLimits
     {
@@ -88,11 +92,13 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public ActionType action { get; set; }
         public string tickerName { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
 
     public class TickerLimits
     {
-        private string fundName { get; set; }
+        public string fundName { get; set; }
         public List<TickerWeightLimits> TickerWeightLimitsList { get; set; }
         public List<TickerNotionalLimits> TickerNotionalLimitsList { get; set; }
         public List<TickerLiquidityLimits> TickerLiquidityLimitsList { get; set; }
@@ -114,6 +120,7 @@ namespace wpfTDX
         public List<string> ListOfTickerNames { get; set; }
         public Dictionary<string,string> dictOfTickers { get; set; }
         public FundLimits fundLimit { get; set; }
+        
         public TickerLimits(string fundname,FundLimits fundlimit, SqlConnection conn)
         {
             this.fundName = fundname;
@@ -203,6 +210,31 @@ namespace wpfTDX
                 }
             }
         }
+        public static bool GetFlaggedStatus(double? liveValue, double? customValue, double? defaultValue )
+        {
+            bool blnFlagged=  false;
+            if(liveValue != null)
+            {
+                switch(customValue)
+                {
+                    case null:
+                        if(liveValue > defaultValue)
+                        {
+                            blnFlagged = true;
+                        }
+                        break;
+                    default:
+                        if(liveValue > customValue)
+                        {
+                            blnFlagged = true;
+                        }
+                        else { blnFlagged = false; }
+                        break;
+                }
+            }
+
+            return blnFlagged;
+        }
         /// <summary>
         /// sets the ticker's weight limits and values
         /// </summary>
@@ -222,19 +254,35 @@ namespace wpfTDX
                 }
                 //get the live weight pct value
                 var matchingRows = this.dtLiveValues.AsEnumerable()
-                                    .Where(liverow => liverow.Field<string>("tickername") == tickername);
+                    .GroupBy(maxrow => maxrow.Field<string>("tickername"))
+                    .SelectMany(group =>
+                    {
+                        DateTime maxRuntime = group.Max(maxrow => maxrow.Field<DateTime>("runtime"));
+                        return group.Where(maxrow => maxrow.Field<DateTime>("runtime") == maxRuntime);
+                    })
+                    .Where(maxrow => maxrow.Field<string>("tickername") == tickername);
                 if (matchingRows.Any())
                 {
+
                     var maxWeight = matchingRows.Max(liverow => liverow.Field<double?>("weight"));
+
                     if (maxWeight != null)
                     {
                         twl.liveValue = Math.Round(Convert.ToDouble(maxWeight), 5);
+                        var rowWithMaxWeight = matchingRows.FirstOrDefault(liverow => liverow.Field<double?>("weight") == maxWeight);
+                        if (rowWithMaxWeight != null)
+                        {
+                            bool? isValid = rowWithMaxWeight.Field<bool?>("valid");
+                            // Now 'isValid' holds the value of the "valid" field from the row with the maximum notional value
+                            twl.valid = isValid;
+                        }
                     }
                     else
                     {
                         twl.liveValue = maxWeight;
                     }
                 }
+
 
                 this.TickerWeightLimitsList.Add(twl);
             }
@@ -258,13 +306,26 @@ namespace wpfTDX
                 }
                 //get the live liquidity  pct value
                 var matchingRows = this.dtLiveValues.AsEnumerable()
-                                    .Where(liverow => liverow.Field<string>("tickername") == tickername);
+                    .GroupBy(maxrow => maxrow.Field<string>("tickername"))
+                    .SelectMany(group =>
+                    {
+                        DateTime maxRuntime = group.Max(maxrow => maxrow.Field<DateTime>("runtime"));
+                        return group.Where(maxrow => maxrow.Field<DateTime>("runtime") == maxRuntime);
+                    })
+                    .Where(maxrow => maxrow.Field<string>("tickername") == tickername);
                 if (matchingRows.Any())
                 {
                     var maxLiquidity = matchingRows.Max(liverow => liverow.Field<double?>("liquidity"));
+
                     if (maxLiquidity != null)
                     {
                         tll.liveValue = Math.Round(Convert.ToDouble(maxLiquidity), 5);
+                        var rowWithMaxLiquidity = matchingRows.FirstOrDefault(liverow => liverow.Field<double?>("liquidity") == maxLiquidity);
+                        if (rowWithMaxLiquidity != null)
+                        {
+                            bool? isValid = rowWithMaxLiquidity.Field<bool?>("valid");
+                            tll.valid = isValid;
+                        }
                     }
                     else
                     {
@@ -294,13 +355,29 @@ namespace wpfTDX
                 }
                 //get the live notional pct value
                 var matchingRows = this.dtLiveValues.AsEnumerable()
-                                    .Where(liverow => liverow.Field<string>("tickername") == tickername);
+                    .GroupBy(maxrow => maxrow.Field<string>("tickername"))
+                    .SelectMany(group =>
+                    {
+                        DateTime maxRuntime = group.Max(maxrow => maxrow.Field<DateTime>("runtime"));
+                        return group.Where(maxrow => maxrow.Field<DateTime>("runtime") == maxRuntime);
+                    })
+                    .Where(maxrow => maxrow.Field<string>("tickername") == tickername);
+
+
                 if (matchingRows.Any())
                 {
-                    var maxNotional = matchingRows.Max(liverow => liverow.Field<double?>("adj_notional_pct"));
+                    var maxNotional = matchingRows.Max(liverow => liverow.Field<double?>("adj_notional_pct") );
+                    
                     if (maxNotional != null)
                     {
                         tnl.liveValue = Math.Round(Convert.ToDouble(maxNotional),5);
+                        var rowWithMaxNotional = matchingRows.FirstOrDefault(liverow => liverow.Field<double?>("adj_notional_pct") == maxNotional);
+                        if (rowWithMaxNotional != null)
+                        {
+                            bool? isValid = rowWithMaxNotional.Field<bool?>("valid");
+                            tnl.valid = isValid;
+
+                        }
                     }
                     else
                     {
@@ -311,6 +388,7 @@ namespace wpfTDX
             }
         }
     }
+    
     public class FundLimits
     {
         private string fundname { get; set; }
@@ -348,6 +426,7 @@ namespace wpfTDX
                 this.drawdown_limit = new DrawDownLimit();
                 this.liquidity_limit = new LiquidityLimit();
                 this.weight_limit = new WeightLimit();
+
                 //get the default data from the funds table
                 tblFunds = new Table("funds", this.gbl_conn, "WHERE fundname='" + this.fundname + "'");
                 dtFundData = new DataTable();
@@ -356,7 +435,7 @@ namespace wpfTDX
                 tblFundLimits = new Table("fund_limits", this.gbl_conn, "WHERE fundname='" + fundname + "'");
                 dtFundLimits = tblFundLimits.table_data;
                 //get the live limits data from the postions_target table
-                tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "'");
+                tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "' AND sub_tickername = current_contract and sub_tickername !='NONE'");
                 dtLive = tblTargetPositions.table_data;
                 ProcessCustomFundLimits(dtFundLimits);
                 ProcessDefaultFundLimits(dtFundData);
@@ -399,7 +478,13 @@ namespace wpfTDX
                          .Max(row => row.Field<double?>(columnName));
                 if (Double.TryParse(maxValue.ToString(), out parsedOut))
                 {
-                    return Math.Round(parsedOut,4);
+                    switch(columnName)
+                    {
+                        case "portfolio_dd":
+                            return Math.Abs(Math.Round(parsedOut, 4));
+                        default:
+                            return Math.Round(parsedOut, 4);
+                    }          
                 }
             }
             catch(Exception ex)
@@ -710,6 +795,7 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public bool updated { get; set; }
     }
+    
     public class FuturesLeverageLimit
     {
         public double? defaultValue { get; set; }
@@ -718,6 +804,7 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public bool updated { get; set; }
     }
+    
     public class LeverageLimit
     {
         public double? defaultValue { get; set; }
@@ -726,6 +813,7 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public bool updated { get; set; }
     }
+    
     public class VarLimitFactor
     {
         public double? defaultValue { get; set; }
@@ -734,6 +822,7 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public bool updated { get; set; }
     }
+    
     public class StressLimitFactor
     {
         public double? defaultValue { get; set; }
@@ -742,6 +831,7 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public bool updated { get; set; }
     }
+    
     public class DrawDownLimit
     {
         public double? defaultValue { get; set; }
@@ -750,6 +840,7 @@ namespace wpfTDX
         public double? liveValue { get; set; }
         public bool updated { get; set; }
     }
+    
     public class StockNotionalPctLimit
     {
         public double? defaultValue { get; set; }
@@ -757,7 +848,9 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
+    
     public class FuturesNotionalPctLimit
     {
         public double? defaultValue { get; set; }
@@ -765,7 +858,9 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool flagged { get; set; }//used for highlighting cells where live limits are over custom and or overriden
     }
+    
     public class LiquidityLimit
     {
         public double? defaultValue { get; set; }
@@ -773,7 +868,9 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool flagged { get; set; }//used for highlighting cells where live limits are over custom and or overriden
     }
+    
     public class WeightLimit
     {
         public double? defaultValue { get; set; }
@@ -781,5 +878,6 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool flagged { get; set; }//used for highlighting cells where live limits are over custom and or overriden
     }
 }

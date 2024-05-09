@@ -30,10 +30,13 @@ namespace wpfTDX
         DataTable dtMergedData;
         Limits limits;
         string FundName;
+        List<string> FundsList = new List<string>(); //this will contain the list of funds you want to query
         TickerLimits tickerLimits;
         bool blnValueChanged = false; 
         bool blnTickerLimitChanged = false;
+        string ALL_FUNDS = "<* ALL FUNDS *>";
         TDX.db _db = new TDX.db();
+        List<string> ListOfFundNames; //contains full fund names list
 
         public ucLimits(SqlConnection conn)
         {
@@ -44,18 +47,36 @@ namespace wpfTDX
         private void LoadForm()
         {
             dtFunds = _db.get_funds(gbl_conn);
+
+            // Filter out the "ALL_FUNDS" row
+            var filteredRows = dtFunds.AsEnumerable()
+                .Where(row => row.Field<string>("fundname") != ALL_FUNDS);
+
+            // Project fund names into a list
+            ListOfFundNames = filteredRows.Select(row => row.Field<string>("fundname")).ToList();
+
+            // add "all funds" to the dtFunds table
+            DataRow newrow = dtFunds.NewRow();
+            newrow["fundname"] = ALL_FUNDS ;
+            dtFunds.Rows.Add(newrow);
+            //order the datatable
+            var orderedRows = dtFunds.AsEnumerable()
+                             .OrderBy(row => row.Field<string>("fundname"));
+            dtFunds = orderedRows.CopyToDataTable();
+
+
             cboFundName.Items.Clear();
             foreach (DataRow row in dtFunds.Rows)
             {
                 cboFundName.Items.Add(row["fundname"].ToString());
             }
-
-
         }
         private void cboFundName_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            this.FundsList.Clear();
             RefreshFundLimits();
             RefreshTickerLimits();
+
         }
         private void RefreshFundLimits()
         {
@@ -63,79 +84,95 @@ namespace wpfTDX
            
             btnUpdateCustom.Visibility = Visibility.Hidden;
             this.FundName = cboFundName.SelectedValue.ToString();
-            //set up the fund limits
-            this.limits = new Limits(this.FundName, this.gbl_conn);
+            if(this.FundName != ALL_FUNDS)
+            {
+                this.FundsList.Add(this.FundName);
+            }
+            else
+            {
+                this.FundsList = this.ListOfFundNames;
+            }
+
             DataTable dtAll = new DataTable();
+            dtAll.Columns.Add("fundname");
             dtAll.Columns.Add("metric");
             dtAll.Columns.Add("default");
             dtAll.Columns.Add("custom");
             dtAll.Columns.Add("action");
             dtAll.Columns.Add("live");
-            for (int i = 0; i < limits.lstFundLimits.Count; i++)
+
+            for (int x = 0; x < this.FundsList.Count; x++)
             {
-                DataRow row = dtAll.NewRow();
-                string limit = limits.lstFundLimits[i];
-                row["metric"] = limit;
-                switch (limit)
+                //set up the fund limits
+                string _fundName = this.FundsList[x].ToString();
+                this.limits = new Limits(_fundName, this.gbl_conn);
+                for (int i = 0; i < limits.lstFundLimits.Count; i++)
                 {
-                    case "weight_limit":
-                        row["default"] = limits.fundLimits.weight_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.weight_limit.customValue;
-                        row["action"] = limits.fundLimits.weight_limit.action;
-                        break;
-                    case "stk_notional_pct_limit":
-                        row["default"] = limits.fundLimits.stk_notional_pct_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.stk_notional_pct_limit.customValue;
-                        row["action"] = limits.fundLimits.stk_notional_pct_limit.action;
-                        break;
-                    case "fut_notional_pct_limit":
-                        row["default"] = limits.fundLimits.fut_notional_pct_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.fut_notional_pct_limit.customValue;
-                        row["action"] = limits.fundLimits.fut_notional_pct_limit.action;
-                        break;
-                    case "liquidity_limit":
-                        row["default"] = limits.fundLimits.liquidity_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.liquidity_limit.customValue;
-                        row["action"] = limits.fundLimits.liquidity_limit.action;
-                        break;
-                    case "stk_leverage_limit":
-                        row["default"] = limits.fundLimits.stk_leverage_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.stk_leverage_limit.customValue;
-                        row["action"] = limits.fundLimits.stk_leverage_limit.action;
-                        row["live"] = limits.fundLimits.stk_leverage_limit.liveValue;
-                        break;
-                    case "fut_leverage_limit":
-                        row["default"] = limits.fundLimits.fut_leverage_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.fut_leverage_limit.customValue;
-                        row["action"] = limits.fundLimits.fut_leverage_limit.action;
-                        row["live"] = limits.fundLimits.fut_leverage_limit.liveValue;
-                        break;
-                    case "leverage_limit":
-                        row["default"] = limits.fundLimits.leverage_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.leverage_limit.customValue;
-                        row["action"] = limits.fundLimits.leverage_limit.action;
-                        row["live"] = limits.fundLimits.leverage_limit.liveValue;
-                        break;
-                    case "var_limit_factor":
-                        row["default"] = limits.fundLimits.var_limit_factor.defaultValue;
-                        row["custom"] = limits.fundLimits.var_limit_factor.customValue;
-                        row["action"] = limits.fundLimits.var_limit_factor.action;
-                        row["live"] = limits.fundLimits.var_limit_factor.liveValue;
-                        break;
-                    case "stress_limit_factor":
-                        row["default"] = limits.fundLimits.stress_limit_factor.defaultValue;
-                        row["custom"] = limits.fundLimits.stress_limit_factor.customValue;
-                        row["action"] = limits.fundLimits.stress_limit_factor.action;
-                        row["live"] = limits.fundLimits.stress_limit_factor.liveValue;
-                        break;
-                    case "drawdown_limit":
-                        row["default"] = limits.fundLimits.drawdown_limit.defaultValue;
-                        row["custom"] = limits.fundLimits.drawdown_limit.customValue;
-                        row["action"] = limits.fundLimits.drawdown_limit.action;
-                        row["live"] = limits.fundLimits.drawdown_limit.liveValue;
-                        break;
+                    DataRow row = dtAll.NewRow();
+                    string limit = limits.lstFundLimits[i];
+                    row["metric"] = limit;
+                    row["fundname"] = _fundName;
+                    switch (limit)
+                    {
+                        case "weight_limit":
+                            row["default"] = limits.fundLimits.weight_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.weight_limit.customValue;
+                            row["action"] = limits.fundLimits.weight_limit.action;
+                            break;
+                        case "stk_notional_pct_limit":
+                            row["default"] = limits.fundLimits.stk_notional_pct_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.stk_notional_pct_limit.customValue;
+                            row["action"] = limits.fundLimits.stk_notional_pct_limit.action;
+                            break;
+                        case "fut_notional_pct_limit":
+                            row["default"] = limits.fundLimits.fut_notional_pct_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.fut_notional_pct_limit.customValue;
+                            row["action"] = limits.fundLimits.fut_notional_pct_limit.action;
+                            break;
+                        case "liquidity_limit":
+                            row["default"] = limits.fundLimits.liquidity_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.liquidity_limit.customValue;
+                            row["action"] = limits.fundLimits.liquidity_limit.action;
+                            break;
+                        case "stk_leverage_limit":
+                            row["default"] = limits.fundLimits.stk_leverage_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.stk_leverage_limit.customValue;
+                            row["action"] = limits.fundLimits.stk_leverage_limit.action;
+                            row["live"] = limits.fundLimits.stk_leverage_limit.liveValue;
+                            break;
+                        case "fut_leverage_limit":
+                            row["default"] = limits.fundLimits.fut_leverage_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.fut_leverage_limit.customValue;
+                            row["action"] = limits.fundLimits.fut_leverage_limit.action;
+                            row["live"] = limits.fundLimits.fut_leverage_limit.liveValue;
+                            break;
+                        case "leverage_limit":
+                            row["default"] = limits.fundLimits.leverage_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.leverage_limit.customValue;
+                            row["action"] = limits.fundLimits.leverage_limit.action;
+                            row["live"] = limits.fundLimits.leverage_limit.liveValue;
+                            break;
+                        case "var_limit_factor":
+                            row["default"] = limits.fundLimits.var_limit_factor.defaultValue;
+                            row["custom"] = limits.fundLimits.var_limit_factor.customValue;
+                            row["action"] = limits.fundLimits.var_limit_factor.action;
+                            row["live"] = limits.fundLimits.var_limit_factor.liveValue;
+                            break;
+                        case "stress_limit_factor":
+                            row["default"] = limits.fundLimits.stress_limit_factor.defaultValue;
+                            row["custom"] = limits.fundLimits.stress_limit_factor.customValue;
+                            row["action"] = limits.fundLimits.stress_limit_factor.action;
+                            row["live"] = limits.fundLimits.stress_limit_factor.liveValue;
+                            break;
+                        case "drawdown_limit":
+                            row["default"] = limits.fundLimits.drawdown_limit.defaultValue;
+                            row["custom"] = limits.fundLimits.drawdown_limit.customValue;
+                            row["action"] = limits.fundLimits.drawdown_limit.action;
+                            row["live"] = limits.fundLimits.drawdown_limit.liveValue;
+                            break;
+                    }
+                    dtAll.Rows.Add(row);
                 }
-                dtAll.Rows.Add(row);
             }
             dgFundLimits.ItemsSource = dtAll.DefaultView;
 
@@ -146,19 +183,59 @@ namespace wpfTDX
             this.blnTickerLimitChanged = false;
             btnUpdateTickerLimits.Visibility = Visibility.Hidden;
             DataTable dtNotional = new DataTable();
+            dtNotional.Columns.Add("fundname");
+            dtNotional.Columns.Add("benchmarkname");
+            dtNotional.Columns.Add("tickername");
+            dtNotional.Columns.Add("Default");
+            dtNotional.Columns.Add("Custom");
+            dtNotional.Columns.Add("Live");
+            dtNotional.Columns.Add("Action");
+            dtNotional.Columns.Add("Frozen");
+            dtNotional.Columns.Add("Flagged", typeof(bool));
+            dtNotional.Columns.Add("Color");
             DataTable dtLiquidity = new DataTable();
             DataTable dtWeights = new DataTable();
-            this.FundName = cboFundName.SelectedValue.ToString();
-            //set up the ticker limits based on the fund
-            this.tickerLimits = new TickerLimits(this.FundName,this.limits.fundLimits, this.gbl_conn);
-            dtNotional = populateNotionalTickerLimits();
-            dtLiquidity = populateTickerLiquidityLimits();
-            dtWeights = populateTickerWeightLimits();
-            //dtMergedData = MergeDataTables(dtNotional, dtLiquidity, dtWeights);
-            //dgTickerLimits.ItemsSource = dtMergedData.DefaultView;
+            //this.FundName = cboFundName.SelectedValue.ToString();
+
+            for (int i = 0; i < this.FundsList.Count; i++)
+            {
+                //set up the ticker limits based on the fund
+                string _fundName = this.FundsList[i].ToString();
+                this.limits = new Limits(_fundName, this.gbl_conn);
+                this.tickerLimits = new TickerLimits(_fundName, this.limits.fundLimits, this.gbl_conn);
+                dtNotional.Merge(populateNotionalTickerLimits());
+
+                //dtLiquidity = populateTickerLiquidityLimits();
+                //dtWeights = populateTickerWeightLimits();
+
+                ////dgTickerLimits.ItemsSource = dtNotional.DefaultView;
+
+                //dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
+                //dgWeightLimits.ItemsSource = dtWeights.DefaultView;
+                // Hide the "color" & flagged column
+                var columnsToHide = new List<string> { "Color", "Flagged" };
+                // Hide specified columns
+                foreach (var columnName in columnsToHide)
+                {
+                    var column = dgLiquidityLimits.Columns.FirstOrDefault(c => c.Header.ToString() == columnName);
+                    if (column != null)
+                    {
+                        column.Visibility = Visibility.Collapsed;
+                    }
+                    column = dgWeightLimits.Columns.FirstOrDefault(c => c.Header.ToString() == columnName);
+                    if (column != null)
+                    {
+                        column.Visibility = Visibility.Collapsed;
+                    }
+                    column = dgTickerLimits.Columns.FirstOrDefault(c => c.Header.ToString() == columnName);
+                    if (column != null)
+                    {
+                        column.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
+            
             dgTickerLimits.ItemsSource = dtNotional.DefaultView;
-            dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
-            dgWeightLimits.ItemsSource = dtWeights.DefaultView;
         }
         
         private DataTable populateTickerWeightLimits()
@@ -172,6 +249,9 @@ namespace wpfTDX
                 dtWeight.Columns.Add("Custom");
                 dtWeight.Columns.Add("Live");
                 dtWeight.Columns.Add("Action");
+                dtWeight.Columns.Add("Frozen");
+                dtWeight.Columns.Add("Flagged", typeof(bool));
+                dtWeight.Columns.Add("Color");
                 foreach (var kvp in this.tickerLimits.dictOfTickers)
                 {
                     string tickername = kvp.Key.ToString();
@@ -181,13 +261,30 @@ namespace wpfTDX
                     TickerWeightLimits tickerLimits = this.tickerLimits.TickerWeightLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue!=null))
+                    bool? frozen = null;
+                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue!=null || tickerLimits.valid != null))
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
                         row["Action"] = tickerLimits.action;
+                        switch (tickerLimits.valid)
+                        {
+                            case true:
+                                frozen = false;
+                                break;
+                            case false:
+                                frozen = true;
+                                break;
+                            default:
+                                frozen = null;
+                                break;
+                        }
+                        row["Frozen"] = frozen;
                     }
                     row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
+                    bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits.liveValue, tickerLimits.customLimit, this.tickerLimits.fundLimit.liquidity_limit.defaultValue);
+                    row["Flagged"] = flagged;
+                    row["Color"] = SetColor(flagged, frozen);
                     dtWeight.Rows.Add(row);
 
                 }
@@ -210,6 +307,9 @@ namespace wpfTDX
                 dtLiquidity.Columns.Add("Custom");
                 dtLiquidity.Columns.Add("Live");
                 dtLiquidity.Columns.Add("Action");
+                dtLiquidity.Columns.Add("Frozen");
+                dtLiquidity.Columns.Add("Flagged",typeof(bool));
+                dtLiquidity.Columns.Add("Color");
                 foreach (var kvp in this.tickerLimits.dictOfTickers)
                 {
                     string tickername = kvp.Key.ToString();
@@ -219,19 +319,42 @@ namespace wpfTDX
                     TickerLiquidityLimits tickerLimits = this.tickerLimits.TickerLiquidityLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue !=null))
+                    bool? frozen = null ;
+                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue !=null || tickerLimits.valid !=null))
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
                         row["Action"] = tickerLimits.action;
+                        switch (tickerLimits.valid)
+                        {
+                            case true:
+                                frozen = false;
+                                break;
+                            case false:
+                                frozen = true;
+                                break;
+                            default:
+                                frozen = null;
+                                break;
+                        }
+                        row["Frozen"] = frozen;
                     }
 
                     row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
-
+                    bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits.liveValue, tickerLimits.customLimit, this.tickerLimits.fundLimit.liquidity_limit.defaultValue);
+                    row["Flagged"] = flagged;
+                    row["Color"] = SetColor(flagged, frozen);
                     dtLiquidity.Rows.Add(row);
 
                 }
-                return dtLiquidity;
+
+                var sortedRows = dtLiquidity.AsEnumerable()
+                   .OrderByDescending(r => r.Field<bool>("Flagged"))
+                   .ThenBy(r => r.Field<string>("tickername"))
+                   .CopyToDataTable();
+
+                return sortedRows;
+
             }
             catch (Exception ex)
             {
@@ -239,53 +362,110 @@ namespace wpfTDX
             }
         }
         
+        private string SetColor(bool flagged, bool? frozen)
+        {
+            string strOut = "";
+            switch(flagged)
+            {
+                case true:
+                    switch(frozen)
+                    {
+                        case null:
+                            strOut = "R";
+                            break;
+                        case true:
+                            strOut = "R";
+                            break;
+                        case false:
+                            strOut = "Y";
+                            break;
+                    }
+                    break;
+                default:
+                    strOut = "";
+                    break;
+            }
+            return strOut;
+        }
+        
         private DataTable populateNotionalTickerLimits()
         {
             try
             {
                 DataTable dtNotional = new DataTable();
+                dtNotional.Columns.Add("fundname");
                 dtNotional.Columns.Add("benchmarkname");
                 dtNotional.Columns.Add("tickername");
                 dtNotional.Columns.Add("Default");
                 dtNotional.Columns.Add("Custom");
                 dtNotional.Columns.Add("Live");
                 dtNotional.Columns.Add("Action");
+                dtNotional.Columns.Add("Frozen");
+                dtNotional.Columns.Add("Flagged", typeof(bool));
+                dtNotional.Columns.Add("Color");
                 //loop over all tickers in the benchmark
-                foreach(var kvp in this.tickerLimits.dictOfTickers)
+                foreach (var kvp in this.tickerLimits.dictOfTickers)
                 {
                     string tickername = kvp.Key.ToString();
                     string instrument = kvp.Value.ToString();
                     DataRow row = dtNotional.NewRow();
                     // Check if the tickername exists in the list of TickerNotionalLimits
                     TickerNotionalLimits tickerLimits = this.tickerLimits.TickerNotionalLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
+                    row["fundname"] = this.tickerLimits.fundName;
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
-                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue != null))
+                    bool? frozen = null;
+                    if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue != null || tickerLimits.valid != null))
                     {
                         row["Custom"] = tickerLimits.customLimit;
                         row["Live"] = tickerLimits.liveValue;
                         row["action"] = tickerLimits.action;
-                    }
-                    //else
-                    //{
-                        if(instrument=="equity" || instrument=="etf")
-                        {
-                            row["Default"] = this.tickerLimits.fundLimit.stk_notional_pct_limit.defaultValue;
-                        }
-                        else if(instrument == "future" )
-                        {
-                            row["Default"] = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue;
-                        }
-                        else if (instrument =="spread")
-                        {
-                            row["Default"] = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue * 1.5; //hard coding spread notionals to 1.5 times fund default
-                        }
-                    //}
-                    dtNotional.Rows.Add(row);
 
+                        switch(tickerLimits.valid)
+                        {
+                            case true:
+                                frozen = false;
+                                break;
+                            case false:
+                                frozen = true;
+                                break;
+                            default:
+                                frozen = null;
+                                break;
+                        }
+                        row["Frozen"] = frozen;
+                    }
+                    double? defaultValue = null;
+                    if(instrument=="equity" || instrument=="etf")
+                    {
+                        defaultValue = this.tickerLimits.fundLimit.stk_notional_pct_limit.defaultValue;
+                    }
+                    else if(instrument == "future" || instrument == "spread" || instrument == "swap")
+                    {
+                        defaultValue = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue;
+                    }
+                    row["Default"] = defaultValue;
+                    bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits.liveValue, tickerLimits.customLimit, defaultValue);
+                    row["Flagged"] = flagged;
+                    row["Color"] = SetColor(flagged, frozen);
+
+                    dtNotional.Rows.Add(row);
+                }
+              
+                if (dtNotional.Rows.Count > 0)
+                {
+                    var sortedRows = dtNotional.AsEnumerable()
+                       .OrderByDescending(r => r.Field<bool>("Flagged"))
+                       .ThenBy(r => r.Field<string>("tickername"))
+                       .CopyToDataTable();
+                    return sortedRows;
+                }
+                else
+                {
+                    return dtNotional;
                 }
 
-                return dtNotional;
+                
             }
             catch(Exception ex)
             {
@@ -656,7 +836,7 @@ namespace wpfTDX
                     break;
             }
             string stringParsedCustomValue = "";
-            if(customValue.ToString() == "" || customValue == null)
+            if(customValue == null || customValue.ToString() == "")
             {
                 stringParsedCustomValue = "NULL";
             }
@@ -678,20 +858,6 @@ namespace wpfTDX
                 this._db.execSQL_noresults(insertSQL, this.gbl_conn);
                 RefreshTickerLimits();
             }
-            //if (customValue != null)
-            //{
-            //double parsedOut;
-            //if (Double.TryParse(customValue.ToString(), out parsedOut))
-            //{
-            //    insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + parsedOut.ToString() + ",'" + action + "')";
-            //    this._db.execSQL_noresults(insertSQL, this.gbl_conn);
-            //    RefreshTickerLimits();
-            //}
-            //}
-            //else
-            //{
-            //    MessageBox.Show("No custom value was set", "update limits error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //}
         }
        
         private void UpdateTickerLimits(string tickername, string columnName, string columnValue,DataRowView rowView)

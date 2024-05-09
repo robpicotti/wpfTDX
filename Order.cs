@@ -83,7 +83,7 @@ namespace wpfTDX
             execSQL += "DROP TABLE #all ";
             execSQL += "IF OBJECT_ID('tempdb..#max_orders_key') IS NOT NULL ";
             execSQL += "DROP TABLE #max_orders_key  ";
-            execSQL += "SET @fundname ='ENBW-testing'  ";
+            execSQL += "SET @fundname ='" + fundname + "'";
             execSQL += "SELECT subaccountname INTO #subaccounts FROM subaccounts WHERE fundname  = @fundname ";
             execSQL += "SELECT " + out_columns + " into #all FROM orders ord CROSS APPLY string_split(ord.subaccounts,',') s JOIN #subaccounts sub ";
             execSQL += "ON s.value = sub.subaccountname WHERE ord.order_submit_time BETWEEN ";
@@ -99,7 +99,7 @@ namespace wpfTDX
             execSQL += "AND m.tad_order_id = a.tad_order_id ";
             execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED')";
             dtOut = DB.execSQL(execSQL, this.gbl_conn);
-
+            
             dtOut = SetApprovedFlag(dtOut);
             return dtOut;
         }
@@ -107,7 +107,7 @@ namespace wpfTDX
         {
             // Clone the structure of the input DataTable
             DataTable dtOutCloned = dtIn.Clone();
-
+            
             // Create a new DataColumn for the "Approved" column
             DataColumn approvedColumn = new DataColumn("Approved", typeof(bool));
             // Add the "Approved" column as the first column
@@ -119,6 +119,7 @@ namespace wpfTDX
             // Copy the data from the input DataTable to the cloned DataTable
             foreach (DataRow row in dtIn.Rows)
             {
+           
                 DataRow newRow = dtOutCloned.NewRow();
                 // Set the value for the "Approved" column based on the "status" field
                 string status = row["status"].ToString();
@@ -136,7 +137,7 @@ namespace wpfTDX
                 // Add the new row to the cloned DataTable
                 dtOutCloned.Rows.Add(newRow);
             }
-
+          
             return dtOutCloned;
         }
         /// <summary>

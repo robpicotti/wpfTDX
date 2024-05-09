@@ -4,94 +4,109 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:wpfTDX"
-             mc:Ignorable="d" d:DesignWidth="800" Height="631.901">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+             mc:Ignorable="d" 
+             d:DesignWidth="1500" Height="500">
+    <StackPanel Margin="2">
+        
+        <StackPanel  Margin="5">
+            <Button x:Name="cmdClose" 
+                            Click="cmdClose_Click" 
+                            Content="X" 
+                            FontWeight="Bold" 
+                            Width="40"
+                            HorizontalAlignment="Right" 
+                            VerticalAlignment="Top"
+                            Background="LightGray"/>
+        </StackPanel>
+        <StackPanel Grid.Column="0" Margin="5">
+            <TextBlock Text="fundname" FontWeight="Bold" Margin="5"/>
+            <ComboBox x:Name="cboFundName" 
+                              SelectionChanged="cboFundName_SelectionChanged"
+                              Margin="5" HorizontalAlignment="Left" 
+                              Width="150"/>
+        </StackPanel>
 
-        <Border Grid.Row="0" BorderBrush="Black" Background="Orange" BorderThickness="1" Padding="5" Margin="5">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="5">
-                    <TextBlock Text="fundname" FontWeight="Bold" Margin="5"/>
-                    <ComboBox x:Name="cboFundName" 
-                              SelectionChanged="cboFundName_SelectionChanged"
-                              Margin="5" HorizontalAlignment="Left" 
-                              Width="150"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="5">
-                    <Button x:Name="cmdClose" 
-                            Click="cmdClose_Click" 
-                            Content="X" 
-                            FontWeight="Bold" 
-                            Width="50"
-                            HorizontalAlignment="Right" Background="LightGray"/>
-                </StackPanel>
             </Grid>
-        </Border>
-
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+            <!--</Border>-->
+            <ScrollViewer  VerticalScrollBarVisibility="Auto">
+                <Border BorderBrush="Black" BorderThickness="1"  Background="Orange"  Padding="5" Margin="8">
                 <TabControl>
-                    <TabItem Header="Fund Limits" FontWeight="Bold">
-                        <StackPanel>
-                            <Button x:Name="btnUpdateCustom" Click="btnUpdateCustom_Click" 
+                        <TabItem Header="Fund Limits" FontWeight="Bold">
+                            <StackPanel>
+                                <Button x:Name="btnUpdateCustom" Click="btnUpdateCustom_Click" 
                                     Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
                                     Visibility="Hidden"
                                     FontWeight="Bold"/>
-                            <DataGrid x:Name="dgFundLimits" AutoGenerateColumns="False" Margin="5" CellEditEnding="dgFundLimits_CellEditEnding">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Metric" Binding="{Binding metric}"/>
-                                    <DataGridTextColumn Header="Default" Binding="{Binding default}"/>
-                                    <DataGridTextColumn Header="Custom" Binding="{Binding custom}"/>
-                                    <DataGridComboBoxColumn Header="Action" SelectedItemBinding="{Binding action}">
-                                        <DataGridComboBoxColumn.ElementStyle>
-                                            <Style TargetType="ComboBox">
-                                                <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged"/>
-                                                <Setter Property="ItemsSource">
-                                                    <Setter.Value>
-                                                        <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                            <Binding Path="action" />
-                                                        </MultiBinding>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </DataGridComboBoxColumn.ElementStyle>
-                                        <DataGridComboBoxColumn.EditingElementStyle>
-                                            <Style TargetType="ComboBox">
-                                                <Setter Property="ItemsSource">
-                                                    <Setter.Value>
-                                                        <MultiBinding Converter="{local:ActionItemsConverter}">
-                                                            <Binding Path="action" />
-                                                        </MultiBinding>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </DataGridComboBoxColumn.EditingElementStyle>
-                                    </DataGridComboBoxColumn>
-                                    <DataGridTextColumn Header="Live" Binding="{Binding live}"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </StackPanel>
+                                <DataGrid 
+                                    x:Name="dgFundLimits" 
+                                    AutoGenerateColumns="False" 
+                                    Height="400"
+                                      ScrollViewer.CanContentScroll="True" 
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                    Margin="5" CellEditEnding="dgFundLimits_CellEditEnding">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="FundName" Binding="{Binding fundname}"/>
+                                        <DataGridTextColumn Header="Metric" Binding="{Binding metric}"/>
+                                        <DataGridTextColumn Header="Default" Binding="{Binding default}"/>
+                                        <DataGridTextColumn Header="Custom" Binding="{Binding custom}"/>
+                                        <DataGridComboBoxColumn Header="Action" SelectedItemBinding="{Binding action}">
+                                            <DataGridComboBoxColumn.ElementStyle>
+                                                <Style TargetType="ComboBox">
+                                                    <EventSetter Event="SelectionChanged" Handler="ComboBox_SelectionChanged"/>
+                                                    <Setter Property="ItemsSource">
+                                                        <Setter.Value>
+                                                            <MultiBinding Converter="{local:ActionItemsConverter}">
+                                                                <Binding Path="action" />
+                                                            </MultiBinding>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </DataGridComboBoxColumn.ElementStyle>
+                                            <DataGridComboBoxColumn.EditingElementStyle>
+                                                <Style TargetType="ComboBox">
+                                                    <Setter Property="ItemsSource">
+                                                        <Setter.Value>
+                                                            <MultiBinding Converter="{local:ActionItemsConverter}">
+                                                                <Binding Path="action" />
+                                                            </MultiBinding>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </DataGridComboBoxColumn.EditingElementStyle>
+                                        </DataGridComboBoxColumn>
+                                        <DataGridTextColumn Header="Live" Binding="{Binding live}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        <!--</ScrollViewer>-->
                     </TabItem>
                     <TabItem Header="Notional Limits" FontWeight="Bold">
-                        <StackPanel>
+                            <!--<ScrollViewer VerticalScrollBarVisibility="Auto">-->
+                                <StackPanel>
                             <Button x:Name="btnUpdateTickerLimits" Click="btnUpdateTickerLimits_Click"
                                     Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
                                     Visibility="Hidden"
                                     FontWeight="Bold" />
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                            <!--<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">-->
                                 <DataGrid x:Name="dgTickerLimits"  AutoGenerateColumns="False" Margin="5" 
+                                          Height="200"
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                       CellEditEnding="dgTickerLimits_CellEditEnding">
                                     <DataGrid.Columns>
+                                        <DataGridTextColumn Header="fundname" Binding="{Binding fundname}"/>
                                         <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
                                         <DataGridTextColumn Header="tickername" Binding="{Binding tickername}"/>
                                         <!--Notional data-->
@@ -123,13 +138,30 @@
                                             </DataGridComboBoxColumn.EditingElementStyle>
                                         </DataGridComboBoxColumn>
                                         <DataGridTextColumn Header="Live" Binding="{Binding Live}"/>
+                                        <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
+                                        <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}"/>
+                                        <DataGridTextColumn Header="Color" Binding="{Binding Color}"/>
                                     </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=Color}" Value="Y">
+                                                    <Setter Property="Background" Value="Yellow"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Color}" Value="R">
+                                                    <Setter Property="Background" Value="Red"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
                                 </DataGrid>
-                            </ScrollViewer>
+                            <!--</ScrollViewer>-->
                         </StackPanel>
-                    </TabItem>
+                            <!--</ScrollViewer>-->
+                        </TabItem>
                     <TabItem Header="Liquidity Limits" FontWeight="Bold">
                         <DataGrid x:Name="dgLiquidityLimits"  AutoGenerateColumns="False" Margin="5" 
+                                      Height="200"
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -166,11 +198,27 @@
                                     </DataGridComboBoxColumn.EditingElementStyle>
                                 </DataGridComboBoxColumn>
                                 <DataGridTextColumn Header="Live" Binding="{Binding Live}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
+                                <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}"/>
+                                <DataGridTextColumn Header="Color" Binding="{Binding Color}"/>
+                                </DataGrid.Columns>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=Color}" Value="Y">
+                                                <Setter Property="Background" Value="Yellow"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=Color}" Value="R">
+                                                <Setter Property="Background" Value="Red"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                            </DataGrid>
                     </TabItem>
                     <TabItem Header="Weight Limits" FontWeight="Bold">
                         <DataGrid x:Name="dgWeightLimits"  AutoGenerateColumns="False" Margin="5" 
+                                        Height="200"
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -207,11 +255,27 @@
                                     </DataGridComboBoxColumn.EditingElementStyle>
                                 </DataGridComboBoxColumn>
                                 <DataGridTextColumn Header="Live" Binding="{Binding Live}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
+                                <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}"/>
+                                <DataGridTextColumn Header="Color" Binding="{Binding Color}"/>
+                                </DataGrid.Columns>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=Color}" Value="Y">
+                                                <Setter Property="Background" Value="Yellow"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=Color}" Value="R">
+                                                <Setter Property="Background" Value="Red"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                            </DataGrid>
                     </TabItem>
                 </TabControl>
             </Border>
         </ScrollViewer>
     </Grid>
+    </StackPanel>
 </UserControl>

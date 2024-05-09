@@ -138,6 +138,7 @@ namespace wpfTDX
 
                     }
                 }
+                MessageBox.Show("Trades approved", "EMS", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch(Exception ex)
             {

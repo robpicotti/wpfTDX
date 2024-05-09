@@ -109,6 +109,7 @@
     <Compile Include="ucTickerFreezer.xaml.cs">
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Util.cs" />
     <Compile Include="winFreezeTadId.xaml.cs">
       <DependentUpon>winFreezeTadId.xaml</DependentUpon>
     </Compile>

@@ -307,6 +307,7 @@ namespace TDX
         {
             string sql_text = "SELECT DISTINCT fundname from funds WHERE fundgroupname NOT in ('benchmarks', 'market_neutral') order by fundname ";
             DataTable dt = execSQL(sql_text, conn);
+
             return dt;
         }
         public DataTable get_accounts(SqlConnection conn)
