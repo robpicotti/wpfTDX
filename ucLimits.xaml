@@ -39,14 +39,14 @@
             </Grid>
             <!--</Border>-->
             <ScrollViewer  VerticalScrollBarVisibility="Auto">
-                <Border BorderBrush="Black" BorderThickness="1"  Background="Orange"  Padding="5" Margin="8">
-                <TabControl>
+                <Border BorderBrush="Black" BorderThickness="1"  Background="Orange"  Padding="5" Margin="8" >
+                <TabControl >
                         <TabItem Header="Fund Limits" FontWeight="Bold">
                             <StackPanel>
-                                <Button x:Name="btnUpdateCustom" Click="btnUpdateCustom_Click" 
+                                <!--<Button x:Name="btnUpdateCustom" 
                                     Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
                                     Visibility="Hidden"
-                                    FontWeight="Bold"/>
+                                    FontWeight="Bold"/>-->
                                 <DataGrid 
                                     x:Name="dgFundLimits" 
                                     AutoGenerateColumns="False" 
@@ -86,7 +86,21 @@
                                             </DataGridComboBoxColumn.EditingElementStyle>
                                         </DataGridComboBoxColumn>
                                         <DataGridTextColumn Header="Live" Binding="{Binding live}"/>
+                                        <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
+                                        <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
                                     </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=Color}" Value="Y">
+                                                    <Setter Property="Background" Value="Yellow"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Color}" Value="R">
+                                                    <Setter Property="Background" Value="Red"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
                                 </DataGrid>
                             </StackPanel>
                         <!--</ScrollViewer>-->
@@ -94,13 +108,13 @@
                     <TabItem Header="Notional Limits" FontWeight="Bold">
                             <!--<ScrollViewer VerticalScrollBarVisibility="Auto">-->
                                 <StackPanel>
-                            <Button x:Name="btnUpdateTickerLimits" Click="btnUpdateTickerLimits_Click"
+                            <!--<Button x:Name="btnUpdateTickerLimits" Click="btnUpdateTickerLimits_Click"
                                     Content="update custom value" Padding="5" HorizontalAlignment="Left" Margin="5" 
                                     Visibility="Hidden"
-                                    FontWeight="Bold" />
+                                    FontWeight="Bold" />-->
                             <!--<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">-->
                                 <DataGrid x:Name="dgTickerLimits"  AutoGenerateColumns="False" Margin="5" 
-                                          Height="200"
+                                          Height="400"
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -139,8 +153,8 @@
                                         </DataGridComboBoxColumn>
                                         <DataGridTextColumn Header="Live" Binding="{Binding Live}"/>
                                         <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
-                                        <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}"/>
-                                        <DataGridTextColumn Header="Color" Binding="{Binding Color}"/>
+                                        <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
+                                        <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
                                     </DataGrid.Columns>
                                     <DataGrid.RowStyle>
                                         <Style TargetType="DataGridRow">
@@ -161,13 +175,14 @@
                         </TabItem>
                     <TabItem Header="Liquidity Limits" FontWeight="Bold">
                         <DataGrid x:Name="dgLiquidityLimits"  AutoGenerateColumns="False" Margin="5" 
-                                      Height="200"
+                                      Height="400"
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                       CellEditEnding="dgLiquidityLimits_CellEditEnding">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
+                                    <DataGridTextColumn Header="fundname" Binding="{Binding fundname}"/>
+                                    <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
                                 <DataGridTextColumn Header="tickername" Binding="{Binding tickername}"/>
                                 <!--Notional data-->
                                 <DataGridTextColumn Header="Default" Binding="{Binding Default}"/>
@@ -199,8 +214,8 @@
                                 </DataGridComboBoxColumn>
                                 <DataGridTextColumn Header="Live" Binding="{Binding Live}"/>
                                 <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
-                                <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}"/>
-                                <DataGridTextColumn Header="Color" Binding="{Binding Color}"/>
+                                <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
+                                <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
                                 </DataGrid.Columns>
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
@@ -224,7 +239,8 @@
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                       CellEditEnding="dgWeightLimits_CellEditEnding">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
+                                    <DataGridTextColumn Header="fundname" Binding="{Binding fundname}"/>
+                                    <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
                                 <DataGridTextColumn Header="tickername" Binding="{Binding tickername}"/>
                                 <!--Notional data-->
                                 <DataGridTextColumn Header="Default" Binding="{Binding Default}"/>
@@ -256,8 +272,8 @@
                                 </DataGridComboBoxColumn>
                                 <DataGridTextColumn Header="Live" Binding="{Binding Live}"/>
                                 <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
-                                <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}"/>
-                                <DataGridTextColumn Header="Color" Binding="{Binding Color}"/>
+                                <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
+                                <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
                                 </DataGrid.Columns>
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">

@@ -70,6 +70,7 @@ namespace wpfTDX
         public bool? valid { get; set; }
         public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
+    
     public class TickerWeightLimits
     {
         public double? customLimit { get; set; }
@@ -391,7 +392,7 @@ namespace wpfTDX
     
     public class FundLimits
     {
-        private string fundname { get; set; }
+        public string fundname { get; set; }
         public StockNotionalPctLimit stk_notional_pct_limit { get; set; }
         public FuturesNotionalPctLimit fut_notional_pct_limit { get; set; }
         public StockLeverageLimit stk_leverage_limit { get; set; }
@@ -469,6 +470,7 @@ namespace wpfTDX
                 throw new Exception("ProcessLiveFundValues error: " + ex.Message);
             }
         }
+        
         private double? GetMaxLiveValue(DataTable dtIn, string columnName)
         {
             double parsedOut;
@@ -497,6 +499,7 @@ namespace wpfTDX
         /// process default fund limits from input datatable of data that comes from database
         /// </summary>
         /// <param name="dtFundData"></param>
+        
         private void ProcessDefaultFundLimits(DataTable dtFundData)
         {
             try
@@ -561,6 +564,7 @@ namespace wpfTDX
                 throw new Exception("ProcessDefaultFundLimits error: " + ex.Message);
             }
         }
+        
         public ActionType GetActionType(string action)
         {
             switch( action)
@@ -689,75 +693,75 @@ namespace wpfTDX
             }
         }
      
-        public void UpdateFundLimits()
+        public void UpdateFundLimits(string fundname)
         {
             string execSQL = "";
             if(this.stk_leverage_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("stk_leverage_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname,"stk_leverage_limit",
                     this.stk_leverage_limit.customValue,
                     this.stk_leverage_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.weight_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("weight_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "weight_limit",
                     this.weight_limit.customValue,
                     this.weight_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.stk_notional_pct_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("stk_notional_pct_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "stk_notional_pct_limit",
                     this.stk_notional_pct_limit.customValue,
                     this.stk_notional_pct_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.fut_notional_pct_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("fut_notional_pct_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "fut_notional_pct_limit",
                     this.fut_notional_pct_limit.customValue,
                     this.fut_notional_pct_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.liquidity_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("liquidity_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "liquidity_limit",
                     this.liquidity_limit.customValue,
                     this.liquidity_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.fut_leverage_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("fut_leverage_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "fut_leverage_limit",
                     this.fut_leverage_limit.customValue,
                     this.fut_leverage_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.leverage_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("leverage_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "leverage_limit",
                     this.leverage_limit.customValue,
                     this.leverage_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.var_limit_factor.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("var_limit_factor",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "var_limit_factor",
                     this.var_limit_factor.customValue,
                     this.var_limit_factor.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.stress_limit_factor.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("stress_limit_factor",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "stress_limit_factor",
                     this.stress_limit_factor.customValue,
                     this.stress_limit_factor.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
             }
             if (this.drawdown_limit.updated)
             {
-                execSQL = InsertFundLimitsSQLStatement("drawdown_limit",
+                execSQL = InsertFundLimitsSQLStatement(fundname, "drawdown_limit",
                     this.drawdown_limit.customValue,
                     this.drawdown_limit.action);
                 DB.execSQL_noresults(execSQL, this.gbl_conn);
@@ -766,7 +770,7 @@ namespace wpfTDX
             this.ResetUpdated();
         }
 
-        private string InsertFundLimitsSQLStatement(string metric,  double? customValue, ActionType action )
+        private string InsertFundLimitsSQLStatement(string fundname,string metric,  double? customValue, ActionType action )
         {
             string now = DateTime.UtcNow.ToString("dd-MMM-yyyy HH:mm:ss");
             Table tbl = new Table("fund_limits", this.gbl_conn, select_data: false);
@@ -780,7 +784,7 @@ namespace wpfTDX
             string customValueString = customValue?.ToString();
             string actionString = (customValueString is null) ? "NULL" : "'" + action.ToString() + "'";
 
-            string valuesSQL = "VALUES('" + now + "','" + this.fundname + "',"
+            string valuesSQL = "VALUES('" + now + "','" + fundname + "',"
                               + "'" + metric + "'," + (customValueString ?? "NULL") + "," + actionString + ")";
 
             return insertSQL + valuesSQL;
@@ -794,6 +798,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class FuturesLeverageLimit
@@ -803,6 +809,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class LeverageLimit
@@ -812,6 +820,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class VarLimitFactor
@@ -821,6 +831,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class StressLimitFactor
@@ -830,6 +842,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class DrawDownLimit
@@ -839,6 +853,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class StockNotionalPctLimit
@@ -858,7 +874,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
-        public bool flagged { get; set; }//used for highlighting cells where live limits are over custom and or overriden
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class LiquidityLimit
@@ -868,7 +885,8 @@ namespace wpfTDX
         public ActionType action { get; set; }
         public double? liveValue { get; set; }
         public bool updated { get; set; }
-        public bool flagged { get; set; }//used for highlighting cells where live limits are over custom and or overriden
+        public bool? valid { get; set; }
+        public bool flagged { get; set; } //used for highlighting cells where live limits are over custom and or overriden
     }
     
     public class WeightLimit

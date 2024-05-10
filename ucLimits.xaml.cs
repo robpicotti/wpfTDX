@@ -29,14 +29,13 @@ namespace wpfTDX
         DataTable dtFunds;
         DataTable dtMergedData;
         Limits limits;
-        string FundName;
         List<string> FundsList = new List<string>(); //this will contain the list of funds you want to query
         TickerLimits tickerLimits;
         bool blnValueChanged = false; 
         bool blnTickerLimitChanged = false;
         string ALL_FUNDS = "<* ALL FUNDS *>";
         TDX.db _db = new TDX.db();
-        List<string> ListOfFundNames; //contains full fund names list
+        public List<string> ListOfFundNames =  new List<string>(); //contains full fund names list
 
         public ucLimits(SqlConnection conn)
         {
@@ -53,7 +52,7 @@ namespace wpfTDX
                 .Where(row => row.Field<string>("fundname") != ALL_FUNDS);
 
             // Project fund names into a list
-            ListOfFundNames = filteredRows.Select(row => row.Field<string>("fundname")).ToList();
+            this.ListOfFundNames = filteredRows.Select(row => row.Field<string>("fundname")).ToList();
 
             // add "all funds" to the dtFunds table
             DataRow newrow = dtFunds.NewRow();
@@ -71,26 +70,38 @@ namespace wpfTDX
                 cboFundName.Items.Add(row["fundname"].ToString());
             }
         }
+        
         private void cboFundName_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            this.FundsList.Clear();
-            RefreshFundLimits();
-            RefreshTickerLimits();
-
+            try
+            {
+                Cursor = Cursors.Wait;
+                this.FundsList.Clear();
+                RefreshFundLimits();
+                RefreshTickerLimits();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Refresh funds", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
         }
         private void RefreshFundLimits()
         {
             this.blnValueChanged = false;
-           
-            btnUpdateCustom.Visibility = Visibility.Hidden;
-            this.FundName = cboFundName.SelectedValue.ToString();
-            if(this.FundName != ALL_FUNDS)
+            this.FundsList.Clear();
+            //btnUpdateCustom.Visibility = Visibility.Hidden;
+            string FundName = cboFundName.SelectedValue.ToString();
+            if(FundName != ALL_FUNDS)
             {
-                this.FundsList.Add(this.FundName);
+                this.FundsList.Add(FundName);
             }
             else
             {
-                this.FundsList = this.ListOfFundNames;
+                this.FundsList = new List<string>(this.ListOfFundNames);
             }
 
             DataTable dtAll = new DataTable();
@@ -100,6 +111,8 @@ namespace wpfTDX
             dtAll.Columns.Add("custom");
             dtAll.Columns.Add("action");
             dtAll.Columns.Add("live");
+            dtAll.Columns.Add("Flagged",typeof(bool));
+            dtAll.Columns.Add("Color");
 
             for (int x = 0; x < this.FundsList.Count; x++)
             {
@@ -171,8 +184,35 @@ namespace wpfTDX
                             row["live"] = limits.fundLimits.drawdown_limit.liveValue;
                             break;
                     }
+                    double? live = null;
+                    double? custom = null;
+                    double? _default = null;
+                    if (double.TryParse(row["live"].ToString(), out double result_live))
+                    {
+                        live = result_live;
+                    }
+                    if (double.TryParse(row["custom"].ToString(), out double result_custom))
+                    {
+                        custom = result_custom;
+                    }
+                    if (double.TryParse(row["default"].ToString(), out double result_default))
+                    {
+                        _default = result_default;
+                    }
+                    bool flagged = TickerLimits.GetFlaggedStatus(live, custom, _default);
+                    row["Flagged"] = flagged;
+                    row["Color"] = SetColor(flagged, null);
                     dtAll.Rows.Add(row);
                 }
+            }
+            if (dtAll.Rows.Count > 0)
+            {
+                var sortedRows_weight = dtAll.AsEnumerable()
+                .OrderByDescending(r => r.Field<bool>("Flagged"))
+                .ThenBy(r => r.Field<string>("fundname"))
+                .ThenBy(r => r.Field<string>("metric"))
+                .CopyToDataTable();
+                dtAll = sortedRows_weight.Copy();
             }
             dgFundLimits.ItemsSource = dtAll.DefaultView;
 
@@ -181,7 +221,7 @@ namespace wpfTDX
         private void RefreshTickerLimits()
         {
             this.blnTickerLimitChanged = false;
-            btnUpdateTickerLimits.Visibility = Visibility.Hidden;
+            //btnUpdateTickerLimits.Visibility = Visibility.Hidden;
             DataTable dtNotional = new DataTable();
             dtNotional.Columns.Add("fundname");
             dtNotional.Columns.Add("benchmarkname");
@@ -195,7 +235,6 @@ namespace wpfTDX
             dtNotional.Columns.Add("Color");
             DataTable dtLiquidity = new DataTable();
             DataTable dtWeights = new DataTable();
-            //this.FundName = cboFundName.SelectedValue.ToString();
 
             for (int i = 0; i < this.FundsList.Count; i++)
             {
@@ -204,14 +243,8 @@ namespace wpfTDX
                 this.limits = new Limits(_fundName, this.gbl_conn);
                 this.tickerLimits = new TickerLimits(_fundName, this.limits.fundLimits, this.gbl_conn);
                 dtNotional.Merge(populateNotionalTickerLimits());
-
-                //dtLiquidity = populateTickerLiquidityLimits();
-                //dtWeights = populateTickerWeightLimits();
-
-                ////dgTickerLimits.ItemsSource = dtNotional.DefaultView;
-
-                //dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
-                //dgWeightLimits.ItemsSource = dtWeights.DefaultView;
+                dtLiquidity.Merge(populateTickerLiquidityLimits());
+                dtWeights.Merge(populateTickerWeightLimits());
                 // Hide the "color" & flagged column
                 var columnsToHide = new List<string> { "Color", "Flagged" };
                 // Hide specified columns
@@ -234,8 +267,36 @@ namespace wpfTDX
                     }
                 }
             }
-            
+            if (dtNotional.Rows.Count > 0)
+            {
+                var sortedRows = dtNotional.AsEnumerable()
+                   .OrderByDescending(r => r.Field<bool>("Flagged"))
+                   .ThenBy(r => r.Field<string>("fundname"))
+                   .ThenBy(r => r.Field<string>("tickername"))
+                   .CopyToDataTable();
+                dtNotional = sortedRows.Copy();
+            }
+            if(dtLiquidity.Rows.Count >0)
+            {
+                var sortedRows_Liq = dtLiquidity.AsEnumerable()
+                    .OrderByDescending(r => r.Field<bool>("Flagged"))
+                    .ThenBy(r => r.Field<string>("fundname"))
+                    .ThenBy(r => r.Field<string>("tickername"))
+                    .CopyToDataTable();
+                dtLiquidity = sortedRows_Liq.Copy();
+            }
+            if(dtWeights.Rows.Count >0)
+            {
+                var sortedRows_weight = dtWeights.AsEnumerable()
+                .OrderByDescending(r => r.Field<bool>("Flagged"))
+                .ThenBy(r => r.Field<string>("fundname"))
+                .ThenBy(r => r.Field<string>("tickername"))
+                .CopyToDataTable();
+                dtWeights = sortedRows_weight.Copy();
+            }
             dgTickerLimits.ItemsSource = dtNotional.DefaultView;
+            dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
+            dgWeightLimits.ItemsSource = dtWeights.DefaultView;
         }
         
         private DataTable populateTickerWeightLimits()
@@ -243,6 +304,7 @@ namespace wpfTDX
             try
             {
                 DataTable dtWeight = new DataTable();
+                dtWeight.Columns.Add("fundname");
                 dtWeight.Columns.Add("benchmarkname");
                 dtWeight.Columns.Add("tickername");
                 dtWeight.Columns.Add("Default");
@@ -259,6 +321,7 @@ namespace wpfTDX
                     DataRow row = dtWeight.NewRow();
                     // Check if the tickername exists in the list of TickerNotionalLimits
                     TickerWeightLimits tickerLimits = this.tickerLimits.TickerWeightLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
+                    row["fundname"] = this.tickerLimits.fundName;
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
                     bool? frozen = null;
@@ -301,6 +364,7 @@ namespace wpfTDX
             try
             {
                 DataTable dtLiquidity = new DataTable();
+                dtLiquidity.Columns.Add("fundname");
                 dtLiquidity.Columns.Add("benchmarkname");
                 dtLiquidity.Columns.Add("tickername");
                 dtLiquidity.Columns.Add("Default");
@@ -317,6 +381,7 @@ namespace wpfTDX
                     DataRow row = dtLiquidity.NewRow();
                     // Check if the tickername exists in the list of TickerNotionalLimits
                     TickerLiquidityLimits tickerLimits = this.tickerLimits.TickerLiquidityLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
+                    row["fundname"] = this.tickerLimits.fundName;
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
                     bool? frozen = null ;
@@ -347,14 +412,7 @@ namespace wpfTDX
                     dtLiquidity.Rows.Add(row);
 
                 }
-
-                var sortedRows = dtLiquidity.AsEnumerable()
-                   .OrderByDescending(r => r.Field<bool>("Flagged"))
-                   .ThenBy(r => r.Field<string>("tickername"))
-                   .CopyToDataTable();
-
-                return sortedRows;
-
+                return dtLiquidity;
             }
             catch (Exception ex)
             {
@@ -451,21 +509,7 @@ namespace wpfTDX
 
                     dtNotional.Rows.Add(row);
                 }
-              
-                if (dtNotional.Rows.Count > 0)
-                {
-                    var sortedRows = dtNotional.AsEnumerable()
-                       .OrderByDescending(r => r.Field<bool>("Flagged"))
-                       .ThenBy(r => r.Field<string>("tickername"))
-                       .CopyToDataTable();
-                    return sortedRows;
-                }
-                else
-                {
-                    return dtNotional;
-                }
-
-                
+                return dtNotional;                
             }
             catch(Exception ex)
             {
@@ -550,31 +594,29 @@ namespace wpfTDX
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void btnUpdateCustom_Click(object sender, RoutedEventArgs e)
+        private void UpdateFundLimits()
         {
-            if (this.blnValueChanged)
+            try
             {
-                try
-                {
-                    this.limits.fundLimits.UpdateFundLimits();
-                    RefreshFundLimits();
-                    MessageBox.Show("fund_limits updated", "fund limits", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch(Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "update fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                this.limits.fundLimits.UpdateFundLimits(this.limits.fundLimits.fundname);
+                RefreshFundLimits();
+                MessageBox.Show("fund_limits updated", "fund limits", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "update fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
+        
         private void dgFundLimits_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             try
             {
+                Cursor = Cursors.Wait;
                 if (e.EditAction == DataGridEditAction.Commit)
                 {
                     this.blnValueChanged = true;
-                    btnUpdateCustom.Visibility = Visibility.Visible;
+                    //btnUpdateCustom.Visibility = Visibility.Visible;
                     // Get the edited cell's row index
                     int rowIndex = e.Row.GetIndex();
 
@@ -582,11 +624,12 @@ namespace wpfTDX
                     if (dgFundLimits.Items[rowIndex] is DataRowView rowView)
                     {
                         // Access the first column's value
-                        var valueOfMetric = rowView[0]; // not editable
-                        var valueOfDefault = rowView[1];
-                        var valueOfCustom = rowView[2];
-                        var valueOfLive = rowView[4];//not editable 
-                        var valueOfAction = rowView[3];
+                        var valueOfFund = rowView[0];
+                        var valueOfMetric = rowView[1]; // not editable
+                        var valueOfDefault = rowView[2];
+                        var valueOfCustom = rowView[3];
+                        var valueOfLive = rowView[5];//not editable 
+                        var valueOfAction = rowView[4];
                         var editedValueAfter = "";
                         //check what the action value was after selection
                         if (e.EditingElement is ComboBox)
@@ -596,22 +639,35 @@ namespace wpfTDX
                                 editedValueAfter = (e.EditingElement as ComboBox).SelectedItem.ToString();
                             }
                         }
+                        
                         else if (e.EditingElement is TextBox)
                         {
                             editedValueAfter = (e.EditingElement as TextBox).Text;
                         }
-                        
+
                         // Convert to string if necessary
+                        string stringValueOfFund = valueOfFund.ToString();
                         string stringValueOfMetric = valueOfMetric.ToString();
                         string stringValueOfDefault = valueOfDefault.ToString();
                         string stringValueOfCustom = (editedValueAfter.ToString() !="" ? editedValueAfter.ToString() : "NULL") ;
                         string stringValueOfAction = editedValueAfter.ToString();
-                        if (e.Column.DisplayIndex == 2)
+                        //create a new instance of the fundlimit object seeing that you are updating it
+                        this.limits.fundLimits = new FundLimits(stringValueOfFund, this.gbl_conn);
+
+                        if (e.Column.DisplayIndex == 3)
                         {
                             double? parsedValue;
                             if (double.TryParse(stringValueOfCustom, out double result))
                             {
                                 parsedValue = result;
+                                if(valueOfAction.ToString()=="Default")
+                                {
+                                    stringValueOfAction = "Hard";
+                                }
+                                else
+                                {
+                                    stringValueOfAction = valueOfAction.ToString();
+                                }
                             }
                             else
                             {
@@ -622,117 +678,155 @@ namespace wpfTDX
                                 case "weight_limit":
                                     this.limits.fundLimits.weight_limit.customValue = parsedValue;
                                     this.limits.fundLimits.weight_limit.updated = true;
+                                    this.limits.fundLimits.weight_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "stk_notional_pct_limit":
                                     this.limits.fundLimits.stk_notional_pct_limit.customValue = parsedValue;
                                     this.limits.fundLimits.stk_notional_pct_limit.updated = true;
+                                    this.limits.fundLimits.stk_notional_pct_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "fut_notional_pct_limit":
                                     this.limits.fundLimits.fut_notional_pct_limit.customValue = parsedValue;
                                     this.limits.fundLimits.fut_notional_pct_limit.updated = true;
+                                    this.limits.fundLimits.fut_notional_pct_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "liquidity_limit":
                                     this.limits.fundLimits.liquidity_limit.customValue = parsedValue;
                                     this.limits.fundLimits.liquidity_limit.updated = true;
+                                    this.limits.fundLimits.liquidity_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "stk_leverage_limit":
                                     this.limits.fundLimits.stk_leverage_limit.customValue = parsedValue;
                                     this.limits.fundLimits.stk_leverage_limit.updated = true;
+                                    this.limits.fundLimits.stk_leverage_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "fut_leverage_limit":
                                     this.limits.fundLimits.fut_leverage_limit.customValue = parsedValue;
                                     this.limits.fundLimits.fut_leverage_limit.updated = true;
+                                    this.limits.fundLimits.fut_leverage_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "leverage_limit":
                                     this.limits.fundLimits.leverage_limit.customValue = parsedValue;
                                     this.limits.fundLimits.leverage_limit.updated = true;
+                                    this.limits.fundLimits.leverage_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "var_limit_factor":
                                     this.limits.fundLimits.var_limit_factor.customValue = parsedValue;
                                     this.limits.fundLimits.var_limit_factor.updated = true;
+                                    this.limits.fundLimits.var_limit_factor.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "stress_limit_factor":
                                     this.limits.fundLimits.stress_limit_factor.customValue = parsedValue;
                                     this.limits.fundLimits.stress_limit_factor.updated = true;
+                                    this.limits.fundLimits.stress_limit_factor.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                                 case "drawdown_limit":
                                     this.limits.fundLimits.drawdown_limit.customValue = parsedValue;
                                     this.limits.fundLimits.drawdown_limit.updated = true;
+                                    this.limits.fundLimits.drawdown_limit.action = this.limits.fundLimits.GetActionType(stringValueOfAction);
                                     break;
                             }
                         }
-                        else if(e.Column.DisplayIndex ==3)
+                        
+                        else if(e.Column.DisplayIndex ==4)
                         {
                             ActionType actionType = this.limits.fundLimits.GetActionType(stringValueOfAction);
+                            double? parsedCustomValue = null;
+                            if (double.TryParse(valueOfCustom.ToString(), out double result))
+                            {
+                                if(actionType != ActionType.Default)
+                                {
+                                    parsedCustomValue = result;
+                                }
+                            }
+
                             switch (stringValueOfMetric)
                             {
                                 case "weight_limit":
                                     this.limits.fundLimits.weight_limit.action = actionType;
                                     this.limits.fundLimits.weight_limit.updated = true;
+                                    this.limits.fundLimits.weight_limit.customValue = parsedCustomValue;
                                     break;
                                 case "stk_notional_pct_limit":
                                     this.limits.fundLimits.stk_notional_pct_limit.action = actionType;
                                     this.limits.fundLimits.stk_notional_pct_limit.updated = true;
+                                    this.limits.fundLimits.stk_notional_pct_limit.customValue = parsedCustomValue;
                                     break;
                                 case "fut_notional_pct_limit":
                                     this.limits.fundLimits.fut_notional_pct_limit.action = actionType;
                                     this.limits.fundLimits.fut_notional_pct_limit.updated = true;
+                                    this.limits.fundLimits.fut_notional_pct_limit.customValue = parsedCustomValue;
                                     break;
                                 case "liquidity_limit":
                                     this.limits.fundLimits.liquidity_limit.action = actionType;
                                     this.limits.fundLimits.liquidity_limit.updated = true;
+                                    this.limits.fundLimits.liquidity_limit.customValue = parsedCustomValue;
                                     break;
                                 case "stk_leverage_limit":
                                     this.limits.fundLimits.stk_leverage_limit.action = actionType;
                                     this.limits.fundLimits.stk_leverage_limit.updated = true;
+                                    this.limits.fundLimits.stk_leverage_limit.customValue = parsedCustomValue;
                                     break;
                                 case "fut_leverage_limit":
                                     this.limits.fundLimits.fut_leverage_limit.action = actionType;
                                     this.limits.fundLimits.fut_leverage_limit.updated = true;
+                                    this.limits.fundLimits.fut_leverage_limit.customValue = parsedCustomValue;
                                     break;
                                 case "leverage_limit":
                                     this.limits.fundLimits.leverage_limit.action = actionType;
                                     this.limits.fundLimits.leverage_limit.updated = true;
+                                    this.limits.fundLimits.leverage_limit.customValue = parsedCustomValue;
                                     break;
                                 case "var_limit_factor":
                                     this.limits.fundLimits.var_limit_factor.action = actionType;
                                     this.limits.fundLimits.var_limit_factor.updated = true;
+                                    this.limits.fundLimits.var_limit_factor.customValue = parsedCustomValue;
                                     break;
                                 case "stress_limit_factor":
                                     this.limits.fundLimits.stress_limit_factor.action = actionType;
                                     this.limits.fundLimits.stress_limit_factor.updated = true;
+                                    this.limits.fundLimits.stress_limit_factor.customValue = parsedCustomValue;
                                     break;
                                 case "drawdown_limit":
                                     this.limits.fundLimits.drawdown_limit.action = actionType;
                                     this.limits.fundLimits.drawdown_limit.updated = true;
+                                    this.limits.fundLimits.drawdown_limit.customValue = parsedCustomValue;
                                     break;
                             }
                         }
                         
-                        else if (e.Column.DisplayIndex == 0)
+                        else if (e.Column.DisplayIndex == 1)
                         {
                             ((TextBox)e.EditingElement).Text = stringValueOfMetric;
                             e.Cancel = true;
                             MessageBox.Show("You can only edit the custom value field", "edit fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
-                        else if (e.Column.DisplayIndex == 1)
+                        
+                        else if (e.Column.DisplayIndex == 2)
                         {
                             ((TextBox)e.EditingElement).Text = stringValueOfDefault;
                             e.Cancel = true;
                             MessageBox.Show("You can only edit the custom value field", "edit fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
-                        //else if (e.Column.DisplayIndex == 3)
-                        //{
-                        //    ((TextBox)e.EditingElement).Text = stringValueOfFourthColumn;
-                        //    e.Cancel = true;
-                        //    MessageBox.Show("You can only edit the custom value field", "edit fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
-                        //}
+                        
+                        else if (e.Column.DisplayIndex == 0)
+                        {
+                            ((TextBox)e.EditingElement).Text = stringValueOfFund;
+                            e.Cancel = true;
+                            MessageBox.Show("You can only edit the fundname value field", "edit fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+
+                        UpdateFundLimits();
                     }
                 }
             }
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "update fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
             }
 
         }
@@ -755,12 +849,14 @@ namespace wpfTDX
         {
             try
             {
+                Cursor = Cursors.Wait;
                 if (e.EditAction == DataGridEditAction.Commit)
                 {
                     // Get the column and row indices of the cell being edited
                     int columnIndex = e.Column.DisplayIndex;
                     int rowIndex = e.Row.GetIndex();
                     string tickername = "";
+                    string fundname = "";
                     DataRowView rowView = null;
    
                     if (dgTickerLimits.Items[rowIndex] is DataRowView)
@@ -782,15 +878,20 @@ namespace wpfTDX
                     // Get the column name
                     string columnName = e.Column.Header.ToString();
                     tickername = rowView["tickername"].ToString();
-                    UpdateTickerLimits("Notional",tickername,columnName,rowView,editedValueAfter);
+                    fundname = rowView["fundname"].ToString();
+                    UpdateTickerLimits(fundname,"Notional",tickername,columnName,rowView,editedValueAfter);
                 }
             }
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
         }
-        private void UpdateTickerLimits(string limitType,string tickername,string columnName,DataRowView rowView, string afterEditValue)
+        private void UpdateTickerLimits(string fundname,string limitType,string tickername,string columnName,DataRowView rowView, string afterEditValue)
         {
             //if you are at this point you arent updating the action field.
             //so you need to get the value of the action field for the data insert
@@ -854,7 +955,7 @@ namespace wpfTDX
             }
             if(stringParsedCustomValue !="")
             {
-                insertSQL += " VALUES('" + runtime + "','" + this.FundName + "','" + tickername + "'," + stringParsedCustomValue + ",'" + action + "')";
+                insertSQL += " VALUES('" + runtime + "','" + fundname + "','" + tickername + "'," + stringParsedCustomValue + ",'" + action + "')";
                 this._db.execSQL_noresults(insertSQL, this.gbl_conn);
                 RefreshTickerLimits();
             }
@@ -885,12 +986,14 @@ namespace wpfTDX
         {
             try
             {
+                Cursor = Cursors.Wait;
                 if (e.EditAction == DataGridEditAction.Commit)
                 {
                     // Get the column and row indices of the cell being edited
                     int columnIndex = e.Column.DisplayIndex;
                     int rowIndex = e.Row.GetIndex();
                     string tickername = "";
+                    string fundname = "";
                     DataRowView rowView = null;
 
                     if (dgLiquidityLimits.Items[rowIndex] is DataRowView)
@@ -912,12 +1015,17 @@ namespace wpfTDX
                     // Get the column name
                     string columnName = e.Column.Header.ToString();
                     tickername = rowView["tickername"].ToString();
-                    UpdateTickerLimits("Liquidity", tickername, columnName, rowView, editedValueAfter);
+                    fundname = rowView["fundname"].ToString();
+                    UpdateTickerLimits(fundname,"Liquidity", tickername, columnName, rowView, editedValueAfter);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
             }
         }
 
@@ -925,12 +1033,14 @@ namespace wpfTDX
         {
             try
             {
+                Cursor = Cursors.Wait;
                 if (e.EditAction == DataGridEditAction.Commit)
                 {
                     // Get the column and row indices of the cell being edited
                     int columnIndex = e.Column.DisplayIndex;
                     int rowIndex = e.Row.GetIndex();
                     string tickername = "";
+                    string fundname = "";
                     DataRowView rowView = null;
 
                     if (dgWeightLimits.Items[rowIndex] is DataRowView)
@@ -952,12 +1062,17 @@ namespace wpfTDX
                     // Get the column name
                     string columnName = e.Column.Header.ToString();
                     tickername = rowView["tickername"].ToString();
-                    UpdateTickerLimits("Weight", tickername, columnName, rowView, editedValueAfter);
+                    fundname = rowView["fundname"].ToString();
+                    UpdateTickerLimits(fundname, "Weight", tickername, columnName, rowView, editedValueAfter);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Ticker limits editing error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
             }
         }
 
