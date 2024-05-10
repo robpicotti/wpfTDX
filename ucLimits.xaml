@@ -233,7 +233,7 @@
                     </TabItem>
                     <TabItem Header="Weight Limits" FontWeight="Bold">
                         <DataGrid x:Name="dgWeightLimits"  AutoGenerateColumns="False" Margin="5" 
-                                        Height="200"
+                                        Height="400"
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"

@@ -695,6 +695,9 @@ namespace wpfTDX
      
         public void UpdateFundLimits(string fundname)
         {
+            // this will insert NULL , NULL in the fund_limits table values if you switch a fundlimit back
+            // from a custom limit to nothing (which means it goes to default). Otherwise
+            // the system will think you still have a custom limit 
             string execSQL = "";
             if(this.stk_leverage_limit.updated)
             {
