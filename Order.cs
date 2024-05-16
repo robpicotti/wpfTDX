@@ -18,6 +18,7 @@ namespace wpfTDX
         public string FundName { get; set; }
         public DataTable dtOrders { get; set; }
         public DataTable dtOpenOrders { get; set; }
+        public DataTable dtOpenOrdersProposed { get; set; }
         public DateTime StartDate;
         public DateTime EndDate;
         private SqlConnection gbl_conn { get; set; }
@@ -41,6 +42,18 @@ namespace wpfTDX
             {
                 dtOrders = GetOrdersByFundName(this.FundName);
                 dtOpenOrders = GetOpenOrdersByFundName(this.FundName);
+                dtOpenOrdersProposed = dtOpenOrders.Copy();
+                // Filter out the "ALL_FUNDS" row
+                var filteredRows = dtOpenOrdersProposed.AsEnumerable()
+                    .Where(row => row.Field<string>("status") == "PROPOSED");
+                if (filteredRows.Count()>0)
+                {
+                    dtOpenOrdersProposed = filteredRows.CopyToDataTable();
+                }
+                else
+                {
+                    dtOpenOrdersProposed = dtOpenOrders.Clone();
+                }
             }
         }
         /// <summary>
@@ -97,12 +110,13 @@ namespace wpfTDX
             execSQL += "INNER JOIN #max_orders_key m ";
             execSQL += "ON m.max_orders_key = a.orders_key ";
             execSQL += "AND m.tad_order_id = a.tad_order_id ";
-            execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED')";
+            execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED') ";
+            execSQL += "ORDER BY a.tad_order_id ";
             dtOut = DB.execSQL(execSQL, this.gbl_conn);
             
-            dtOut = SetApprovedFlag(dtOut);
             return dtOut;
         }
+        
         private DataTable SetApprovedFlag(DataTable dtIn)
         {
             // Clone the structure of the input DataTable
@@ -172,6 +186,32 @@ namespace wpfTDX
             execSQL += insert_columns + ")";
             execSQL += " SELECT TOP 1 " + insert_columns + " FROM #update";
             DB.execSQL_noresults(execSQL, this.gbl_conn);
+        }
+        public static void CancelTDX(List<DataRow> listOfDataRows, SqlConnection conn)
+        {
+            try
+            {
+                //Table tblOrder = new Table("orders", conn, select_data: false);
+                //List<string> ordersColumns = new List<string>();
+                //ordersColumns = tblOrder.get_table_columns();
+                //ordersColumns.Remove("orders_key");
+                //string InsertSQL = "INSERT orders(";
+                ////build up string of insert columns
+                //for(int i = 0; i < ordersColumns.Count; i++)
+                //{
+                //    InsertSQL += ordersColumns[i].ToString() + ",";
+                //}
+                //InsertSQL = InsertSQL.Substring(0, InsertSQL.Length - 1);
+                //InsertSQL += ") VALUES ('";
+                //for (int i =0; i < listOfDataRows.Count;i++)
+                //{
+                //    row
+                //}
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("CancelTDX error: " + ex.Message);
+            }
         }
     }
 }

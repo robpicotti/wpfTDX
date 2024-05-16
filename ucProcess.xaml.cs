@@ -51,7 +51,7 @@ namespace wpfTDX
         private void LoadForm()
         {
             SolidColorBrush brush = new SolidColorBrush(STATUS_COLOUR);
-            txtStatus.Text = PROCESS_NAME + "\n" + DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+            txtStatus.Text = PROCESS_NAME + "\n" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             txtStatus.Background = brush;
         }
 
@@ -65,7 +65,7 @@ namespace wpfTDX
                     STATUS_COLOUR = (Convert.ToInt32(beat.minutes_delta) > beat.age_limit_minutes) ? Colors.Red : Colors.Green;
                     SolidColorBrush brush = new SolidColorBrush(STATUS_COLOUR);
                     txtStatus.Background = brush;
-                    txtStatus.Text = PROCESS_NAME  +"\n" + DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+                    txtStatus.Text = PROCESS_NAME  +"\n" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 }
             }
         }

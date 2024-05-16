@@ -47,21 +47,90 @@
             <TabControl>
                 <TabItem Header="Open Orders" x:Name="tabiOpenOrders">
                     <StackPanel>
-                        <StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button 
+                                x:Name="btnSelectAll"
+                                Background="LightGreen"
+                                Content="Select All"
+                                Click="btnSelectAll_Click"
+                                HorizontalAlignment="Left"
+                                Width="115"
+                                Margin="2"
+                                FontWeight="Bold"
+                                Visibility="Hidden">
+                            </Button>
+                            <Button 
+                                x:Name="btnFreeze" 
+                                Content="Freeze" 
+                                Click="btnFreeze_Click"
+                                Width="100" 
+                                HorizontalAlignment="Left" 
+                                Margin="2" 
+                                FontWeight="Bold"
+                                Visibility="Hidden">
+                            </Button>
+                            <Button 
+                                x:Name="btnCancel" 
+                                Content="Cancel" 
+                                Click="btnCancel_Click"
+                                Width="100" 
+                                HorizontalAlignment="Left" 
+                                Margin="2" 
+                                FontWeight="Bold"
+                                Visibility="Hidden">
+                            </Button>
+                        </StackPanel>
+
+                        <DataGrid x:Name="dgOpenOrders" AutoGenerateColumns="True"
+                                Height="200"       
+                                ScrollViewer.CanContentScroll="True" 
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                IsReadOnly="false"
+                                CanUserAddRows="False"
+                                Margin="5">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="FontWeight" Value="Bold" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+
+                        </DataGrid>
+                    </StackPanel>
+                </TabItem>
+
+
+                <TabItem Header="Proposed Open Orders" x:Name="tabiOpenOrdersProposed">
+                    <StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button 
+                                x:Name="btnApproveAll"
+                                Background="LightGreen"
+                                Content="Select All"
+                                Click="btnApproveAll_Click"
+                                HorizontalAlignment="Left"
+                                Width="115"
+                                Margin="2"
+                                FontWeight="Bold"
+                                Visibility="Hidden">
+                            </Button>
                             <Button 
                                 x:Name="btnApprove" 
                                 Content="Approve" 
                                 Click="btnApprove_Click" 
                                 Width="100" 
                                 HorizontalAlignment="Left" 
-                                Margin="5" 
+                                Margin="2" 
                                 FontWeight="Bold"
-                                Visibility="Hidden"
-                                >
-                                
+                                Visibility="Hidden">
                             </Button>
                         </StackPanel>
-                        <DataGrid x:Name="dgOpenOrders" AutoGenerateColumns="True"
+
+
+
+                        <DataGrid x:Name="dgOpenOrdersProposed" AutoGenerateColumns="True"
                                 Height="200"       
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -78,7 +147,7 @@
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="Filled Orders" x:Name="tabiOrders">
+                <TabItem Header="Filled Orders" x:Name="tabiOrders" Height="22" VerticalAlignment="Top">
                     <StackPanel>
                         <DataGrid x:Name="dgOrders" AutoGenerateColumns="True"
                                 Height="200"       
