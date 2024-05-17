@@ -54,6 +54,7 @@ namespace wpfTDX
                 MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        
         public void Refresh()
         {
             dtTickerFreezer = _db.ticker_freezer("", gbl_conn);
@@ -154,6 +155,7 @@ namespace wpfTDX
                 }
             }
         }
+        
         private DataGridCell GetClickedCell(MouseButtonEventArgs e)
         {
             // Find the visual element that was clicked
@@ -188,6 +190,7 @@ namespace wpfTDX
                 Refresh();
             }
         }
+        
         private void RemoveOverride()
         {
             try

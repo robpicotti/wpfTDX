@@ -48,6 +48,7 @@ namespace wpfTDX
             dtFund = tblFund.table_data;
             PopulateFundAttributes();
         }
+        
         private void PopulateFundAttributes()
         {
             try

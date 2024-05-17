@@ -30,7 +30,6 @@ namespace wpfTDX
             this.StartDate = startDate;
             this.EndDate = endDate;
             this.gbl_conn = conn;
-
         }
         /// <summary>
         /// 
@@ -187,6 +186,7 @@ namespace wpfTDX
             execSQL += " SELECT TOP 1 " + insert_columns + " FROM #update";
             DB.execSQL_noresults(execSQL, this.gbl_conn);
         }
+        
         public static void CancelTDX(List<DataRow> listOfDataRows, SqlConnection conn)
         {
             try

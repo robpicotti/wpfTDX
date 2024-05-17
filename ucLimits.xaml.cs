@@ -43,6 +43,7 @@ namespace wpfTDX
             this.gbl_conn = conn;
             LoadForm();
         }
+        
         private void LoadForm()
         {
             dtFunds = _db.get_funds(gbl_conn);
@@ -62,7 +63,6 @@ namespace wpfTDX
             var orderedRows = dtFunds.AsEnumerable()
                              .OrderBy(row => row.Field<string>("fundname"));
             dtFunds = orderedRows.CopyToDataTable();
-
 
             cboFundName.Items.Clear();
             foreach (DataRow row in dtFunds.Rows)
@@ -89,6 +89,7 @@ namespace wpfTDX
                 Cursor = Cursors.Arrow;
             }
         }
+        
         private void RefreshFundLimits()
         {
             this.blnValueChanged = false;
@@ -891,6 +892,7 @@ namespace wpfTDX
                 Cursor = Cursors.Arrow;
             }
         }
+        
         private void UpdateTickerLimits(string fundname,string limitType,string tickername,string columnName,DataRowView rowView, string afterEditValue)
         {
             //if you are at this point you arent updating the action field.

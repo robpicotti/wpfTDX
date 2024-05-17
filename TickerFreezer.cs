@@ -86,12 +86,14 @@ namespace TDX
         {
             _db.thaw_tad_id(runtime, ems, broker_code_exec, fundname, subaccountname,execaccountname, tad_id,tickername, error_code,benchmarkname,notes, gbl_conn);
         }
+        
         public void Override_freezer(string runtime, string ems, string brokercode_exec, string fundname, string execaccountname, string subaccountname, string tad_id, string error_code,
             bool add_override,string expiration,SqlConnection gbl_conn)
         {
             string SQL = generate_override_freezer_sql(runtime, ems, brokercode_exec, fundname, execaccountname,subaccountname, tad_id, error_code,add_override,expiration);
             _db.execSQL(SQL, gbl_conn); ;
         }
+        
         private string generate_override_freezer_sql(string runtime, string ems, string brokercode_exec, string fundname, string execaccountname,string subaccountname,
             string tad_id, string error_code,bool add_override,string expiration)
         {
@@ -112,6 +114,7 @@ namespace TDX
 
             return t_sql;
         }
+        
         private DataTable SearchTadId(string tad_id_wildcard)
         {
             DataTable dtOut = new DataTable();

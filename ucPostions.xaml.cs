@@ -170,6 +170,7 @@ namespace wpfTDX
                 }
             }
         }
+        
         private DataGridCell GetClickedCell(MouseButtonEventArgs e)
         {
             // Find the visual element that was clicked

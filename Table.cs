@@ -65,6 +65,7 @@ namespace TDX
             list_numeric_types = new List<string>();
             populate_numericTypes();
         }
+        
         public DataTable select()
         {
             DataTable dtOut = new DataTable();
@@ -72,6 +73,7 @@ namespace TDX
             dtOut = _db.execSQL(sqlText, gbl_conn);
             return dtOut;
         }
+        
         public bool isNumericType(string data_type)
         {
             bool bln = false;
@@ -81,6 +83,7 @@ namespace TDX
             }
             return bln;
         }
+        
         public Table select_latest(string where_clause="")
         {
             DataTable dtOut = new DataTable();
@@ -118,6 +121,7 @@ namespace TDX
             list_tablecol =  dt.AsEnumerable().Select(row => row["COLUMN_NAME"].ToString()).Distinct().ToList();
             return list_tablecol;
         }
+        
         public DataTable get_table_schema()
         {
             DataTable dtOut = new DataTable();
@@ -131,6 +135,7 @@ namespace TDX
 
             return dtOut;
         }
+        
         public string get_primKeys()
         {
             string pks = "";
@@ -142,6 +147,7 @@ namespace TDX
             }
             return pks;
         }
+        
         public string get_PK_data_types()
         {
             string types = "";
@@ -150,6 +156,7 @@ namespace TDX
             types = dtOut.Rows[0][1].ToString();
             return types;
         }
+        
         public void load_dataTable(DataTable dtIn)
         {
             gbl_conn.Open();
@@ -180,6 +187,7 @@ namespace TDX
                 }
             }
         }
+        
         public List<string> get_updatable_columns()
         {
             List<string> edit_cols = new List<string>();
@@ -193,6 +201,7 @@ namespace TDX
             }
             return edit_cols;
         }
+        
         private void populate_numericTypes()
         {
             list_numeric_types.Add("bigint");
