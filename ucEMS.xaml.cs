@@ -129,6 +129,8 @@ namespace wpfTDX
             if(dgOpenOrders.Items.Count >0)
             {
                 btnSelectAll.Visibility = Visibility.Visible;
+                btnSelectAll.Content = "Select All";
+                btnSelectAll.Background = Brushes.LightGreen ;
                 btnFreeze.Visibility = Visibility.Visible;
                 btnCancel.Visibility = Visibility.Visible;
             }
@@ -253,7 +255,7 @@ namespace wpfTDX
             }
         }
 
-        private void btnSelectAll_Click(object sender, RoutedEventArgs e)
+        private void SelectAllButton()
         {
             bool setMode = false;
             try
@@ -298,6 +300,10 @@ namespace wpfTDX
                     }
                 }
             }
+        }
+        private void btnSelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            SelectAllButton();
         }
 
         private void btnFreeze_Click(object sender, RoutedEventArgs e)
@@ -358,17 +364,18 @@ namespace wpfTDX
                     bool blnSelected = (bool)row["selected"];
                     string broker = row["broker"].ToString();
                     string status = row["status"].ToString();
+                    bool cancel_tdx = (bool)row["cancel_tdx"];
                     if(blnSelected)
                     {
                         // can only cancel tad broker trades and 
                         if (broker == "TAD"  )
                         {
                             // trades that havent already been flagged as CANCEL TDX
-                            if (status != "CANCEL TDX")
+                            if (!cancel_tdx)
                             {
                                 string tad_order_id = row["tad_order_id"].ToString();
                                 string orders_key = row["orders_key"].ToString();
-                                ord.UpdateOrderStatus(tad_order_id, "CANCEL TDX", orders_key);
+                                ord.UpdateCancelTDXStatus(tad_order_id, true, orders_key);
                             }
                         }
                         else

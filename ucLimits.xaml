@@ -98,6 +98,9 @@
                                                 <DataTrigger Binding="{Binding Path=Color}" Value="R">
                                                     <Setter Property="Background" Value="Red"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Color}" Value="G">
+                                                    <Setter Property="Background" Value="Green"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </DataGrid.RowStyle>
@@ -165,6 +168,9 @@
                                                 <DataTrigger Binding="{Binding Path=Color}" Value="R">
                                                     <Setter Property="Background" Value="Red"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=Color}" Value="G">
+                                                    <Setter Property="Background" Value="Green"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </DataGrid.RowStyle>
@@ -226,6 +232,9 @@
                                             <DataTrigger Binding="{Binding Path=Color}" Value="R">
                                                 <Setter Property="Background" Value="Red"/>
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=Color}" Value="G">
+                                                <Setter Property="Background" Value="Green"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </DataGrid.RowStyle>
@@ -283,6 +292,9 @@
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Path=Color}" Value="R">
                                                 <Setter Property="Background" Value="Red"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=Color}" Value="G">
+                                                <Setter Property="Background" Value="Green"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

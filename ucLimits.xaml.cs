@@ -109,7 +109,7 @@ namespace wpfTDX
             dtAll.Columns.Add("fundname");
             dtAll.Columns.Add("metric");
             dtAll.Columns.Add("default");
-            dtAll.Columns.Add("custom");
+            dtAll.Columns.Add("custom",typeof(double));
             dtAll.Columns.Add("action");
             dtAll.Columns.Add("live");
             dtAll.Columns.Add("Flagged",typeof(bool));
@@ -130,57 +130,87 @@ namespace wpfTDX
                     {
                         case "weight_limit":
                             row["default"] = limits.fundLimits.weight_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.weight_limit.customValue;
+                            if (limits.fundLimits.weight_limit.customValue != null)
+                                row["custom"] = limits.fundLimits.weight_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.weight_limit.action;
                             break;
                         case "stk_notional_pct_limit":
                             row["default"] = limits.fundLimits.stk_notional_pct_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.stk_notional_pct_limit.customValue;
+                            if (limits.fundLimits.stk_notional_pct_limit.customValue != null)
+                                row["custom"] = limits.fundLimits.stk_notional_pct_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.stk_notional_pct_limit.action;
                             break;
                         case "fut_notional_pct_limit":
                             row["default"] = limits.fundLimits.fut_notional_pct_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.fut_notional_pct_limit.customValue;
+                            if(limits.fundLimits.fut_notional_pct_limit.customValue!=null)
+                                row["custom"] = limits.fundLimits.fut_notional_pct_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.fut_notional_pct_limit.action;
                             break;
                         case "liquidity_limit":
                             row["default"] = limits.fundLimits.liquidity_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.liquidity_limit.customValue;
+                            if(limits.fundLimits.liquidity_limit.customValue!=null)
+                                row["custom"] = limits.fundLimits.liquidity_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.liquidity_limit.action;
                             break;
                         case "stk_leverage_limit":
                             row["default"] = limits.fundLimits.stk_leverage_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.stk_leverage_limit.customValue;
+                            if(limits.fundLimits.stk_leverage_limit.customValue!=null)
+                                row["custom"] = limits.fundLimits.stk_leverage_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.stk_leverage_limit.action;
                             row["live"] = limits.fundLimits.stk_leverage_limit.liveValue;
                             break;
                         case "fut_leverage_limit":
                             row["default"] = limits.fundLimits.fut_leverage_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.fut_leverage_limit.customValue;
+                            if(limits.fundLimits.fut_leverage_limit.customValue!=null)
+                                row["custom"] = limits.fundLimits.fut_leverage_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.fut_leverage_limit.action;
                             row["live"] = limits.fundLimits.fut_leverage_limit.liveValue;
                             break;
                         case "leverage_limit":
                             row["default"] = limits.fundLimits.leverage_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.leverage_limit.customValue;
+                            if(limits.fundLimits.leverage_limit.customValue!=null)
+                                row["custom"] = limits.fundLimits.leverage_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.leverage_limit.action;
                             row["live"] = limits.fundLimits.leverage_limit.liveValue;
                             break;
                         case "var_limit_factor":
                             row["default"] = limits.fundLimits.var_limit_factor.defaultValue;
-                            row["custom"] = limits.fundLimits.var_limit_factor.customValue;
+                            if(limits.fundLimits.var_limit_factor.customValue!=null)
+                                row["custom"] = limits.fundLimits.var_limit_factor.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.var_limit_factor.action;
                             row["live"] = limits.fundLimits.var_limit_factor.liveValue;
                             break;
                         case "stress_limit_factor":
                             row["default"] = limits.fundLimits.stress_limit_factor.defaultValue;
-                            row["custom"] = limits.fundLimits.stress_limit_factor.customValue;
+                            if(limits.fundLimits.stress_limit_factor.customValue !=null)
+                                row["custom"] = limits.fundLimits.stress_limit_factor.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.stress_limit_factor.action;
                             row["live"] = limits.fundLimits.stress_limit_factor.liveValue;
                             break;
                         case "drawdown_limit":
                             row["default"] = limits.fundLimits.drawdown_limit.defaultValue;
-                            row["custom"] = limits.fundLimits.drawdown_limit.customValue;
+                            if(limits.fundLimits.drawdown_limit.customValue !=null)
+                                row["custom"] = limits.fundLimits.drawdown_limit.customValue;
+                            else
+                                row["custom"] = DBNull.Value;
                             row["action"] = limits.fundLimits.drawdown_limit.action;
                             row["live"] = limits.fundLimits.drawdown_limit.liveValue;
                             break;
@@ -202,7 +232,7 @@ namespace wpfTDX
                     }
                     bool flagged = TickerLimits.GetFlaggedStatus(live, custom, _default);
                     row["Flagged"] = flagged;
-                    row["Color"] = SetColor(flagged, null);
+                    row["Color"] = SetColor(flagged, null,custom);
                     dtAll.Rows.Add(row);
                 }
             }
@@ -228,7 +258,7 @@ namespace wpfTDX
             dtNotional.Columns.Add("benchmarkname");
             dtNotional.Columns.Add("tickername");
             dtNotional.Columns.Add("Default");
-            dtNotional.Columns.Add("Custom");
+            dtNotional.Columns.Add("Custom",typeof(double));
             dtNotional.Columns.Add("Live");
             dtNotional.Columns.Add("Action");
             dtNotional.Columns.Add("Frozen");
@@ -272,6 +302,7 @@ namespace wpfTDX
             {
                 var sortedRows = dtNotional.AsEnumerable()
                    .OrderByDescending(r => r.Field<bool>("Flagged"))
+                   .ThenByDescending(r => r.IsNull("Custom") ? double.MinValue : r.Field<double>("Custom"))
                    .ThenBy(r => r.Field<string>("fundname"))
                    .ThenBy(r => r.Field<string>("tickername"))
                    .CopyToDataTable();
@@ -281,6 +312,7 @@ namespace wpfTDX
             {
                 var sortedRows_Liq = dtLiquidity.AsEnumerable()
                     .OrderByDescending(r => r.Field<bool>("Flagged"))
+                    .ThenByDescending(r => r.IsNull("Custom") ? double.MinValue : r.Field<double>("Custom"))
                     .ThenBy(r => r.Field<string>("fundname"))
                     .ThenBy(r => r.Field<string>("tickername"))
                     .CopyToDataTable();
@@ -290,6 +322,7 @@ namespace wpfTDX
             {
                 var sortedRows_weight = dtWeights.AsEnumerable()
                 .OrderByDescending(r => r.Field<bool>("Flagged"))
+                .ThenByDescending(r => r.IsNull("Custom") ? double.MinValue : r.Field<double>("Custom"))
                 .ThenBy(r => r.Field<string>("fundname"))
                 .ThenBy(r => r.Field<string>("tickername"))
                 .CopyToDataTable();
@@ -309,7 +342,7 @@ namespace wpfTDX
                 dtWeight.Columns.Add("benchmarkname");
                 dtWeight.Columns.Add("tickername");
                 dtWeight.Columns.Add("Default");
-                dtWeight.Columns.Add("Custom");
+                dtWeight.Columns.Add("Custom",typeof(double));
                 dtWeight.Columns.Add("Live");
                 dtWeight.Columns.Add("Action");
                 dtWeight.Columns.Add("Frozen");
@@ -328,8 +361,14 @@ namespace wpfTDX
                     bool? frozen = null;
                     if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue!=null || tickerLimits.valid != null))
                     {
-                        row["Custom"] = tickerLimits.customLimit;
-                        row["Live"] = tickerLimits.liveValue;
+                        if (tickerLimits.customLimit != null)
+                            row["Custom"] = tickerLimits.customLimit;
+                        else
+                            row["Custom"] = DBNull.Value;
+                        if (tickerLimits.customLimit != null)
+                            row["Live"] = tickerLimits.liveValue;
+                        else
+                            row["Live"] = DBNull.Value;
                         row["Action"] = tickerLimits.action;
                         switch (tickerLimits.valid)
                         {
@@ -345,10 +384,23 @@ namespace wpfTDX
                         }
                         row["Frozen"] = frozen;
                     }
+                    else
+                    {
+                        // If tickerLimits is null, make sure Custom and Live are set to DBNull
+                        row["Custom"] = DBNull.Value;
+                        row["Live"] = DBNull.Value;
+                        row["Action"] = DBNull.Value;
+                        row["Frozen"] = DBNull.Value;
+                    }
                     row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
                     bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits.liveValue, tickerLimits.customLimit, this.tickerLimits.fundLimit.liquidity_limit.defaultValue);
                     row["Flagged"] = flagged;
-                    row["Color"] = SetColor(flagged, frozen);
+                    double? custom = null;
+                    if (double.TryParse(row["custom"].ToString(), out double result_custom))
+                    {
+                        custom = result_custom;
+                    }
+                    row["Color"] = SetColor(flagged, frozen, custom);
                     dtWeight.Rows.Add(row);
 
                 }
@@ -369,7 +421,7 @@ namespace wpfTDX
                 dtLiquidity.Columns.Add("benchmarkname");
                 dtLiquidity.Columns.Add("tickername");
                 dtLiquidity.Columns.Add("Default");
-                dtLiquidity.Columns.Add("Custom");
+                dtLiquidity.Columns.Add("Custom",typeof(double));
                 dtLiquidity.Columns.Add("Live");
                 dtLiquidity.Columns.Add("Action");
                 dtLiquidity.Columns.Add("Frozen");
@@ -388,9 +440,16 @@ namespace wpfTDX
                     bool? frozen = null ;
                     if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue !=null || tickerLimits.valid !=null))
                     {
-                        row["Custom"] = tickerLimits.customLimit;
-                        row["Live"] = tickerLimits.liveValue;
-                        row["Action"] = tickerLimits.action;
+                        if (tickerLimits.customLimit != null)
+                            row["Custom"] = tickerLimits.customLimit;
+                        else
+                            row["Custom"] = DBNull.Value;
+
+                        if (tickerLimits.liveValue != null)
+                            row["Live"] = tickerLimits.liveValue;
+                        else
+                            row["Live"] = DBNull.Value;
+     
                         switch (tickerLimits.valid)
                         {
                             case true:
@@ -405,11 +464,24 @@ namespace wpfTDX
                         }
                         row["Frozen"] = frozen;
                     }
+                    else
+                    {
+                        // If tickerLimits is null, make sure Custom and Live are set to DBNull
+                        row["Custom"] = DBNull.Value;
+                        row["Live"] = DBNull.Value;
+                        row["Action"] = DBNull.Value;
+                        row["Frozen"] = DBNull.Value;
+                    }
 
                     row["Default"] = this.tickerLimits.fundLimit.liquidity_limit.defaultValue;
                     bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits.liveValue, tickerLimits.customLimit, this.tickerLimits.fundLimit.liquidity_limit.defaultValue);
                     row["Flagged"] = flagged;
-                    row["Color"] = SetColor(flagged, frozen);
+                    double? custom = null;
+                    if (double.TryParse(row["custom"].ToString(), out double result_custom))
+                    {
+                        custom = result_custom;
+                    }
+                    row["Color"] = SetColor(flagged, frozen, custom);
                     dtLiquidity.Rows.Add(row);
 
                 }
@@ -421,7 +493,7 @@ namespace wpfTDX
             }
         }
         
-        private string SetColor(bool flagged, bool? frozen)
+        private string SetColor(bool flagged, bool? frozen, double? customValue)
         {
             string strOut = "";
             switch(flagged)
@@ -444,9 +516,16 @@ namespace wpfTDX
                     strOut = "";
                     break;
             }
+            if(strOut=="")
+            {
+                if(customValue!= null)
+                {
+                    strOut = "G";
+                }
+            }
             return strOut;
         }
-        
+
         private DataTable populateNotionalTickerLimits()
         {
             try
@@ -456,31 +535,43 @@ namespace wpfTDX
                 dtNotional.Columns.Add("benchmarkname");
                 dtNotional.Columns.Add("tickername");
                 dtNotional.Columns.Add("Default");
-                dtNotional.Columns.Add("Custom");
+                dtNotional.Columns.Add("Custom", typeof(double)); // Ensure it's double type
                 dtNotional.Columns.Add("Live");
                 dtNotional.Columns.Add("Action");
                 dtNotional.Columns.Add("Frozen");
                 dtNotional.Columns.Add("Flagged", typeof(bool));
                 dtNotional.Columns.Add("Color");
-                //loop over all tickers in the benchmark
+
+                // Loop over all tickers in the benchmark
                 foreach (var kvp in this.tickerLimits.dictOfTickers)
                 {
                     string tickername = kvp.Key.ToString();
                     string instrument = kvp.Value.ToString();
                     DataRow row = dtNotional.NewRow();
+
                     // Check if the tickername exists in the list of TickerNotionalLimits
                     TickerNotionalLimits tickerLimits = this.tickerLimits.TickerNotionalLimitsList.FirstOrDefault(tnl => tnl.tickerName == tickername);
                     row["fundname"] = this.tickerLimits.fundName;
                     row["benchmarkname"] = this.tickerLimits.benchmarkName;
                     row["tickername"] = tickername;
+
                     bool? frozen = null;
                     if (tickerLimits != null && (tickerLimits.customLimit != null || tickerLimits.liveValue != null || tickerLimits.valid != null))
                     {
-                        row["Custom"] = tickerLimits.customLimit;
-                        row["Live"] = tickerLimits.liveValue;
-                        row["action"] = tickerLimits.action;
+                        // Ensure Custom and Live columns handle null values properly
+                        if (tickerLimits.customLimit != null)
+                            row["Custom"] = tickerLimits.customLimit; // No need to assign DBNull.Value here
+                        else
+                            row["Custom"] = DBNull.Value;
 
-                        switch(tickerLimits.valid)
+                        if (tickerLimits.liveValue != null)
+                            row["Live"] = tickerLimits.liveValue; // No need to assign DBNull.Value here
+                        else
+                            row["Live"] = DBNull.Value;
+
+                        row["Action"] = tickerLimits.action;
+
+                        switch (tickerLimits.valid)
                         {
                             case true:
                                 frozen = false;
@@ -494,29 +585,43 @@ namespace wpfTDX
                         }
                         row["Frozen"] = frozen;
                     }
+                    else
+                    {
+                        // If tickerLimits is null, make sure Custom and Live are set to DBNull
+                        row["Custom"] = DBNull.Value;
+                        row["Live"] = DBNull.Value;
+                        row["Action"] = DBNull.Value;
+                        row["Frozen"] = DBNull.Value;
+                    }
+
                     double? defaultValue = null;
-                    if(instrument=="equity" || instrument=="etf")
+                    if (instrument == "equity" || instrument == "etf")
                     {
                         defaultValue = this.tickerLimits.fundLimit.stk_notional_pct_limit.defaultValue;
                     }
-                    else if(instrument == "future" || instrument == "spread" || instrument == "swap")
+                    else if (instrument == "future" || instrument == "spread" || instrument == "swap")
                     {
                         defaultValue = this.tickerLimits.fundLimit.fut_notional_pct_limit.defaultValue;
                     }
-                    row["Default"] = defaultValue;
-                    bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits.liveValue, tickerLimits.customLimit, defaultValue);
+                    row["Default"] = defaultValue.HasValue ? (object)defaultValue.Value : DBNull.Value; // Ensure Default handles null values
+
+                    bool flagged = TickerLimits.GetFlaggedStatus(tickerLimits?.liveValue, tickerLimits?.customLimit, defaultValue);
                     row["Flagged"] = flagged;
-                    row["Color"] = SetColor(flagged, frozen);
+                    double? custom = null;
+                    if (double.TryParse(row["custom"].ToString(), out double result_custom))
+                    {
+                        custom = result_custom;
+                    }
+                    row["Color"] = SetColor(flagged, frozen,custom);
 
                     dtNotional.Rows.Add(row);
                 }
-                return dtNotional;                
+                return dtNotional;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception("populateNotionalTickerLimits error: " + ex.Message);
             }
-
         }
 
         /// <summary>

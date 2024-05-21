@@ -87,7 +87,7 @@ namespace wpfTDX
             string startDateTime = this.StartDate.ToString("dd-MMM-yyyy");
             string out_columns = "ord.runtime, ord.broker,ord.account,ord.subaccounts,ord.allocation_amount,ord.tad_order_id,ord.order_id,";
             out_columns += "ord.brok_uniq_order_id,ord.action,ord.tad_id,ord.tickername,ord.price,ord.multiplier,ord.size,";
-            out_columns += "ord.tif,ord.order_type,ord.status,ord.status_time,ord.newposition_ids,ord.bbg_figi,ord.trade_allocations,ord.autoexecute,ord.tx_type_detail,";
+            out_columns += "ord.tif,ord.order_type,ord.status,ord.cancel_tdx,ord.status_time,ord.newposition_ids,ord.bbg_figi,ord.trade_allocations,ord.autoexecute,ord.tx_type_detail,";
             out_columns += "ord.orders_key";
             string execSQL = "DECLARE @fundname varchar(100)  IF OBJECT_ID('tempdb..#subaccounts') IS NOT NULL ";
             execSQL += "DROP TABLE #subaccounts ";
@@ -186,7 +186,35 @@ namespace wpfTDX
             execSQL += " SELECT TOP 1 " + insert_columns + " FROM #update";
             DB.execSQL_noresults(execSQL, this.gbl_conn);
         }
-        
+        /// <summary>
+        /// updates the cancel_tdx bit column in Orders table based on a tad_order_id/orders_key combo
+        /// </summary>
+        /// <param name="tad_order_id"></param>
+        /// <param name="status"></param>
+        /// <param name="orders_key"></param>
+        public void UpdateCancelTDXStatus(string tad_order_id,  bool status, string orders_key)
+        {
+            Table tbl = new Table("Orders", this.gbl_conn, select_data: false);
+            List<string> lstTblColumns = tbl.get_table_columns();
+            lstTblColumns.Remove("orders_key");
+            string execSQL = "IF OBJECT_ID('tempdb..#update') IS NOT NULL ";
+            execSQL += " DROP TABLE #update ";
+            execSQL += " SELECT * INTO #update FROM orders WHERE tad_order_id = '" + tad_order_id + "'";
+            execSQL += " AND orders_key = " + orders_key;
+            execSQL += " UPDATE #update SET runtime = getdate(), cancel_tdx = " + (status? 1:0).ToString() + " ";
+            execSQL += " ALTER table #update DROP COLUMN orders_key ";
+            execSQL += "INSERT orders(";
+            //loop over table columns and create insert statement for new row
+            string insert_columns = "";
+            for (int i = 0; i < lstTblColumns.Count; i++)
+            {
+                insert_columns += lstTblColumns[i].ToString() + ",";
+            }
+            insert_columns = insert_columns.Substring(0, insert_columns.Length - 1);
+            execSQL += insert_columns + ")";
+            execSQL += " SELECT TOP 1 " + insert_columns + " FROM #update";
+            DB.execSQL_noresults(execSQL, this.gbl_conn);
+        }
         public static void CancelTDX(List<DataRow> listOfDataRows, SqlConnection conn)
         {
             try
