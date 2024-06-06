@@ -1,0 +1,65 @@
+﻿<Window x:Class="wpfTDX.winTradeHistory"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        xmlns:local="clr-namespace:wpfTDX"
+        mc:Ignorable="d"
+        Title="winTradeHistory" Height="450" Width="800">
+    <StackPanel Margin="2">
+        <Border BorderBrush="Black" Background="Beige"  BorderThickness="1" Padding="5" Margin="5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="10*"/>
+                    <ColumnDefinition Width="10*"/>
+                    <ColumnDefinition Width="10*"/>
+                    <ColumnDefinition Width="12*"/>
+                    <ColumnDefinition Width="12*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="5">
+                    <TextBlock Text="fundname" FontWeight="Bold" Margin="5 1"/>
+                    <TextBox x:Name="txtFundName" IsEnabled="False" Margin="5 1"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="5">
+                    <TextBlock Text="tad id" FontWeight="Bold" Margin="5 1"/>
+                    <TextBox x:Name="txtTadId" IsEnabled="False" Margin="5 1"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="5">
+                    <TextBlock Text="tickername" FontWeight="Bold" Margin="5 1"/>
+                    <TextBox x:Name="txtTickerName" IsEnabled="False" Margin="5 1"/>
+                </StackPanel>
+                <StackPanel Grid.Column="3" Margin="5">
+                    <TextBlock Text="start date" FontWeight="Bold" Margin="5 -1"></TextBlock>
+                    <DatePicker x:Name="dtPickerPostionFrom" Margin="5"></DatePicker>
+                </StackPanel>
+                <StackPanel Grid.Column="4" Margin="5">
+                    <TextBlock Text="end date" FontWeight="Bold" Margin="5 -1"></TextBlock>
+                    <DatePicker x:Name="dtPickerPostionTo" Margin="5"></DatePicker>
+                </StackPanel>
+                <StackPanel Grid.Column="5" Margin="5">
+                    <Button x:Name="cmdRun" Margin="5 18 5 5" Content="Run" Click="cmdRun_Click"></Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
+            <StackPanel>
+                <lvc:CartesianChart x:Name="MyChart" Margin="10" Height="300">
+                    <lvc:CartesianChart.AxisX>
+                        <lvc:Axis Title="Execution Date" Labels="{Binding XLabels}" LabelsRotation="15">
+                            <lvc:Axis.Separator>
+                                <lvc:Separator IsEnabled="False"/>
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisX>
+                    <lvc:CartesianChart.AxisY>
+                        <lvc:Axis Title="Net Position" />
+                    </lvc:CartesianChart.AxisY>
+                </lvc:CartesianChart>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</Window>

@@ -171,7 +171,7 @@ namespace wpfTDX
                     bool isnumeric = double.TryParse(amount, out _);
                     string tad_id = txtTadId.Text;
                     DateTime dtmTx_date = (DateTime)dtpTxDate.SelectedDate;
-                    string tx_date = dtmTx_date.ToString("yyyy-MM-dd hh: mm:ss");
+                    string tx_date = dtmTx_date.ToString("yyyy-MM-dd HH:mm:ss");
                     if ((subaccount != "") && (broker != "") && (currency != "") && (txtype_detail != "") && (isnumeric))
                     {
                         addDepoCash(currency, Brok, fund, subaccount, tad_id, amount, "BUY", tx_date, Broker_exec, txtype_detail);

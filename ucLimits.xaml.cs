@@ -328,6 +328,7 @@ namespace wpfTDX
                 .CopyToDataTable();
                 dtWeights = sortedRows_weight.Copy();
             }
+            Util.DataTableToCSV(dtNotional, "dtLiquidity.csv");
             dgTickerLimits.ItemsSource = dtNotional.DefaultView;
             dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
             dgWeightLimits.ItemsSource = dtWeights.DefaultView;
@@ -449,7 +450,7 @@ namespace wpfTDX
                             row["Live"] = tickerLimits.liveValue;
                         else
                             row["Live"] = DBNull.Value;
-     
+                        row["Action"] = tickerLimits.action;
                         switch (tickerLimits.valid)
                         {
                             case true:

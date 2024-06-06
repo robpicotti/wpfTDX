@@ -106,10 +106,12 @@ namespace wpfTDX
         private SqlConnection gbl_conn { get; set; }
         private db DB = new db();
         private Table tblPortfolioWeights { get; set; }
+        private Table tblTargetPositions { get; set; }
         private Table tblNotionalLimits { get; set; }
         private Table tblLiquidityLimits { get; set; }
         private Table tblWeighLimits { get; set; }
         private Table tblTickers { get; set; }
+        private DataTable dtTargetPositions { get; set; }
         private DataTable dtPortfolioWeights { get; set; }
         private DataTable dtNotionalLimits { get; set; }
         private DataTable dtLiquidityLimits { get; set; }
@@ -150,6 +152,9 @@ namespace wpfTDX
             //tickers --need this to get the instrument type
             tblTickers = new Table("tickers", this.gbl_conn);
             dtTickers = tblTickers.table_data;
+            //populate target_positions
+            tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + this.fundName + "'");
+            dtTargetPositions = tblTargetPositions.table_data;
             //portfolio weights
             tblPortfolioWeights = new Table("portfolio_weights", this.gbl_conn, "WHERE portfolioname='" + this.fund.benchmarkName + "'");
             this.dtPortfolioWeights = tblPortfolioWeights.table_data;
@@ -165,11 +170,17 @@ namespace wpfTDX
         }
         private void PopulateTickerNamesList()
         {
-            //get list of tickers from portfolio weights 
-            ListOfTickerNames = this.dtPortfolioWeights.AsEnumerable()
-                                            .Where(row => !row.IsNull("weight") && !string.IsNullOrEmpty(row.Field<string>("tickername")))
+            ////get list of tickers from portfolio weights 
+            //ListOfTickerNames = this.dtPortfolioWeights.AsEnumerable()
+            //                                .Where(row => !row.IsNull("weight") && !string.IsNullOrEmpty(row.Field<string>("tickername")))
+            //                                .Select(row => row.Field<string>("tickername"))
+            //                                .ToList();
+            ListOfTickerNames = this.dtTargetPositions.AsEnumerable()
+                                            .Where(row => row.Field<string>("sub_tickername") != "NONE" && 
+                                                row.Field<string>("sub_tickername") == row.Field<string>("current_contract"))
                                             .Select(row => row.Field<string>("tickername"))
                                             .ToList();
+
             //get distinct list of tickers from the notional limits table for benchmark
             var NotionalTickers = this.dtNotionalLimits.AsEnumerable()
                 .Where(row => row.Field<string>("fundname") == this.fundName)
