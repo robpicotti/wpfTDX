@@ -50,7 +50,7 @@ namespace wpfTDX
                 DateTime endDate = dtPickerPostionTo.SelectedDate.Value.AddDays(1).AddMilliseconds(-1);
                 Position posn = new Position("", this.gbl_conn);
                 DataTable dtRun = posn.get_daily_positions(this.FundName, this.Tad_id, this.TickerName, startDate, endDate);
-                LoadNetPositionChartData(dtRun);
+                LoadNetPositionChartData(dtRun,endDate);
             }
             catch (Exception ex)
             {
@@ -58,7 +58,7 @@ namespace wpfTDX
             }
         }
 
-        private void LoadNetPositionChartData(DataTable dataTable)
+        private void LoadNetPositionChartData(DataTable dataTable, DateTime endDate)
         {
             // Initialize SeriesCollection
             SeriesCollection = new SeriesCollection
@@ -68,7 +68,7 @@ namespace wpfTDX
                     Title = "Net Position",
                     Values = new ChartValues<double>(),
                     PointGeometry = DefaultGeometries.Circle,
-                    PointGeometrySize = 10
+                    PointGeometrySize = 2
                 }
             };
 
@@ -77,7 +77,7 @@ namespace wpfTDX
 
             // Calculate min and max dates
             DateTime minDate = DateTime.MaxValue;
-            DateTime maxDate = DateTime.MinValue;
+            DateTime maxDate = endDate;//DateTime.MinValue;
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -86,8 +86,6 @@ namespace wpfTDX
                 {
                     if (date < minDate)
                         minDate = date;
-                    if (date > maxDate)
-                        maxDate = date;
                 }
             }
 
@@ -121,32 +119,49 @@ namespace wpfTDX
             double padding = (maxValue - minValue) * 0.1; // 10% padding
             minValue -= padding;
             maxValue += padding;
+            // Ensure zero is included in the axis range
+            if (minValue > 0) minValue = 0;
+            if (maxValue < 0) maxValue = 0;
+
+            // Calculate the step size dynamically
+            double range = maxValue - minValue;
+            double stepSize = CalculateStepSize(range);
 
             // Set dynamic min and max values for Y-axis
             MyChart.AxisY[0].MinValue = minValue;
             MyChart.AxisY[0].MaxValue = maxValue;
 
-            // Set bold zero line
-            MyChart.AxisY.Add(new Axis
+            // Set up zero line as bold
+            MyChart.AxisY[0].Separator = new LiveCharts.Wpf.Separator
             {
-                Position = AxisPosition.LeftBottom,
-                IsEnabled = true,
-                Separator = new LiveCharts.Wpf.Separator
-                {
-                    Step = (maxValue - minValue) / 5,
-                    StrokeThickness = 2,
-                    Stroke = Brushes.Black,
-                    IsEnabled = true
-                }
+                Step = stepSize, // Adjust step to fit your data range
+                StrokeThickness = 1,
+                StrokeDashArray = new DoubleCollection { 2, 2 },
+                Stroke = Brushes.Gray
+            };
+
+            // Add AxisSection for bold zero line
+            MyChart.AxisY[0].Sections.Add(new AxisSection
+            {
+                Value = 0,
+                Stroke = Brushes.Black,
+                Label = "0",
+                StrokeThickness = 2
             });
 
-            // Bind SeriesCollection to the chart
+
             MyChart.Series = SeriesCollection;
-
-            // Update the XAxis labels
             MyChart.AxisX[0].Labels = XLabels;
-        }
 
+        }
+        private double CalculateStepSize(double range)
+        {
+            // Determine a reasonable step size that avoids cramped axis labels and uses whole numbers
+            double step = Math.Pow(10, Math.Floor(Math.Log10(range)));
+            if (range / step > 10) step *= 2;
+            if (range / step > 10) step *= 5;
+            return step;
+        }
         private DataTable FillForwardDataTable(DataTable originalDataTable, DateTime minDate, DateTime maxDate)
         {
             DataTable filledDataTable = new DataTable();
