@@ -414,13 +414,16 @@ namespace wpfTDX
         public DrawDownLimit drawdown_limit { get; set; }
         public LiquidityLimit liquidity_limit { get; set; }
         public WeightLimit weight_limit { get; set; }
+        public double var_target { get; set; }
         private Table tblFunds { get; set; }
         private Table tblFundLimits { get; set; }
         private Table tblTargetPositions { get; set; }
+        private Table tblRiskMetrics { get; set; }
         private SqlConnection gbl_conn { get; set; }
         private DataTable dtFundData { get; set; }
         private DataTable dtFundLimits { get; set; }
         public DataTable dtLive { get; set; }
+        public DataTable dtLiveFund { get; set; }
         private db DB = new db();
         public FundLimits(string fundname, SqlConnection conn)
         {
@@ -448,10 +451,12 @@ namespace wpfTDX
                 dtFundLimits = tblFundLimits.table_data;
                 //get the live limits data from the postions_target table
                 tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "' AND sub_tickername = current_contract and sub_tickername !='NONE'");
+                tblRiskMetrics = new Table("risk_metrics", this.gbl_conn, "WHERE fundname='" + fundname + "'");
                 dtLive = tblTargetPositions.table_data;
+                dtLiveFund = tblRiskMetrics.table_data;//tblTargetPositions.table_data;
                 ProcessCustomFundLimits(dtFundLimits);
                 ProcessDefaultFundLimits(dtFundData);
-                ProcessLiveFundValues(dtLive);
+                ProcessLiveFundValues(dtLiveFund);
             }
             catch(Exception ex)
             {
@@ -468,12 +473,15 @@ namespace wpfTDX
             {
                 if(dtIn.Rows.Count > 0)
                 {
-                    this.stk_leverage_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_leverage_equities");
-                    this.fut_leverage_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_leverage_futures");
-                    this.leverage_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_leverage");
-                    this.var_limit_factor.liveValue = GetMaxLiveValue(dtIn, "portfolio_var");
-                    this.stress_limit_factor.liveValue = GetMaxLiveValue(dtIn, "portfolio_stress");
-                    this.drawdown_limit.liveValue = GetMaxLiveValue(dtIn, "portfolio_dd");
+                    this.stk_leverage_limit.liveValue = GetMaxLiveValue(dtIn, "leverage_equities");
+                    this.fut_leverage_limit.liveValue = GetMaxLiveValue(dtIn, "leverage_futures");
+                    this.leverage_limit.liveValue = GetMaxLiveValue(dtIn, "leverage_total");
+                    double? varLive =  GetMaxLiveValue(dtIn, "var")/ this.var_target;
+                    this.var_limit_factor.liveValue = varLive.HasValue ? (double?)Math.Round(varLive.Value, 1) : null;
+                    double? stressLive  = GetMaxLiveValue(dtIn, "stress") / this.var_target;
+                    this.stress_limit_factor.liveValue = stressLive.HasValue ? (double?)Math.Round(stressLive.Value, 1) : null;
+                    double? ddLive = GetMaxLiveValue(dtIn, "dd_return_curday");
+                    this.drawdown_limit.liveValue = ddLive.HasValue ? (double?)Math.Abs(ddLive.Value) : null;
                  }
             }
             catch(Exception ex)
@@ -517,8 +525,14 @@ namespace wpfTDX
             {
                 if (dtFundData.Rows.Count > 0)
                 {
-                    string stkLeverageLimitDefault = dtFundData.Rows[0]["stk_leverage_limit"].ToString();
+                    string var_target = dtFundData.Rows[0]["var_target"].ToString();
                     double parsedOut;
+                    if(Double.TryParse(var_target,out parsedOut))
+                    {
+                        this.var_target = parsedOut;
+                    }
+                    string stkLeverageLimitDefault = dtFundData.Rows[0]["stk_leverage_limit"].ToString();
+
                     if (Double.TryParse(stkLeverageLimitDefault, out parsedOut))
                     {
                         this.stk_leverage_limit.defaultValue = parsedOut;
