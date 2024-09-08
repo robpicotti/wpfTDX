@@ -39,6 +39,9 @@
                 <StackPanel Grid.Column="3" Margin="5 23">
                     <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold"/>
                 </StackPanel>
+                <StackPanel Grid.Column="4" Margin="5 23">
+                    <Button x:Name="cmdTest" Click="cmdTest_Click" Content="Test webapi" Background="HotPink"></Button>
+                </StackPanel>
                 <StackPanel Grid.Column="8" Margin="5">
                     <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x"  FontWeight="Bold" />
                 </StackPanel>
@@ -193,7 +196,18 @@
                             </StackPanel>
                         </StackPanel>
                     </TabItem>
-                </TabControl>
+
+                    <TabItem Header="test">
+                        <StackPanel>
+                            <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
+                            </Border>
+                            <DataGrid x:Name="dgTest"></DataGrid>
+                        </StackPanel>
+
+
+                    </TabItem>
+            
+            </TabControl>
         </Border>
             </ScrollViewer>
     </StackPanel>
