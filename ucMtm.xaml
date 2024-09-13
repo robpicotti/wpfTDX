@@ -26,22 +26,41 @@
                 <!-- fundname-->
                 <StackPanel Grid.Column="0" Margin="5">
                     <TextBlock Text="fundname" FontWeight="Bold" Margin="5 1"/>
-                    <ComboBox x:Name="cboFundname" ItemsSource="{Binding}"/>
+                    <ComboBox x:Name="cboFundname" 
+                              ItemsSource="{Binding Funds}" DisplayMemberPath="FundName"
+                                SelectedItem="{Binding SelectedFund, Mode=TwoWay}" 
+                              />
+                              <!--ItemsSource="{Binding FundName}"
+                              SelectionChanged="cboFundname_SelectionChanged"
+                              SelectedItem="{Binding FundName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"-->
+                     
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="5">
                     <TextBlock Text="from date" FontWeight="Bold" Margin="5 1"/>
-                    <DatePicker x:Name="dtFrom"/>
+                    <DatePicker x:Name="dtFrom"
+                                SelectedDate="{Binding Date_tminus1,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                SelectedDateChanged="dtFrom_SelectedDateChanged"
+                                />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Margin="5">
                     <TextBlock Text="to date" FontWeight="Bold" Margin="5 1"/>
-                    <DatePicker x:Name="dtTo"/>
+                    <DatePicker x:Name="dtTo"
+                        SelectedDate="{Binding Date_t, Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                SelectedDateChanged="dtTo_SelectedDateChanged"
+                    />
                 </StackPanel>
-                <StackPanel Grid.Column="3" Margin="5 23">
+                <StackPanel Grid.Column="3" >
+                    <TextBlock Text="base currency" FontWeight="Bold" Margin="5 8"/>
+                    <TextBox x:Name="txtBaseCurrency" FontWeight="Bold" Margin="5 -8" IsReadOnly="True" 
+                             Text="{Binding SelectedFund.BaseCurrency, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                             
+                             />
+                </StackPanel>
+
+                <StackPanel Grid.Column="4" Margin="5 23">
                     <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold"/>
                 </StackPanel>
-                <StackPanel Grid.Column="4" Margin="5 23">
-                    <Button x:Name="cmdTest" Click="cmdTest_Click" Content="Test webapi" Background="HotPink"></Button>
-                </StackPanel>
+                <StackPanel Grid.Column="5" Margin="5 23"/>
                 <StackPanel Grid.Column="8" Margin="5">
                     <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x"  FontWeight="Bold" />
                 </StackPanel>
@@ -50,92 +69,8 @@
         <TextBlock Text="MtM" Margin="5" FontWeight="Bold" FontSize="15"/>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
-            <TabControl >
-                <!-- total pnl data-->
-                <TabItem Header="Total">
-                        <StackPanel>
-                            <DataGrid x:Name="dgTotal" AutoGenerateColumns="True"
-                                Height="200"       
-                                ScrollViewer.CanContentScroll="True" 
-                                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                IsReadOnly="True"
-                                Margin="5">
-                                <DataGrid.ColumnHeaderStyle>
-                                    <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="FontWeight" Value="Bold" />
-                                    </Style>
-                                </DataGrid.ColumnHeaderStyle>
-                            </DataGrid>
-                    </StackPanel>
-                </TabItem>
-                <!-- equities data-->
-                <TabItem Header="Equities">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                           
-                        <StackPanel>
-                                <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
-                                            <TextBox IsReadOnly="True" x:Name="txtTotalPnl" Margin="5"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" >
-                                            <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
-                                            <TextBox  IsReadOnly="True" x:Name="txtPosnPnl" Margin="5"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
-                                            <TextBox IsReadOnly="True" x:Name="txtNewDealsPnl" Margin="5"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="3">
-                                            <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
-                                            <TextBox IsReadOnly="True" x:Name="txtCommission" Margin="5"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                                <StackPanel >
-                                    <TextBlock Text="position pnl:" Margin="5" FontWeight="Bold"/>
-                                    <DataGrid x:Name="dgEquities"  
-                                        AutoGenerateColumns="True" Height="200"       
-                                        ScrollViewer.CanContentScroll="True" 
-                                        ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                              IsReadOnly="True"
-                                        Margin="5">
-                                        <DataGrid.ColumnHeaderStyle>
-                                            <Style TargetType="DataGridColumnHeader">
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </Style>
-                                        </DataGrid.ColumnHeaderStyle>
-                                    </DataGrid>
-                                    <TextBlock Text="new deals pnl:" Margin="5" FontWeight="Bold"/>
-                                    <DataGrid x:Name="dgEquitiesNewDeals" 
-                                          Height="500"   
-                                          AutoGenerateColumns="True" 
-                                          Margin="5"
-                                                ScrollViewer.CanContentScroll="True" 
-                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                              IsReadOnly="True">
-                                        <DataGrid.ColumnHeaderStyle>
-                                            <Style TargetType="DataGridColumnHeader">
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </Style>
-                                        </DataGrid.ColumnHeaderStyle>
-                                    </DataGrid>
-                            </StackPanel>
-                        </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
-                <!-- fututes data-->
-                    <TabItem Header="Futures">
+                <TabControl >
+                    <TabItem Header="PNL">
                         <StackPanel>
                             <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
                                 <Grid>
@@ -147,67 +82,128 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="total pnl:" FontWeight="Bold" Margin="5"/>
-                                        <TextBox IsReadOnly="True" x:Name="txtTotalPnlFutures" Margin="5"/>
+                                        <TextBox IsReadOnly="True" x:Name="txtTotalPnlFutures" Margin="5" Text="{Binding TotalPnl,Mode=OneWay,StringFormat={}{0:N2}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" >
                                         <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
-                                        <TextBox  IsReadOnly="True" x:Name="txtPosnPnlFutures" Margin="5"/>
+                                        <TextBox  IsReadOnly="True" x:Name="txtPosnPnlFutures" Margin="5" 
+                                                  Text="{Binding TotalBuyAndHold,Mode=OneWay,StringFormat={}{0:N2}, UpdateSourceTrigger=PropertyChanged}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5"/>
-                                        <TextBox IsReadOnly="True" x:Name="txtNewDealsPnlFutures" Margin="5"/>
+                                        <TextBox IsReadOnly="True" x:Name="txtNewDealsPnlFutures" 
+                                                 Text="{Binding TotalNewDeals,Mode=OneWay,StringFormat={}{0:N2}, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="5"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="3">
                                         <TextBlock Text="commission:" FontWeight="Bold" Margin="5"/>
-                                        <TextBox IsReadOnly="True" x:Name="txtCommissionFutures" Margin="5"/>
+                                        <TextBox IsReadOnly="True" x:Name="txtCommissionFutures" Margin="5"
+                                                 Text="{Binding TotalCommissions,Mode=OneWay,StringFormat={}{0:N2}, UpdateSourceTrigger=PropertyChanged}"
+                                                 />
                                     </StackPanel>
                                 </Grid>
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="position pnl:" FontWeight="Bold" Margin="5" />
                                 <DataGrid x:Name="dgFutures" 
-                                AutoGenerateColumns="True" Height="200"     
-                                Margin="5"
-                                ScrollViewer.CanContentScroll="True" 
-                                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                IsReadOnly="True">
+                                  ItemsSource="{Binding BuyAndHoldData, Mode=TwoWay}"
+                                  AutoGenerateColumns="False" 
+                                  Height="200"     
+                                  Margin="5"
+                                  ScrollViewer.CanContentScroll="True" 
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  IsReadOnly="True"
+                                SelectionMode="Extended" 
+                                SelectionUnit="FullRow"
+                                ClipboardCopyMode="IncludeHeader"
+                                                    ColumnWidth="Auto"
+                                          >
                                     <DataGrid.ColumnHeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
-                                            <Setter Property="FontWeight" Value="Bold" />
+                                            <Setter Property="Background" Value="Black" />
+                                            <!-- Set background to black -->
+                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="FontWeight" Value="Normal" />
+                                            <Setter Property="FontSize" Value="11"/>
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
+
+                                    <DataGrid.Columns>
+                                        <!-- Non-nullable types -->
+                                        <DataGridTextColumn Header="TadID" Binding="{Binding TadId}" />
+                                        <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" />
+                                        <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" />
+                                        <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" />
+                                        <DataGridTextColumn Header="Posn" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Closing Price T" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" />
+                                        <DataGridTextColumn Header="Closing Price Tminus" Binding="{Binding ClosingPriceTMinus1,StringFormat={}{0:N2}}" />
+                                        <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Cash T minus" Binding="{Binding CashTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="MtM T" Binding="{Binding MtmT,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="MtM T minus" Binding="{Binding MtmTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Adj MtM T minus" Binding="{Binding AdjustedMtmTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Adj Cash T minus" Binding="{Binding AdjustedCashTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Commission (Base Curr)" Binding="{Binding CommissionBaseCurrency, StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Pnl (Base Curr)" Binding="{Binding PnlBaseCurrency, StringFormat={}{0:N0}}" >
+                                            
+                                        </DataGridTextColumn>
+     
+                                    </DataGrid.Columns>
                                 </DataGrid>
+
                                 <TextBlock Text="new deals pnl:" FontWeight="Bold" Margin="5" />
                                 <DataGrid x:Name="dgFuturesNewDeals" 
+                                           ItemsSource="{Binding NewDealsData, Mode=TwoWay}"
                                           Height="200"   
-                                          AutoGenerateColumns="True" 
+                                          AutoGenerateColumns="False" 
                                           Margin="5"
                                             ScrollViewer.CanContentScroll="True" 
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                            IsReadOnly="True">
+                                            IsReadOnly="True"
+                                         SelectionMode="Extended" 
+                                        SelectionUnit="FullRow"
+                                        ClipboardCopyMode="IncludeHeader"  
+                                          ColumnWidth="Auto"
+                                          >
                                     <DataGrid.ColumnHeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
-                                            <Setter Property="FontWeight" Value="Bold" />
+                                            <Setter Property="Background" Value="Black" />
+                                            <!-- Set background to black -->
+                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="FontWeight" Value="Normal" />
+                                            <Setter Property="FontSize" Value="11"/>
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="TadID" Binding="{Binding TadId}" />
+                                        <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" />
+                                        <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" />
+                                        <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" />
+                                        <DataGridTextColumn Header="Exec Qty" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Exec time" Binding="{Binding ExecutionTime}" />
+                                        <DataGridTextColumn Header="Tx Price" Binding="{Binding TransactionPrice,StringFormat={}{0:N2}}" />
+                                        <DataGridTextColumn Header="Closing Price" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" />
+                                        <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Cash T minus" Binding="{Binding CashTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="MtM T" Binding="{Binding MtmT,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="MtM T minus" Binding="{Binding MtmTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Adj MtM T minus" Binding="{Binding AdjustedMtmTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="Adj Cash T minus" Binding="{Binding AdjustedCashTMinus1,StringFormat={}{0:N0}}" />
+                                        <DataGridTextColumn Header="FX Currency" Binding="{Binding SpotCurrency}" />
+                                        <DataGridTextColumn Header="FX Spot Rate" Binding="{Binding FXSpotRate,StringFormat={}{0:N5}}" />
+                                        <!-- Nullable double type with StringFormat -->
+                                        <DataGridTextColumn Header="Commission (Base Curr)" Binding="{Binding CommissionBaseCurrency, StringFormat={}{0:N2}}" />
+                                        <DataGridTextColumn Header="Pnl (Base Curr)" Binding="{Binding PnlBaseCurrency, StringFormat={}{0:N2}}" />
+
+                                    </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
                         </StackPanel>
                     </TabItem>
 
-                    <TabItem Header="test">
-                        <StackPanel>
-                            <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">
-                            </Border>
-                            <DataGrid x:Name="dgTest"></DataGrid>
-                        </StackPanel>
-
-
-                    </TabItem>
-            
-            </TabControl>
+                </TabControl>
         </Border>
             </ScrollViewer>
     </StackPanel>

@@ -19,6 +19,7 @@ using System.Globalization;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.ObjectModel;
 
 namespace wpfTDX
 {
@@ -47,26 +48,21 @@ namespace wpfTDX
         public decimal equity_new_deals = 0;
         public decimal equity_total_pnl = 0;
         public decimal equity_commission = 0;
+        public MtmViewModel ViewModel { get; set; }
 
         public ucMtm(SqlConnection conn, string default_fund)
         {
             InitializeComponent();
             gbl_conn = conn;
-            LoadForm();  
+            this.ViewModel = new MtmViewModel();
+            this.DataContext = ViewModel;
+            LoadForm();
+
         }
         private void LoadForm() 
         {
-            dgEquities.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
-            dgEquitiesNewDeals.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
-            dgFutures.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
-            dgFuturesNewDeals.AutoGeneratingColumn += dgEquities_AutoGeneratingColumn;
-            dtAccounts = _db.get_funds(gbl_conn);
-            cboFundname.Items.Clear();
-            foreach (DataRow row in dtAccounts.Rows)
-            {
-                cboFundname.Items.Add(row["fundname"].ToString());
-            }
-            cboFundname.SelectedItem = DEFAULT_FUND;
+
+            ViewModel?.GetFunds();
             BuildNumericColumnLists();
             SetControlValues();
 
@@ -121,182 +117,16 @@ namespace wpfTDX
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void GetFuturesPnl()
-        {
-            string posn_date = "";
-            string posn_date_t1 = "";
-
-            string fundName = cboFundname.Text;
-      
-            if (dtFrom.SelectedDate != null)
-            {
-                posn_date_t1 = dtFrom.SelectedDate.Value.ToString("yyyy-MM-dd");
-            }
-            else
-            {
-                posn_date_t1 = DateTime.Today.ToString("yyyy-MM-dd");
-            }
-            if (dtTo.SelectedDate != null)
-            {
-                posn_date = dtTo.SelectedDate.Value.ToString("yyyy-MM-dd");
-            }
-            else
-            {
-                posn_date = DateTime.Today.ToString("yyyy-MM-dd");
-            }
-
-            //DataSet ds = _db.get_futures_pnl(fundName, posn_date, posn_date_t1, gbl_conn);
-
-            //if (ds.Tables.Count > 0)
-            //{
-            //    DataView dataView = ds.Tables[1].DefaultView;
-            //    dgFutures.ItemsSource = dataView;
-            //    dgFuturesNewDeals.ItemsSource = ds.Tables[0].DefaultView;
-            //    dtFuturesPosnPnl = ds.Tables[1];
-            //    dtFuturesNewDealsPnl = ds.Tables[0];
-            //}
-            //decimal futuresCommission = 0;
-            //decimal futuresNewDeals = 0;
-            //decimal futuresPosnPnl = 0;
-            //object futuresNewDealsObject = DBNull.Value;
-            //if ((dtFuturesNewDealsPnl != null) && dtFuturesNewDealsPnl.Rows.Count > 0)
-            //{
-            //    futuresNewDealsObject = Math.Round(Convert.ToDecimal(dtFuturesNewDealsPnl.Compute("SUM(new_deals)", String.Empty)), 0);
-            //    if (futuresNewDealsObject != DBNull.Value)
-            //    {
-            //        futuresNewDeals = Math.Round(Convert.ToDecimal(futuresNewDealsObject), 0);
-            //    }
-            //}
-            //futures_posn_pnl = Math.Round(Convert.ToDecimal(dtFuturesPosnPnl.Compute("SUM(_position_pnl)", String.Empty)), 0);
-
-            //futures_total_pnl = Math.Round(Convert.ToDecimal(dtFuturesPosnPnl.Compute("SUM(total_pnl)", String.Empty)), 0);
-
-            //futures_new_deals = futuresNewDeals;
-            //txtPosnPnlFutures.Text = futures_posn_pnl.ToString("N0");
-            //txtNewDealsPnlFutures.Text = futures_new_deals.ToString("N0");
-            //txtTotalPnlFutures.Text = futures_total_pnl.ToString("N0");
-            //txtCommissionFutures.Text = futures_commission.ToString("N0");
-        }
-       
-        private void GetEquitiesPnl()
-        {
-            string posn_date = "";
-            string posn_date_t1 = "";
-            string fundName = cboFundname.Text;
-            if (dtFrom.SelectedDate != null)
-            {
-                posn_date_t1 = dtFrom.SelectedDate.Value.ToString("yyyy-MM-dd");
-            }
-            else
-            {
-                posn_date_t1 = DateTime.Today.ToString("yyyy-MM-dd");
-            }
-            if (dtTo.SelectedDate != null)
-            {
-                posn_date = dtTo.SelectedDate.Value.ToString("yyyy-MM-dd");
-            }
-            else
-            {
-                posn_date = DateTime.Today.ToString("yyyy-MM-dd");
-            }
-            DataSet ds = _db.get_equities_pnl(fundName, posn_date, posn_date_t1, gbl_conn);
-            if (ds.Tables.Count > 0)
-            {
-                DataView dataView = ds.Tables[1].DefaultView;
-                dgEquities.ItemsSource = dataView;
-                dgEquitiesNewDeals.ItemsSource = ds.Tables[0].DefaultView;
-                dtEquityPosnPnl = ds.Tables[1];
-                dtEquityNewDealsPnl = ds.Tables[0];
-            }
-
-
-            if (dtEquityPosnPnl.Rows.Count > 0)
-            {
-                decimal equityCommission = 0;
-                equity_posn_pnl = Math.Round(Convert.ToDecimal(dtEquityPosnPnl.Compute("SUM(posn_pnl)", String.Empty)),0);
-                equity_new_deals = Math.Round(Convert.ToDecimal(dtEquityPosnPnl.Compute("SUM(new_deals_pnl)", String.Empty)),0);
-                equity_total_pnl = Math.Round(Convert.ToDecimal(dtEquityPosnPnl.Compute("SUM(total_pnl)", String.Empty)),0);
-                object equityCommissionObject = dtEquityNewDealsPnl.Compute("SUM(commission)", String.Empty);
-                if (equityCommissionObject != DBNull.Value)
-                {
-                    equityCommission = Math.Round(Convert.ToDecimal(equityCommissionObject), 0);
-                }
-
-                equity_commission = equityCommission;
-                txtPosnPnl.Text = equity_posn_pnl.ToString("N0");
-                txtNewDealsPnl.Text = equity_new_deals.ToString("N0");
-                txtTotalPnl.Text = equity_total_pnl.ToString("N0");
-                txtCommission.Text = equity_commission.ToString("N0");
-            }
-        }
-        private void GetTotalPnl()
-        {
-            decimal total_posn_pnl = 0;
-            decimal total_newdeals_pnl = 0;
-            decimal total_pnl = 0;
-            string fundname = cboFundname.Text;
-            total_posn_pnl = futures_posn_pnl + equity_posn_pnl;
-            total_newdeals_pnl = futures_new_deals + equity_new_deals;
-            total_pnl = equity_total_pnl + futures_total_pnl;
-
-            DataTable dtTotal = new DataTable();
-            dtTotal.Columns.Add("fundname");
-            dtTotal.Columns.Add("type");
-            dtTotal.Columns.Add("posn_pnl");
-            dtTotal.Columns.Add("new_deals_pnl");
-            dtTotal.Columns.Add("total_pnl");
-
-            DataRow dr1 = dtTotal.NewRow();
-            dr1["fundname"] = fundname ;
-            dr1["type"] = "equities";
-            dr1["posn_pnl"] = equity_posn_pnl.ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dr1["new_deals_pnl"] = equity_new_deals.ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dr1["total_pnl"] = equity_total_pnl.ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dtTotal.Rows.Add(dr1);
-
-            DataRow dr2 = dtTotal.NewRow();
-            dr2["fundname"] = fundname;
-            dr2["type"] = "futures";
-            dr2["posn_pnl"] = futures_posn_pnl.ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dr2["new_deals_pnl"] = futures_new_deals.ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dr2["total_pnl"] = futures_total_pnl.ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dtTotal.Rows.Add(dr2);
-
-            DataRow dr3 = dtTotal.NewRow();
-            dr3["fundname"] = fundname;
-            dr3["type"] = "";
-            dr3["posn_pnl"] = String.Empty;
-            dr3["new_deals_pnl"] = String.Empty;
-            dr3["total_pnl"] = String.Empty;
-            dtTotal.Rows.Add(dr3);
-
-            DataRow dr4 = dtTotal.NewRow();
-            dr4["fundname"] = fundname;
-            dr4["type"] = "Total";
-            dr4["posn_pnl"] = (futures_posn_pnl + equity_posn_pnl).ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dr4["new_deals_pnl"] = (futures_new_deals + equity_new_deals).ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dr4["total_pnl"] = (futures_total_pnl + equity_total_pnl).ToString("N", CultureInfo.GetCultureInfo("en-US"));
-            dtTotal.Rows.Add(dr4);
-            dgTotal.ItemsSource = dtTotal.DefaultView;
-
-        }
-        private async void cmdRun_Click(object sender, RoutedEventArgs e)
+        private  void cmdRun_Click(object sender, RoutedEventArgs e)
         {
  
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                string fundname = cboFundname.Text;
-                DateTime date_t = dtTo.SelectedDate.Value;
-                DateTime date_tminus1 = dtFrom.SelectedDate.Value;
-                string base_currency = "EUR";
-                await ProcessPnlData(fundname, date_t, date_tminus1, base_currency);
-                MessageBox.Show("Pnl calculation complete", "Pnl", MessageBoxButton.OK, MessageBoxImage.Information);
-                //GetEquitiesPnl();
-                //GetFuturesPnl();
-                //GetTotalPnl();
+                ViewModel?.GetPnl();
+                MessageBox.Show("Pnl data loaded for: " + ViewModel.SelectedFund.FundName,"Mtm",MessageBoxButton.OK,MessageBoxImage.Information);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Run pnl error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -491,6 +321,32 @@ namespace wpfTDX
                     Console.WriteLine("Error: " + response.StatusCode);
                     return null;
                 }
+            }
+        }
+
+        private void cboFundname_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ViewModel.FundName = cboFundname.SelectedItem.ToString();
+        }
+
+        private void dtFrom_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dtFrom.SelectedDate == null) { ViewModel.Date_tminus1 = DateTime.Today; }
+            else
+            {
+                ViewModel.Date_tminus1 = (DateTime)dtFrom.SelectedDate;
+            }
+        }
+
+        private void dtTo_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dtTo.SelectedDate == null)
+            {
+                ViewModel.Date_t = DateTime.Today;
+            }
+            else
+            {
+                ViewModel.Date_t = (DateTime)dtTo.SelectedDate;
             }
         }
     }

@@ -68,7 +68,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Fund.cs" />
+    <Compile Include="FundsDataModel.cs" />
     <Compile Include="Limits.cs" />
+    <Compile Include="MtmDataModel.cs" />
+    <Compile Include="MtmViewModel.cs" />
     <Compile Include="Order.cs" />
     <Compile Include="Slippage.cs" />
     <Compile Include="Table.cs" />
