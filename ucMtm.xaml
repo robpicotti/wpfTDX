@@ -117,7 +117,8 @@
                                 SelectionMode="Extended" 
                                 SelectionUnit="FullRow"
                                 ClipboardCopyMode="IncludeHeader"
-                                                    ColumnWidth="Auto"
+                                ColumnWidth="Auto" 
+                                SelectionChanged="dgFutures_SelectionChanged"
                                           >
                                     <DataGrid.ColumnHeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
@@ -128,24 +129,30 @@
                                             <Setter Property="FontSize" Value="11"/>
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
-
+                                    <!-- Define Cell Style for adding padding -->
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="Padding" Value="25,0,25,0"/>
+                                            <!-- Horizontal padding for extra width -->
+                                        </Style>
+                                    </DataGrid.CellStyle>
                                     <DataGrid.Columns>
                                         <!-- Non-nullable types -->
-                                        <DataGridTextColumn Header="TadID" Binding="{Binding TadId}" />
-                                        <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" />
-                                        <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" />
-                                        <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" />
-                                        <DataGridTextColumn Header="Posn" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Closing Price T" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" />
-                                        <DataGridTextColumn Header="Closing Price Tminus" Binding="{Binding ClosingPriceTMinus1,StringFormat={}{0:N2}}" />
-                                        <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Cash T minus" Binding="{Binding CashTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="MtM T" Binding="{Binding MtmT,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="MtM T minus" Binding="{Binding MtmTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Adj MtM T minus" Binding="{Binding AdjustedMtmTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Adj Cash T minus" Binding="{Binding AdjustedCashTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Commission (Base Curr)" Binding="{Binding CommissionBaseCurrency, StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Pnl (Base Curr)" Binding="{Binding PnlBaseCurrency, StringFormat={}{0:N0}}" >
+                                        <DataGridTextColumn Header="TadID" Binding="{Binding TadId}" MinWidth="80" />
+                                        <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" MinWidth="80" />
+                                        <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" MinWidth="80" />
+                                        <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" MinWidth="80" />
+                                        <DataGridTextColumn Header="Posn" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" MinWidth="80" />
+                                        <DataGridTextColumn Header="Closing Price T" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" MinWidth="100" />
+                                        <DataGridTextColumn Header="Closing Price Tminus" Binding="{Binding ClosingPriceTMinus1,StringFormat={}{0:N2}}" MinWidth="120" />
+                                        <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" MinWidth="50"/>
+                                        <DataGridTextColumn Header="Cash Tminus" Binding="{Binding CashTMinus1,StringFormat={}{0:N0}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="MtM T" Binding="{Binding MtmT,StringFormat={}{0:N0}}" MinWidth="50"/>
+                                        <DataGridTextColumn Header="MtM Tminus" Binding="{Binding MtmTMinus1,StringFormat={}{0:N0}}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Adj MtM Tminus" Binding="{Binding AdjustedMtmTMinus1,StringFormat={}{0:N0}}" MinWidth="100" />
+                                        <DataGridTextColumn Header="Adj Cash Tminus" Binding="{Binding AdjustedCashTMinus1,StringFormat={}{0:N0}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="Commission (Base Curr)" Binding="{Binding CommissionBaseCurrency, StringFormat={}{0:N0}}" MinWidth="130"/>
+                                        <DataGridTextColumn Header="Pnl (Base Curr)" Binding="{Binding PnlBaseCurrency, StringFormat={}{0:N0}}" MinWidth="100">
                                             
                                         </DataGridTextColumn>
      
@@ -176,26 +183,33 @@
                                             <Setter Property="FontSize" Value="11"/>
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
+                                    <!-- Define Cell Style for adding padding -->
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="Padding" Value="5,0,5,0"/>
+                                            <!-- Horizontal padding for extra width -->
+                                        </Style>
+                                    </DataGrid.CellStyle>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="TadID" Binding="{Binding TadId}" />
-                                        <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" />
-                                        <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" />
-                                        <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" />
-                                        <DataGridTextColumn Header="Exec Qty" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Exec time" Binding="{Binding ExecutionTime}" />
-                                        <DataGridTextColumn Header="Tx Price" Binding="{Binding TransactionPrice,StringFormat={}{0:N2}}" />
-                                        <DataGridTextColumn Header="Closing Price" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" />
-                                        <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Cash T minus" Binding="{Binding CashTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="MtM T" Binding="{Binding MtmT,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="MtM T minus" Binding="{Binding MtmTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Adj MtM T minus" Binding="{Binding AdjustedMtmTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="Adj Cash T minus" Binding="{Binding AdjustedCashTMinus1,StringFormat={}{0:N0}}" />
-                                        <DataGridTextColumn Header="FX Currency" Binding="{Binding SpotCurrency}" />
-                                        <DataGridTextColumn Header="FX Spot Rate" Binding="{Binding FXSpotRate,StringFormat={}{0:N5}}" />
+                                        <DataGridTextColumn Header="TadID" Binding="{Binding TadId}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Exec Qty" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Exec time" Binding="{Binding ExecutionTime}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Tx Price" Binding="{Binding TransactionPrice,StringFormat={}{0:N2}}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Closing Price" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="Cash Tminus" Binding="{Binding CashTMinus1,StringFormat={}{0:N0}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="MtM T" Binding="{Binding MtmT,StringFormat={}{0:N0}}" MinWidth="80"/>
+                                        <DataGridTextColumn Header="MtM Tminus" Binding="{Binding MtmTMinus1,StringFormat={}{0:N0}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="Adj MtM Tminus" Binding="{Binding AdjustedMtmTMinus1,StringFormat={}{0:N0}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="Adj Cash Tminus" Binding="{Binding AdjustedCashTMinus1,StringFormat={}{0:N0}}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="FX Currency" Binding="{Binding SpotCurrency}" MinWidth="100"/>
+                                        <DataGridTextColumn Header="FX Spot Rate" Binding="{Binding FXSpotRate,StringFormat={}{0:N5}}" MinWidth="100"/>
                                         <!-- Nullable double type with StringFormat -->
-                                        <DataGridTextColumn Header="Commission (Base Curr)" Binding="{Binding CommissionBaseCurrency, StringFormat={}{0:N2}}" />
-                                        <DataGridTextColumn Header="Pnl (Base Curr)" Binding="{Binding PnlBaseCurrency, StringFormat={}{0:N2}}" />
+                                        <DataGridTextColumn Header="Commission (Base Curr)" Binding="{Binding CommissionBaseCurrency, StringFormat={}{0:N2}}" MinWidth="130"/>
+                                        <DataGridTextColumn Header="Pnl (Base Curr)" Binding="{Binding PnlBaseCurrency, StringFormat={}{0:N2}}" MinWidth="120"/>
 
                                     </DataGrid.Columns>
                                 </DataGrid>

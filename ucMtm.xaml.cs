@@ -349,5 +349,10 @@ namespace wpfTDX
                 ViewModel.Date_t = (DateTime)dtTo.SelectedDate;
             }
         }
+
+        private void dgFutures_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }
