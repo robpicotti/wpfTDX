@@ -67,11 +67,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DataModels\PositionsDataModel.cs" />
+    <Compile Include="DataModels\SubaccountDataModel.cs" />
     <Compile Include="Fund.cs" />
-    <Compile Include="FundsDataModel.cs" />
+    <Compile Include="DataModels\FundsDataModel.cs" />
     <Compile Include="Limits.cs" />
-    <Compile Include="MtmDataModel.cs" />
-    <Compile Include="MtmViewModel.cs" />
+    <Compile Include="DataModels\MtmDataModel.cs" />
+    <Compile Include="ViewModels\MtmViewModel.cs" />
     <Compile Include="Order.cs" />
     <Compile Include="Slippage.cs" />
     <Compile Include="Table.cs" />
@@ -122,6 +124,7 @@
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
     <Compile Include="Util.cs" />
+    <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="winFreezeTadId.xaml.cs">
       <DependentUpon>winFreezeTadId.xaml</DependentUpon>
     </Compile>
