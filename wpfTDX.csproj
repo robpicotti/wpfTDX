@@ -68,11 +68,17 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DataModels\PositionsDataModel.cs" />
+    <Compile Include="DataModels\ScheduleDaysDataModel.cs" />
+    <Compile Include="DataModels\ScheduledJobDataModel.cs" />
+    <Compile Include="DataModels\ScheduleFrequenciesDataModel.cs" />
     <Compile Include="DataModels\SubaccountDataModel.cs" />
     <Compile Include="Fund.cs" />
     <Compile Include="DataModels\FundsDataModel.cs" />
     <Compile Include="Limits.cs" />
     <Compile Include="DataModels\MtmDataModel.cs" />
+    <Compile Include="ucScheduledJobsManager.xaml.cs">
+      <DependentUpon>ucScheduledJobsManager.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ViewModels\MtmViewModel.cs" />
     <Compile Include="Order.cs" />
     <Compile Include="Slippage.cs" />
@@ -124,6 +130,7 @@
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
     <Compile Include="Util.cs" />
+    <Compile Include="ViewModels\ScheduleJobViewModel.cs" />
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="winFreezeTadId.xaml.cs">
       <DependentUpon>winFreezeTadId.xaml</DependentUpon>
@@ -203,6 +210,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucProcessMonitor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucScheduledJobsManager.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

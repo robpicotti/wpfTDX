@@ -617,6 +617,10 @@ namespace wpfTDX
                     ucLimits Limits = new ucLimits(sql_conn);
                     Limits.Width = 1892;
                     return Limits;
+                case "Jobs":
+                    ucScheduledJobsManager jobs = new ucScheduledJobsManager();
+                    jobs.Width = 1892;
+                    return jobs;
                 default:
                         return null;
                 }
@@ -696,27 +700,6 @@ namespace wpfTDX
                 if (sender is TextBlock textBlock)
                 {
                     AddMtM(textBlock.Text);
-                    // Create a new instance of the user control
-                    //ucMtm newUserControl = CreateNewUserControl(textBlock.Text) as ucMtm;
-
-                    //if (newUserControl != null)
-                    //{
-                    //    newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                    //    // Set margin to create spacing between user controls
-                    //    newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                    //    // Wrap the user control in a Border with a black border color and thickness
-                    //    Border userControlBorder = new Border
-                    //    {
-                    //        BorderBrush = Brushes.Black,
-                    //        BorderThickness = new Thickness(2),
-                    //        Child = newUserControl
-                    //    };
-
-                    //    // Add the bordered user control to the WrapPanel
-                    //    userControlsWrapPanel.Children.Add(userControlBorder);
-                    //}
                 }
             }
             else
@@ -876,6 +859,18 @@ namespace wpfTDX
                 // Find the Border that wraps the specified ucPostions in the WrapPanel
                 Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
                                                        .FirstOrDefault(border => border.Child == Limits);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+            else if (sender is ucScheduledJobsManager jobs)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == jobs);
 
                 // Remove the Border from the WrapPanel
                 if (userControlBorder != null)
@@ -1306,6 +1301,45 @@ namespace wpfTDX
             else
             {
                 MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void txbJobs_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sql_conn != null)
+            {
+                if (sender is TextBlock textBlock)
+                {
+                    AddJobs(txbJobs.Text);
+                }
+            }
+            else
+            {
+                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void AddJobs(string textblockText)
+        {
+            // Create a new instance of the user control
+            ucScheduledJobsManager newUserControl = CreateNewUserControl(textblockText) as ucScheduledJobsManager;
+
+            if (newUserControl != null)
+            {
+                newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                // Set margin to create spacing between user controls
+                newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                // Wrap the user control in a Border with a black border color and thickness
+                Border userControlBorder = new Border
+                {
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(2),
+                    Child = newUserControl
+                };
+
+                // Add the bordered user control to the WrapPanel
+                userControlsWrapPanel.Children.Add(userControlBorder);
             }
         }
     }

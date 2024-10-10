@@ -88,7 +88,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5000/table_select", content).Result;
+                HttpResponseMessage response = client.PostAsync("http://localhost:5001/table_select", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -109,7 +109,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5000/select_table", content).Result;
+                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
