@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="wpfTDX.ucScheduledJobsManager"
+﻿<!--<UserControl x:Class="wpfTDX.ucScheduledJobsManager"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -7,39 +7,284 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel Margin="2" >
+        <Expander Header="Current Jobs" IsExpanded="True" FontWeight="Bold">
+            <Border BorderBrush="Black" Background="White"  BorderThickness="1" Padding="5" Margin="5">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="8*"/>
+                        <ColumnDefinition Width="1*"/>
 
-        <Border BorderBrush="Black" Background="White"  BorderThickness="1" Padding="5" Margin="5">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="8*"/>
-                    <ColumnDefinition Width="1*"/>
-
-                </Grid.ColumnDefinitions>
-                <StackPanel Margin="2">
-                    <DataGrid  x:Name="dgAllJobs"
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="2">
+                        <DataGrid  x:Name="dgAllJobs"
                             
                             ItemsSource="{Binding ScheduledJobs,Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="5">
-                <Button x:Name="cmdClose"
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="5">
+                        <Button x:Name="cmdClose"
                         Width="15"
                         Click="cmdClose_Click" Content="x"  FontWeight="Bold" />
-            </StackPanel>
-            </Grid>
-        </Border>
-        <Border  BorderBrush="Black" Background="White"  BorderThickness="1" Padding="5" Margin="5">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2*"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="5">
-                    <TextBlock Text="Job Name" FontWeight="Bold"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Expander>
+       
+            <Expander Header="Add Job" IsExpanded="True" FontWeight="Bold">
+                <Border  BorderBrush="Black" Background="White"  BorderThickness="1" Padding="5" Margin="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Job Name" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="5" Grid.Row="0">
+                            <TextBox x:Name="txtJobName" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Days" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Margin="5" Grid.Row="0">
+                            <ComboBox x:Name="cboDays" ItemsSource="{Binding ScheduleDays}" DisplayMemberPath="DayName" />
+
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Frequency" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="5" Margin="5" Grid.Row="0">
+                            <ComboBox x:Name="cboFrequency" ItemsSource="{Binding ScheduleFrequencies}" DisplayMemberPath="FrequencyName"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Expander>
+            <Expander Header="Configure Job" IsExpanded="True" FontWeight="Bold">
+                <Border  BorderBrush="Black" Background="White"  BorderThickness="1" Padding="5" Margin="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Python Module" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="5" Grid.Row="0">
+                            <TextBox x:Name="txtPythonModule"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Python Class" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Margin="5" Grid.Row="0">
+                            <TextBox x:Name="txtPythonClass"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Execute Method" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="5" Margin="5" Grid.Row="0">
+                            <TextBox x:Name="txtExecuteMethod"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="6" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Backfill" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="7" Margin="5" Grid.Row="0">
+                            <ComboBox x:Name="cboBackFill" 
+                              ItemsSource="{Binding TrueFalseOptions}" 
+                               SelectedItem="{Binding IsBackFill, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="8" Margin="5" Grid.Row="0">
+                            <TextBlock Text="Global close delta minutes" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="9" Margin="5" Grid.Row="0">
+                            <TextBox x:Name="txtDeltaMinutes"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Expander>
+            <Expander Header="Configure Job Parameters" IsExpanded="True" FontWeight="Bold">
+                <Border  BorderBrush="Black" Background="White"  BorderThickness="1" Padding="5" Margin="5">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="1.8*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="5" Grid.Row="0">
+                        <TextBlock Text="Parameter name" FontWeight="Bold"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="5" Grid.Row="0">
+                        <TextBox x:Name="txtParameterValue"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="5" Grid.Row="0">
+                        <TextBlock Text="Parameter values" FontWeight="Bold"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Margin="5" Grid.Row="0">
+                        <ListBox x:Name="lsbxParamValues" />
+                    </StackPanel>
+                </Grid>
+                </Border>
+            </Expander>
+        
+    </StackPanel>
+</UserControl>-->
+<UserControl x:Class="wpfTDX.ucScheduledJobsManager"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:wpfTDX"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <StackPanel Margin="2">
+
+        <!-- Top Section for Existing Jobs -->
+        <Expander Header="Current Jobs" IsExpanded="True" FontWeight="Bold">
+            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="8*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <DataGrid Grid.Column="0" x:Name="dgAllJobs"
+                              ItemsSource="{Binding ScheduledJobs, Mode=TwoWay}"
+                              SelectedItem="{Binding SelectedJob, Mode=TwoWay}" 
+                              AutoGenerateColumns="False" SelectionMode="Single">
+                        <!-- Define Columns for Job List -->
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Job Name" Binding="{Binding JobName}" />
+                            <DataGridTextColumn Header="Frequency" Binding="{Binding Frequency}" />
+                            <DataGridTextColumn Header="Days" Binding="{Binding Days}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Grid.Column="1" Margin="5">
+                        <Button x:Name="cmdClose" Width="15" Click="cmdClose_Click" Content="x" FontWeight="Bold" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Expander>
+
+        <!-- Job Details Section -->
+        <Expander Header="Add/Edit Job" IsExpanded="True" FontWeight="Bold">
+            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Job Name -->
+                    <TextBlock Grid.Column="0" Margin="5" Text="Job Name" FontWeight="Bold" />
+                    <TextBox Grid.Column="1" Margin="5" x:Name="txtJobName" Text="{Binding SelectedJob.JobName, Mode=TwoWay}" />
+
+                    <!-- Frequency -->
+                    <TextBlock Grid.Column="2" Margin="5" Text="Frequency" FontWeight="Bold" />
+                    <ComboBox Grid.Column="3" Margin="5" x:Name="cboFrequency" 
+                          ItemsSource="{Binding ScheduleFrequencies}"
+                          DisplayMemberPath="FrequencyName" 
+                          SelectedValuePath="FrequencyId" 
+                          SelectedValue="{Binding SelectedJob.FrequencyId, Mode=TwoWay}" />
+
+                    <!-- Days -->
+                    <TextBlock Grid.Column="4" Margin="5" Text="Days" FontWeight="Bold" />
+                    <ComboBox Grid.Column="5" Margin="5" x:Name="cboDays" 
+                              ItemsSource="{Binding ScheduleDays}"
+          DisplayMemberPath="DayName" 
+          SelectedValuePath="DayID" 
+          SelectedValue="{Binding SelectedJob.DayID, Mode=TwoWay}" />
+                </Grid>
+            </Border>
+        </Expander>
+
+        <!-- Job Configuration -->
+        <Expander Header="Configure Job" IsExpanded="True" FontWeight="Bold">
+            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Python Module and Class -->
+                    <TextBlock Grid.Column="0" Margin="5" Text="Python Module" FontWeight="Bold" />
+                    <TextBox Grid.Column="1" Margin="5" Text="{Binding SelectedJob.PythonModule, Mode=TwoWay}" />
+
+                    <TextBlock Grid.Column="2" Margin="5" Text="Python Class" FontWeight="Bold" />
+                    <TextBox Grid.Column="3" Margin="5" Text="{Binding SelectedJob.PythonClass, Mode=TwoWay}" />
+
+                    <!-- Method and Backfill -->
+                    <TextBlock Grid.Column="4" Margin="5" Text="Execute Method" FontWeight="Bold" />
+                    <TextBox Grid.Column="5" Margin="5" Text="{Binding SelectedJob.ExecuteMethod, Mode=TwoWay}" />
+
+                    <TextBlock Grid.Column="6" Margin="5" Text="Backfill" FontWeight="Bold" />
+                    <ComboBox Grid.Column="7" Margin="5" ItemsSource="{Binding TrueFalseOptions}" 
+                              SelectedItem="{Binding SelectedJob.BackFill, Mode=TwoWay}" />
+                </Grid>
+            </Border>
+        </Expander>
+
+        <!-- Job Parameters Section -->
+        <Expander Header="Configure Job Parameters" IsExpanded="True" FontWeight="Bold">
+            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+
+                    <DataGrid Grid.Row="0" ItemsSource="{Binding JobParameters}" AutoGenerateColumns="False" CanUserAddRows="False">
+                        <!-- Define the columns based on the properties of JobParametersDataModel -->
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Parameter Name" Binding="{Binding ParameterName}" Width="*" />
+
+                            <!-- Add more columns based on other properties of JobParametersDataModel -->
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Add Parameter Button -->
+                    <Button Grid.Row="0" Grid.Column="1" Content="Add Parameter" Command="{Binding AddParameterCommand}" />
+                </Grid>
+            </Border>
+        </Expander>
+
     </StackPanel>
 </UserControl>
+

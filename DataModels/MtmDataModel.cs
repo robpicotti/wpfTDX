@@ -155,7 +155,7 @@ namespace wpfTDX
             }
         }
 
-        [JsonProperty("executed_quantity")]
+        [JsonProperty("executed_qty")]
         public double? ExecutedQuantity
         {
             get => _executed_quantity;

@@ -27,7 +27,7 @@ namespace wpfTDX
     /// </summary>
     public partial class MainWindow : Window
     {
-        public string filepath = @"\\ad01-har.10dynamics.com\share\Files\TDX\tdx.txt";
+        public string filepath = @"\\ad01-har.10dynamics.com\Ray_Share\Files\TDX\tdx.txt";
         public string sqlServer = "";
         public string sqlInstance = "";
         public string DEFAULT_INSTANCE = "SQLEXPRESS";
@@ -62,7 +62,7 @@ namespace wpfTDX
         List<string> lstProcesses = new List<string>();
         private readonly object lockObject = new object();
         Thread monitoringThread;
-        public string VERSION = "TDX version 2.0.6";
+        public string VERSION = "TDX version 2.2.7";
         
         private Dictionary<TextBlock, UserControl> userControlDictionary = new Dictionary<TextBlock, UserControl>();
         /// <summary>

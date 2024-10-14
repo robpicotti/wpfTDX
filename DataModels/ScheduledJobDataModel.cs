@@ -15,6 +15,7 @@ namespace wpfTDX
         private string _jobname;
         private string _pythonmodule;
         private string _executemethod;
+        private string _pythonclass;
         private int _dayid;
         private int _frequencyid;
         private int _globalclosingdeltaminutes;
@@ -83,6 +84,22 @@ namespace wpfTDX
             }
         }
 
+
+
+        [JsonProperty("python_class")]
+        public string PythonClass
+        {
+            get => _pythonclass;
+            set
+            {
+                if (_pythonclass != value)
+                {
+                    _pythonclass = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         [JsonProperty("day_id")]
         public int DayId
         {
@@ -120,6 +137,20 @@ namespace wpfTDX
                 if (_globalclosingdeltaminutes != value)
                 {
                     _globalclosingdeltaminutes = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("backfill")]
+        public bool BackFill
+        {
+            get => _backfill;
+            set
+            {
+                if (_backfill != value)
+                {
+                    _backfill = value;
                     OnPropertyChanged();
                 }
             }
