@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,11 +11,19 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Data;
+using OfficeOpenXml;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows.Input;
+using GalaSoft.MvvmLight.Command;
+
 
 namespace wpfTDX
 {
     public class ScheduleJobViewModel : INotifyPropertyChanged
     {
+        public ICommand SaveCommand { get; private set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void OnPropertyChanged([CallerMemberName] string name = null)
@@ -23,7 +32,6 @@ namespace wpfTDX
         }
 
         private ObservableCollection<ScheduledJobDataModel> _scheduledjobs;
-
         public ObservableCollection<ScheduledJobDataModel> ScheduledJobs
         {
             get => _scheduledjobs;
@@ -68,25 +76,10 @@ namespace wpfTDX
         }
 
 
-
-        private ObservableCollection<JobParametersDataModel> _jobparameters;
-
-        public ObservableCollection<JobParametersDataModel> JobParameters
-        {
-            get => _jobparameters;
-            set
-            {
-                if (_jobparameters != value)
-                {
-                    _jobparameters = value;
-                    OnPropertyChanged(nameof(JobParameters));
-                }
-            }
-        }
+        public ObservableCollection<JobParametersDataModel> JobParameters { get; set; } = new ObservableCollection<JobParametersDataModel>();
 
 
         private ObservableCollection<JobParameterValueDataModel> _jobparametervalues;
-
         public ObservableCollection<JobParameterValueDataModel> JobParameterValues
         {
             get => _jobparametervalues;
@@ -115,9 +108,8 @@ namespace wpfTDX
                 }
             }
         }
-        
+
         private ScheduledJobDataModel _selectedJob;
-        
         public ScheduledJobDataModel SelectedJob
         {
             get => _selectedJob;
@@ -128,28 +120,60 @@ namespace wpfTDX
                     _selectedJob = value;
                     OnPropertyChanged(nameof(SelectedJob));
 
-                    // Load job parameters based on the selected job's JobId
+                    // Clear job parameters and values when a new job is selected
+                    JobParameters.Clear();
+                    JobParameterValues.Clear();
+
+                    // Load job parameters for the selected job
                     if (_selectedJob != null)
                     {
-                        LoadJobParametersForSelectedJob(_selectedJob.JobId);
+                        // Fetch and load parameters specific to the selected job
+                        var jobParams = GetJobParameters(_selectedJob.JobId);
+                        foreach (var param in jobParams)
+                        {
+                            JobParameters.Add(param);
+                        }
                     }
                 }
             }
         }
 
-        private JobParametersDataModel _selectedjobparameter;
+        // Holds all job parameters for all jobs
+        private List<JobParametersDataModel> allJobParameters;
+        private List<JobParameterValueDataModel> allParameterValues;
 
+        private JobParametersDataModel _selectedjobparameter;
         public JobParametersDataModel SelectedJobParameter
         {
             get => _selectedjobparameter;
             set
             {
-                if(_selectedjobparameter !=value)
+                if (_selectedjobparameter != value)
                 {
                     _selectedjobparameter = value;
                     OnPropertyChanged(nameof(SelectedJobParameter));
+
+                    // Clear existing parameter values
+                    JobParameterValues.Clear();
+
+                    // Load parameter values for the selected parameter
+                    if (_selectedjobparameter != null)
+                    {
+                        // Call the method to load parameter values
+                        LoadParameterValuesForSelectedJobParameter(_selectedjobparameter.ParameterId);
+                    }
                 }
             }
+        }
+
+        private List<JobParametersDataModel> GetJobParameters(int jobId)
+        {
+            return allJobParameters?.Where(p => p.JobId == jobId).ToList() ?? new List<JobParametersDataModel>();
+        }
+
+        private List<JobParameterValueDataModel> GetJobParameterValues(int parameterId)
+        {
+            return allParameterValues?.Where(pv => pv.ParameterId == parameterId).ToList() ?? new List<JobParameterValueDataModel>();
         }
 
         private JobParameterValueDataModel _selectedjobparametervalue;
@@ -198,17 +222,28 @@ namespace wpfTDX
 
         public ScheduleJobViewModel()
         {
+            SaveCommand = new RelayCommand(SaveAllJobs);
+            ScheduledJobs = new ObservableCollection<ScheduledJobDataModel>();
+            ScheduleDays = new ObservableCollection<ScheduleDaysDataModel>();
+            ScheduleFrequencies = new ObservableCollection<ScheduleFrequenciesDataModel>();
+            JobParameterValues = new ObservableCollection<JobParameterValueDataModel>(); // Initialize here
+
             GetScheduledJobs();
             GetScheduleDays();
             GetScheduleFrequencies();
             GetJobParameters();
             GetJobParameterValues();
         }
-        
+        private void SaveAllJobs()
+        {
+            // Logic to save all jobs to Excel
+            ExportToExcel(ScheduledJobs);
+        }
         private void GetJobParameters()
         {
             ProcessJobParameters();
         }
+
 
         private void GetJobParameterValues()
         {
@@ -223,7 +258,7 @@ namespace wpfTDX
         {
             ProcessScheduleDays();
         }
-        
+
         private void GetScheduleFrequencies()
         {
             ProcessScheduleFrequencies();
@@ -248,7 +283,7 @@ namespace wpfTDX
                 return jsonResponse;
             }
         }
-        
+
         private void ProcessScheduledJobs()
         {
             string jsonResponse = GetScheduledJobsData();
@@ -406,7 +441,7 @@ namespace wpfTDX
                 return jsonResponse;
             }
         }
-        
+
         private void ProcessJobParameters()
         {
             string jsonResponse = GetJobParametersData();
@@ -416,28 +451,16 @@ namespace wpfTDX
                 JArray paramData = JArray.Parse(jsonResponse);
 
                 // Deserialize the list of dictionaries directly into your DataModel
-                var paramsList = JsonConvert.DeserializeObject<List<JobParametersDataModel>>(paramData.ToString());
+                allJobParameters = JsonConvert.DeserializeObject<List<JobParametersDataModel>>(paramData.ToString());
 
-                if (JobParameters == null)
-                {
-                    JobParameters = new ObservableCollection<JobParametersDataModel>();
-                }
-                else
-                {
-                    JobParameters.Clear();
-                }
-
-                // Add each job to the ObservableCollection
-                foreach (var item in paramsList)
-                {
-                    JobParameters.Add(item);
-                }
+                // No need to fill JobParameters here, it will be done when the job is selected
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
         }
+
 
         private string GetJobParameterValuesData()
         {
@@ -465,48 +488,86 @@ namespace wpfTDX
             try
             {
                 // Parse the response as a JArray since it's a list of dictionaries
-                JArray paramDataValue = JArray.Parse(jsonResponse);
+                JArray paramValueData = JArray.Parse(jsonResponse);
 
                 // Deserialize the list of dictionaries directly into your DataModel
-                var paramValuesList = JsonConvert.DeserializeObject<List<JobParameterValueDataModel>>(paramDataValue.ToString());
+                allParameterValues = JsonConvert.DeserializeObject<List<JobParameterValueDataModel>>(paramValueData.ToString());
 
-                if (JobParameterValues == null)
+                // Check if allParameterValues is populated
+                if (allParameterValues == null || !allParameterValues.Any())
                 {
-                    JobParameterValues = new ObservableCollection<JobParameterValueDataModel>();
-                }
-                else
-                {
-                    JobParameterValues.Clear();
-                }
-
-                // Add each job to the ObservableCollection
-                foreach (var item in paramValuesList)
-                {
-                    JobParameterValues.Add(item);
+                    throw new Exception("No job parameter values were returned from the API.");
                 }
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception($"Error processing job parameter values: {ex.Message}");
             }
         }
 
-        private void LoadJobParametersForSelectedJob(int jobId)
+
+
+
+        // Fetch parameter values when a parameter is selected
+        // Placeholder method to load parameter values for the selected parameter
+        private void LoadParameterValuesForSelectedJobParameter(int parameterId)
         {
-            // Assuming JobParameters is already loaded with all parameters
-            if (JobParameters != null)
-            {
-                var filteredParameters = JobParameters.Where(p => p.JobId == jobId).ToList();
+            var valuesForSelectedParameter = allParameterValues.Where(pv => pv.ParameterId == parameterId).ToList();
 
-                // Clear and update JobParameters collection
-                JobParameters.Clear();
-                foreach (var param in filteredParameters)
-                {
-                    JobParameters.Add(param);
-                }
+            foreach (var value in valuesForSelectedParameter)
+            {
+                JobParameterValues.Add(value);
             }
         }
 
+        private void ExportToExcel(ObservableCollection<ScheduledJobDataModel> jobs)
+        {
+            // Define the path to save the Excel file
+            string path = @"c:\TDX\";
+            string filePath = Path.Combine(path, "schedule_jobs2.xlsx");
+            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+            // Create a new Excel package
+            using (ExcelPackage package = new ExcelPackage())
+            {
+                // Add a new worksheet
+                var worksheet = package.Workbook.Worksheets.Add("Schedule Jobs");
 
+                // Set headers
+                worksheet.Cells[1, 1].Value = "runtime"; 
+                worksheet.Cells[1, 2].Value = "job_id"; 
+                worksheet.Cells[1, 3].Value = "job_name";
+                worksheet.Cells[1, 4].Value = "python_module";
+                worksheet.Cells[1, 5].Value = "python_class";
+                worksheet.Cells[1, 6].Value = "execute_method";
+                worksheet.Cells[1, 7].Value = "day_id";
+                worksheet.Cells[1, 8].Value = "freq_id";
+                worksheet.Cells[1, 9].Value = "global_closing_delta_minutes";
+                worksheet.Cells[1, 10].Value = "backfill";
+
+                // Add data for each job
+                for (int i = 0; i < jobs.Count; i++)
+                {
+                    var job = jobs[i];
+                    worksheet.Cells[i + 2, 1].Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"); 
+                    worksheet.Cells[i + 2, 2].Value = job.JobId;
+                    worksheet.Cells[i + 2, 3].Value = job.JobName;
+                    worksheet.Cells[i + 2, 4].Value = job.PythonModule;
+                    worksheet.Cells[i + 2, 5].Value = job.PythonClass;
+                    worksheet.Cells[i + 2, 6].Value = job.ExecuteMethod;
+                    worksheet.Cells[i + 2, 7].Value = job.DayId;
+                    worksheet.Cells[i + 2, 8].Value = job.FrequencyId;
+                    worksheet.Cells[i + 2, 9].Value = job.GlobalClosingDeltaMinutes;
+                    worksheet.Cells[i + 2, 10].Value = job.BackFill;
+
+                }
+
+                // Save the Excel file
+                FileInfo fi = new FileInfo(filePath);
+                package.SaveAs(fi);
+            }
+
+
+        }
     }
 }
+
