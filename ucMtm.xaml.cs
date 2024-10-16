@@ -72,7 +72,7 @@ namespace wpfTDX
         /// </summary>
         private void SetControlValues()
         {
-            dtFrom.SelectedDate = DateTime.Today;
+            dtFrom.SelectedDate = DateTime.Today.AddDays(-1);
             dtTo.SelectedDate = DateTime.Today;
         }
         /// <summary>

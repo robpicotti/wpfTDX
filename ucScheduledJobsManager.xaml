@@ -27,15 +27,15 @@
                             <!-- Define Columns for Job List -->
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Job Name" Binding="{Binding JobName}" />
- 
+
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
                     <StackPanel  Grid.Column="1" Margin="2">
-                    <Button Content="Save" Command="{Binding SaveCommand}" />
+                        <Button Content="Save" Command="{Binding SaveCommand}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="5">
-                        <Button x:Name="cmdClose" Width="15" Click="cmdClose_Click" Content="x" FontWeight="Bold" />
+                    <StackPanel Grid.Column="3" Margin="5">
+                        <Button x:Name="cmdClose" Width="15" Click="cmdClose_Click" Content="x" FontWeight="Bold" HorizontalAlignment="Right" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -45,6 +45,13 @@
         <Expander Header="Add/Edit Job" IsExpanded="True" FontWeight="Bold">
             <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
                 <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <!-- First Row -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Second Row -->
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="3*" />
@@ -56,58 +63,39 @@
                         <ColumnDefinition Width="3*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Job Name -->
-                    <TextBlock Grid.Column="0" Margin="5" Text="Job Name" FontWeight="Bold" />
-                    <TextBox Grid.Column="1" Margin="5" x:Name="txtJobName" Text="{Binding SelectedJob.JobName, Mode=TwoWay}" />
+                    <TextBlock Grid.Column="0" Grid.Row="0" Margin="5" Text="Job Name" FontWeight="Bold"/>
+                    <TextBox Grid.Column="1"  Margin="5" x:Name="txtJobName" Text="{Binding SelectedJob.JobName, Mode=TwoWay}"  Grid.Row="0" />
 
-                    <!-- Frequency -->
-                    <TextBlock Grid.Column="2" Margin="5" Text="Frequency" FontWeight="Bold" />
-                    <ComboBox Grid.Column="3" Margin="5" x:Name="cboFrequency" 
+        <!-- Frequency -->
+                    <TextBlock Grid.Column="2" Margin="5" Text="Frequency" FontWeight="Bold" Grid.Row="0"/>
+                    <ComboBox Grid.Column="3" Margin="5" x:Name="cboFrequency"  Grid.Row="0"
                           ItemsSource="{Binding ScheduleFrequencies}"
                           DisplayMemberPath="FrequencyName" 
                           SelectedValuePath="FrequencyId" 
                           SelectedValue="{Binding SelectedJob.FrequencyId, Mode=TwoWay}" />
 
-                    <!-- Days -->
-                    <TextBlock Grid.Column="4" Margin="5" Text="Days" FontWeight="Bold" />
-                    <ComboBox Grid.Column="5" Margin="5" x:Name="cboDays" 
+
+                    <TextBlock Grid.Column="4" Margin="5" Text="Days" FontWeight="Bold"  Grid.Row="0"/>
+                    <ComboBox Grid.Column="5" Margin="5" x:Name="cboDays"   Grid.Row="0"
                               ItemsSource="{Binding ScheduleDays}"
-          DisplayMemberPath="DayName" 
-          SelectedValuePath="DayID" 
-          SelectedValue="{Binding SelectedJob.DayID, Mode=TwoWay}" />
-                </Grid>
-            </Border>
-        </Expander>
-
-        <!-- Job Configuration -->
-        <Expander Header="Configure Job" IsExpanded="False" FontWeight="Bold">
-            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                    </Grid.ColumnDefinitions>
-
+                                DisplayMemberPath="DayName" 
+                                SelectedValuePath="DayID" 
+                                SelectedValue="{Binding SelectedJob.DayID, Mode=TwoWay}" />
+           
                     <!-- Python Module and Class -->
-                    <TextBlock Grid.Column="0" Margin="5" Text="Python Module" FontWeight="Bold" />
-                    <TextBox Grid.Column="1" Margin="5" Text="{Binding SelectedJob.PythonModule, Mode=TwoWay}" />
+                <TextBlock Grid.Column="0" Margin="5" Text="Python Module" FontWeight="Bold" Grid.Row="1" />
+                <TextBox Grid.Column="1" Margin="5" Text="{Binding SelectedJob.PythonModule, Mode=TwoWay}" Grid.Row="1" />
 
-                    <TextBlock Grid.Column="2" Margin="5" Text="Python Class" FontWeight="Bold" />
-                    <TextBox Grid.Column="3" Margin="5" Text="{Binding SelectedJob.PythonClass, Mode=TwoWay}" />
+                <TextBlock Grid.Column="2" Margin="5" Text="Python Class" FontWeight="Bold"  Grid.Row="1" />
+                <TextBox Grid.Column="3" Margin="5" Text="{Binding SelectedJob.PythonClass, Mode=TwoWay}"   Grid.Row="1"/>
 
-                    <!-- Method and Backfill -->
-                    <TextBlock Grid.Column="4" Margin="5" Text="Execute Method" FontWeight="Bold" />
-                    <TextBox Grid.Column="5" Margin="5" Text="{Binding SelectedJob.ExecuteMethod, Mode=TwoWay}" />
+                <!-- Method and Backfill -->
+                <TextBlock Grid.Column="4" Margin="5" Text="Execute Method" FontWeight="Bold"  Grid.Row="1"/>
+                <TextBox Grid.Column="5" Margin="5" Text="{Binding SelectedJob.ExecuteMethod, Mode=TwoWay}"  Grid.Row="1"/>
 
-                    <TextBlock Grid.Column="6" Margin="5" Text="Backfill" FontWeight="Bold" />
-                    <ComboBox Grid.Column="7" Margin="5" ItemsSource="{Binding TrueFalseOptions}" 
-                              SelectedItem="{Binding SelectedJob.BackFill, Mode=TwoWay}" />
+                <TextBlock Grid.Column="6" Margin="5" Text="Backfill" FontWeight="Bold"  Grid.Row="1"/>
+                <ComboBox Grid.Column="7" Margin="5" ItemsSource="{Binding TrueFalseOptions}" 
+                            SelectedItem="{Binding SelectedJob.BackFill, Mode=TwoWay}"  Grid.Row="1"/>
                 </Grid>
             </Border>
         </Expander>
@@ -123,18 +111,16 @@
 
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
                     </Grid.ColumnDefinitions>
 
                     <DataGrid Grid.Row="0" ItemsSource="{Binding JobParameters}" 
                               AutoGenerateColumns="False" 
                               SelectedItem="{Binding SelectedJobParameter, Mode=TwoWay}"
-                              CanUserAddRows="False">
+                              CanUserAddRows="True">
                         <!-- Define the columns based on the properties of JobParametersDataModel -->
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Parameter Name" Binding="{Binding ParameterName}" Width="*" />
-
-                            <!-- Add more columns based on other properties of JobParametersDataModel -->
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -144,8 +130,10 @@
                         Grid.Column="1" 
                         Margin="2" 
                         Content="Add Parameter" 
-                        Width="120"
-                        Command="{Binding AddParameterCommand}" />
+                        Width="100"
+                        Height="20"
+                        Command="{Binding AddParameterCommand}"
+                        HorizontalAlignment="Left"/>
                 </Grid>
             </Border>
         </Expander>

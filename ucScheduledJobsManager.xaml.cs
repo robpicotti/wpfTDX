@@ -27,11 +27,20 @@ namespace wpfTDX
             InitializeComponent();
             this.ViewModel = new ScheduleJobViewModel();
             this.DataContext = ViewModel;
+            if(ViewModel!=null)
+            {
+                ViewModel.SaveCompleted += OnSaveCompleted;
+            }
         }
 
         private void cmdClose_Click(object sender, RoutedEventArgs e)
         {
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
+        }
+        private void OnSaveCompleted()
+        {
+            // Show the message box
+            MessageBox.Show("Jobs saved successfully!", "Save Complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }
