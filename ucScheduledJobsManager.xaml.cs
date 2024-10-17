@@ -30,6 +30,8 @@ namespace wpfTDX
             if(ViewModel!=null)
             {
                 ViewModel.SaveCompleted += OnSaveCompleted;
+                ViewModel.BeginProcess += OnBeginProcess;
+
             }
         }
 
@@ -39,8 +41,15 @@ namespace wpfTDX
         }
         private void OnSaveCompleted()
         {
+            txtProcess.Visibility = Visibility.Hidden;
             // Show the message box
             MessageBox.Show("Jobs saved successfully!", "Save Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        private void OnBeginProcess()
+        {
+            txtProcess.Visibility = Visibility.Visible;
+            txtProcess.Text = "Processing";
+            txtProcess.Background = new SolidColorBrush(Colors.Red);
         }
     }
 }

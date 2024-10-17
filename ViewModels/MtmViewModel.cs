@@ -68,8 +68,6 @@ namespace wpfTDX
 
         private double? _totalCommissions;
 
-
-
         public FundsDataModel SelectedFund
         {
             get => _selectedFund;

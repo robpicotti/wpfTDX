@@ -23,11 +23,15 @@ namespace wpfTDX
 {
     public class ScheduleJobViewModel : INotifyPropertyChanged
     {
+
+        private string _excelpath = @"c:\TDX\";
         public ICommand SaveCommand { get; private set; }
         public ICommand AddParameterCommand { get; private set; }
+        public ICommand AddParameterValueCommand { get;private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public event Action SaveCompleted; //action for subscribing from UI for pop up msg
+        public event Action BeginProcess; //action for subscribing to starting to process
 
         public void OnPropertyChanged([CallerMemberName] string name = null)
         {
@@ -52,6 +56,8 @@ namespace wpfTDX
         public ObservableCollection<ScheduledJobDataModel> NewJobs { get; set; }
 
         public ObservableCollection<JobParametersDataModel> NewParameters { get; set; }
+
+        public ObservableCollection<JobParameterValueDataModel> NewParameterValues { get; set; }
 
         private ObservableCollection<ScheduleDaysDataModel> _scheduledays;
 
@@ -130,6 +136,7 @@ namespace wpfTDX
                     OnPropertyChanged(nameof(SelectedJob));
                     //unsubscribe from newparameters
                     JobParameters.CollectionChanged -= JobParameters_CollectionChanged;
+                    JobParameterValues.CollectionChanged -= JobParameterValues_CollectionChanged;
                     // Clear job parameters and values when a new job is selected
                     JobParameters.Clear();
                     JobParameterValues.Clear();
@@ -145,6 +152,7 @@ namespace wpfTDX
                         }
                     }
                     JobParameters.CollectionChanged += JobParameters_CollectionChanged;
+                    JobParameterValues.CollectionChanged += JobParameterValues_CollectionChanged;
                 }
             }
         }
@@ -169,11 +177,19 @@ namespace wpfTDX
             {
                 foreach (JobParametersDataModel newparameter in e.NewItems)
                 {
-                    // Add the new job to the NewJobs collection
-                    //if (newparameter.ParameterName != null)
-                    //{
-                        NewParameters.Add(newparameter);
-                    //}
+                    NewParameters.Add(newparameter);
+                }
+            }
+        }
+
+        //event handler for new paramater values
+        private void JobParameterValues_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                foreach (JobParameterValueDataModel newparametervalue in e.NewItems)
+                {
+                    NewParameterValues.Add(newparametervalue);
                 }
             }
         }
@@ -264,16 +280,19 @@ namespace wpfTDX
         {
             SaveCommand = new RelayCommand(SaveAllJobs);
             AddParameterCommand = new RelayCommand(SaveParameters);
+            AddParameterValueCommand = new RelayCommand(SaveParameterValues);
             ScheduledJobs = new ObservableCollection<ScheduledJobDataModel>();
             ScheduleDays = new ObservableCollection<ScheduleDaysDataModel>();
             ScheduleFrequencies = new ObservableCollection<ScheduleFrequenciesDataModel>();
             JobParameterValues = new ObservableCollection<JobParameterValueDataModel>(); // Initialize here
             NewJobs = new ObservableCollection<ScheduledJobDataModel>();
             NewParameters = new ObservableCollection<JobParametersDataModel>();
+            NewParameterValues = new ObservableCollection<JobParameterValueDataModel>();
 
             GetScheduledJobs();
             // Hook into collection change event after schedulejobs populated
             ScheduledJobs.CollectionChanged += ScheduledJobs_CollectionChanged;
+            JobParameterValues.CollectionChanged += JobParameterValues_CollectionChanged;
             GetScheduleDays();
             GetScheduleFrequencies();
             GetJobParameters();
@@ -283,18 +302,37 @@ namespace wpfTDX
         
         private void SaveAllJobs()
         {
+            BeginProcess?.Invoke();
             //save new jobs to database
             CreateNewJobs(NewJobs);
             // Logic to save all jobs to Excel
-            ExportToExcel(ScheduledJobs);
+            ExportScheduleJobsToExcel(ScheduledJobs);
             // Raise the SaveCompleted event
             SaveCompleted?.Invoke();
         }
 
         private void SaveParameters()
         {
+            BeginProcess?.Invoke();
             CreateNewJobParameters(NewParameters);
+            //refresh all the job parameters
+            GetJobParameters();
+            //then export them
+            ObservableCollection<JobParametersDataModel> _ocallparams = new ObservableCollection<JobParametersDataModel>(allJobParameters);
+            ExportJobParametersToExcel(_ocallparams);
+            SaveCompleted?.Invoke();
         }
+
+        private void SaveParameterValues()
+        {
+            BeginProcess?.Invoke();
+            CreateNewParameterValues(NewParameterValues);
+            GetJobParameterValues();
+            ObservableCollection<JobParameterValueDataModel> _ocallparamvalues = new ObservableCollection<JobParameterValueDataModel>(allParameterValues);
+            ExportJobParameterValuesToExcel(_ocallparamvalues);
+            SaveCompleted?.Invoke();
+        }
+
 
         private void CreateNewJobParameters(ObservableCollection<JobParametersDataModel> newparams)
         {
@@ -345,6 +383,56 @@ namespace wpfTDX
             //clear the collection once we've added all the new jobs
             NewParameters.Clear();
         }
+        /// <summary>
+        /// inserts data into the job_parameter_values table
+        /// </summary>
+        /// <param name="newparamvalues"></param>
+        private void CreateNewParameterValues(ObservableCollection<JobParameterValueDataModel> newparamvalues)
+        {
+            var jobParameterValueList = new List<Dictionary<string, object>>();
+            for(int i=0; i < newparamvalues.Count;i++)
+            {
+                var newparam = newparamvalues[i];
+                newparam.ParameterId = SelectedJobParameter.ParameterId;
+                if (newparam.ParameterId != 0)
+                {
+                    newparam.ParameterValueId = GetNewParameterValueId();
+                }
+                var paramValueData = new Dictionary<string, object>
+                {
+                    { "param_value_id", newparam.ParameterValueId },
+                    {"param_id",newparam.ParameterId },
+                    {"param_value",newparam.ParameterValue },
+                    {"environment", newparam.Environment}
+                };
+                jobParameterValueList.Add(paramValueData);
+                var requestData = new
+                {
+                    table_name = "schedule_jobs_param_values",  // Replace with your table name
+                    data = jobParameterValueList           // This is the list of job rows
+                };
+                var jsonPayload = JsonConvert.SerializeObject(requestData);
+                // Send the JSON payload to the Python web service
+                using (var client = new HttpClient())
+                {
+                    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = client.PostAsync("http://localhost:5001/insert_table", content).Result;
+                    response.EnsureSuccessStatusCode();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseString = response.Content.ReadAsStringAsync();
+                        Console.WriteLine("Success: " + responseString);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: " + response.StatusCode);
+                    }
+                }
+            }
+        }
+
         private void CreateNewJobs(ObservableCollection<ScheduledJobDataModel> newjobs)
         {
             try
@@ -687,12 +775,94 @@ namespace wpfTDX
             }
         }
 
-        private void ExportToExcel(ObservableCollection<ScheduledJobDataModel> jobs)
+        //exports job parameter values to Excel
+        private void ExportJobParameterValuesToExcel(ObservableCollection<JobParameterValueDataModel> jobparametervalues)
+        {
+            string filepath = Path.Combine(_excelpath, "schedule_jobs_param_values.xlsx");
+            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+            using (ExcelPackage package = new ExcelPackage())
+            {
+                // Add a new worksheet
+                var worksheet = package.Workbook.Worksheets.Add("Schedule Jobs parameter values");
+
+                // Set headers
+                worksheet.Cells[1, 1].Value = "param_value_id";
+                worksheet.Cells[1, 2].Value = "param_id";
+                worksheet.Cells[1, 3].Value = "param_value";
+
+                // Add data for each job
+                for (int i = 0; i < jobparametervalues.Count; i++)
+                {
+                    var param = jobparametervalues[i];
+
+                    if (param.ParameterValueId == 0)
+                    {
+                        param.ParameterValueId = GetNewParameterValueId();
+                    }
+
+                    worksheet.Cells[i + 2, 1].Value = param.ParameterValueId;
+                    worksheet.Cells[i + 2, 2].Value = param.ParameterId;
+                    worksheet.Cells[i + 2, 3].Value = param.ParameterValue;
+
+                }
+
+                // Save the Excel file
+                FileInfo fi = new FileInfo(filepath);
+                package.SaveAs(fi);
+            }
+        }
+
+        //exports job parameters to excel
+        private void ExportJobParametersToExcel(ObservableCollection<JobParametersDataModel> jobparameters)
+        { 
+            try
+            {
+                string filepath = Path.Combine(_excelpath, "schedule_jobs_parameters.xlsx");
+                ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+                // Create a new Excel package
+                using (ExcelPackage package = new ExcelPackage())
+                {
+                    // Add a new worksheet
+                    var worksheet = package.Workbook.Worksheets.Add("Schedule Jobs parameters");
+
+                    // Set headers
+                    worksheet.Cells[1, 1].Value = "param_id";
+                    worksheet.Cells[1, 2].Value = "job_id";
+                    worksheet.Cells[1, 3].Value = "param_name";
+
+                    // Add data for each job
+                    for (int i = 0; i < jobparameters.Count; i++)
+                    {
+                        var param = jobparameters[i];
+
+                        if (param.ParameterId == 0)
+                        {
+                            param.ParameterId = GetNewParameterId();
+                        }
+
+                        worksheet.Cells[i + 2, 1].Value = param.ParameterId;
+                        worksheet.Cells[i + 2, 2].Value = param.JobId;
+                        worksheet.Cells[i + 2, 3].Value = param.ParameterName;
+
+                    }
+
+                    // Save the Excel file
+                    FileInfo fi = new FileInfo(filepath);
+                    package.SaveAs(fi);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Export job parameters to Excel error: " + ex.Message);
+            }
+        }
+
+        private void ExportScheduleJobsToExcel(ObservableCollection<ScheduledJobDataModel> jobs)
         {
             try {
                 // Define the path to save the Excel file
-                string path = @"c:\TDX\";
-                string filePath = Path.Combine(path, "schedule_jobs2.xlsx");
+               
+                string filePath = Path.Combine(_excelpath, "schedule_jobs2.xlsx");
                 ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
                 // Create a new Excel package
                 using (ExcelPackage package = new ExcelPackage())
@@ -742,7 +912,7 @@ namespace wpfTDX
             }
             catch(Exception ex)
             {
-                throw new Exception ("Export to Excel error: " + ex.Message);
+                throw new Exception ("Export schedulejobs to Excel error: " + ex.Message);
             }
 
 }
@@ -793,6 +963,30 @@ namespace wpfTDX
             else
             {
                 // Handle the case where there are no jobs, return -1 or a suitable default value
+                return -1;
+            }
+        }
+
+        public int GetNewParameterValueId()
+        {
+            int maxvalueId = GetMaxParameterValueId();
+            switch(maxvalueId)
+            {
+                case -1:
+                    return 1;
+                default:
+                    return maxvalueId + 1;
+            }
+        }
+
+        public int GetMaxParameterValueId()
+        {
+            if(JobParameterValues != null & JobParameterValues.Any())
+            {
+                return JobParameterValues.Max(paramvalues => paramvalues.ParameterValueId);
+            }
+            else
+            {
                 return -1;
             }
         }

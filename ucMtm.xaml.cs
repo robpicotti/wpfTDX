@@ -98,6 +98,8 @@ namespace wpfTDX
             lstNumericColumns.Add("_actual_posn");
         }
 
+
+
         private void dgEquities_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
         {
             if (lstNumericColumns.Contains(e.PropertyName.ToString().ToLower()))
@@ -122,6 +124,7 @@ namespace wpfTDX
  
             try
             {
+
                 Mouse.OverrideCursor = Cursors.Wait;
                 ViewModel?.GetPnl();
                 MessageBox.Show("Pnl data loaded for: " + ViewModel.SelectedFund.FundName,"Mtm",MessageBoxButton.OK,MessageBoxImage.Information);
@@ -132,22 +135,6 @@ namespace wpfTDX
             }
             finally { Mouse.OverrideCursor = null; }
             
-        }
-
-        private async void cmdTest_Click(object sender, RoutedEventArgs e)
-        {
-            //string table_name = "funds";
-            //DataTable dtResults = await GetDataFromApiAsync(table_name);
-            //if (dtResults != null)
-            //{
-            //    dgTest.ItemsSource = dtResults.DefaultView;
-            //}
-
-            string fundname = cboFundname.Text;
-            DateTime date_t = dtTo.SelectedDate.Value;
-            DateTime date_tminus1 = dtFrom.SelectedDate.Value;
-            string base_currency = "EUR";
-            ProcessPnlData(fundname, date_t, date_tminus1, base_currency);
         }
 
 
