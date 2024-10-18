@@ -157,7 +157,6 @@ namespace wpfTDX
             }
         }
 
-
         // Event handler to track new job additions
         private void ScheduledJobs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -179,7 +178,9 @@ namespace wpfTDX
                 {
                     NewParameters.Add(newparameter);
                 }
+                NewParameterValues.Clear();
             }
+
         }
 
         //event handler for new paramater values
@@ -191,6 +192,71 @@ namespace wpfTDX
                 {
                     NewParameterValues.Add(newparametervalue);
                 }
+            }
+        }
+
+        private void ScheduledJob_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            var job = sender as ScheduledJobDataModel;
+
+            if (job != null)
+            {
+                int jobid = job.JobId;
+                if (e.PropertyName == nameof(ScheduledJobDataModel.FrequencyId))
+                {
+                    // Handle frequency changes here
+                    int frqid = job.FrequencyId;
+                    
+                }
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.PythonModule))
+                {
+                    string pythonmodule = job.PythonModule;
+                }
+
+                // Handle other property changes as needed
+            }
+        }
+
+        private void UpdateScheduleJobsTable(ScheduledJobDataModel job,string table_column_to_update)
+        {
+            string sqltext = "UPDATE schedule_jobs2 SET";
+            try
+            {
+                switch(table_column_to_update)
+                {
+                    case "job_name":
+                        sqltext += " job_name='" + job.JobName + "'";
+                        break;
+                    case "freq_id":
+                        sqltext += " freq_id=" + job.FrequencyId;
+                        break;
+
+                }
+                ExecSQL(sqltext);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        private string ExecSQL(string sqltext)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                var requestData = new
+                {
+                    sqltext = sqltext                
+                };
+                string jsonRequest = JsonConvert.SerializeObject(requestData);
+                var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
+
+                // Make a synchronous HTTP POST request
+                HttpResponseMessage response = client.PostAsync("http://localhost:5001/exec_sql", content).Result;
+                response.EnsureSuccessStatusCode();
+
+                string jsonResponse = response.Content.ReadAsStringAsync().Result;
+                return jsonResponse;
             }
         }
         // Holds all job parameters for all jobs
@@ -282,33 +348,51 @@ namespace wpfTDX
             AddParameterCommand = new RelayCommand(SaveParameters);
             AddParameterValueCommand = new RelayCommand(SaveParameterValues);
             ScheduledJobs = new ObservableCollection<ScheduledJobDataModel>();
+
             ScheduleDays = new ObservableCollection<ScheduleDaysDataModel>();
             ScheduleFrequencies = new ObservableCollection<ScheduleFrequenciesDataModel>();
             JobParameterValues = new ObservableCollection<JobParameterValueDataModel>(); // Initialize here
             NewJobs = new ObservableCollection<ScheduledJobDataModel>();
             NewParameters = new ObservableCollection<JobParametersDataModel>();
             NewParameterValues = new ObservableCollection<JobParameterValueDataModel>();
+     
 
             GetScheduledJobs();
+            AddScheduleJobEventHandlers();
             // Hook into collection change event after schedulejobs populated
             ScheduledJobs.CollectionChanged += ScheduledJobs_CollectionChanged;
             JobParameterValues.CollectionChanged += JobParameterValues_CollectionChanged;
+
             GetScheduleDays();
             GetScheduleFrequencies();
             GetJobParameters();
             //JobParameters.CollectionChanged += JobParameters_CollectionChanged;
             GetJobParameterValues();
         }
+        private void AddScheduleJobEventHandlers()
+        {
+            foreach (var job in ScheduledJobs)
+            {
+                job.PropertyChanged += ScheduledJob_PropertyChanged;
+            }
+        }
         
         private void SaveAllJobs()
         {
-            BeginProcess?.Invoke();
-            //save new jobs to database
-            CreateNewJobs(NewJobs);
-            // Logic to save all jobs to Excel
-            ExportScheduleJobsToExcel(ScheduledJobs);
-            // Raise the SaveCompleted event
-            SaveCompleted?.Invoke();
+            try
+            {
+                BeginProcess?.Invoke();
+                //save new jobs to database
+                CreateNewJobs(NewJobs);
+                // Logic to save all jobs to Excel
+                ExportScheduleJobsToExcel(ScheduledJobs);
+                // Raise the SaveCompleted event
+                SaveCompleted?.Invoke();
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         private void SaveParameters()
@@ -332,7 +416,6 @@ namespace wpfTDX
             ExportJobParameterValuesToExcel(_ocallparamvalues);
             SaveCompleted?.Invoke();
         }
-
 
         private void CreateNewJobParameters(ObservableCollection<JobParametersDataModel> newparams)
         {
@@ -431,6 +514,7 @@ namespace wpfTDX
                     }
                 }
             }
+            NewParameterValues.Clear();
         }
 
         private void CreateNewJobs(ObservableCollection<ScheduledJobDataModel> newjobs)
@@ -461,36 +545,39 @@ namespace wpfTDX
                     };
                     jobDataList.Add(jobData);
                 }
-                // Prepare the payload for the web service (table name + job data)
-                var requestData = new
+                if (jobDataList.Any())
                 {
-                    table_name = "schedule_jobs2",  // Replace with your table name
-                    data = jobDataList           // This is the list of job rows
-                };
-
-                // Convert to JSON
-                var jsonPayload = JsonConvert.SerializeObject(requestData);
-
-                // Send the JSON payload to the Python web service
-                using (var client = new HttpClient())
-                {
-                    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-
-                    HttpResponseMessage response = client.PostAsync("http://localhost:5001/insert_table", content).Result;
-                    response.EnsureSuccessStatusCode();
-
-                    if (response.IsSuccessStatusCode)
+                    // Prepare the payload for the web service (table name + job data)
+                    var requestData = new
                     {
-                        var responseString =  response.Content.ReadAsStringAsync();
-                        Console.WriteLine("Success: " + responseString);
-                    }
-                    else
+                        table_name = "schedule_jobs2",  // Replace with your table name
+                        data = jobDataList           // This is the list of job rows
+                    };
+
+                    // Convert to JSON
+                    var jsonPayload = JsonConvert.SerializeObject(requestData);
+
+                    // Send the JSON payload to the Python web service
+                    using (var client = new HttpClient())
                     {
-                        Console.WriteLine("Error: " + response.StatusCode);
+                        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                        HttpResponseMessage response = client.PostAsync("http://localhost:5001/insert_table", content).Result;
+                        response.EnsureSuccessStatusCode();
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var responseString = response.Content.ReadAsStringAsync();
+                            Console.WriteLine("Success: " + responseString);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Error: " + response.StatusCode);
+                        }
                     }
+                    //clear the collection once we've added all the new jobs
+                    NewJobs.Clear();
                 }
-                //clear the collection once we've added all the new jobs
-                NewJobs.Clear();
             }
             catch(Exception ex)
             {
@@ -768,12 +855,15 @@ namespace wpfTDX
         private void LoadParameterValuesForSelectedJobParameter(int parameterId)
         {
             var valuesForSelectedParameter = allParameterValues.Where(pv => pv.ParameterId == parameterId).ToList();
-
+            JobParameterValues.CollectionChanged -= JobParameterValues_CollectionChanged;
             foreach (var value in valuesForSelectedParameter)
             {
                 JobParameterValues.Add(value);
             }
+            JobParameterValues.CollectionChanged += JobParameterValues_CollectionChanged;
         }
+
+
 
         //exports job parameter values to Excel
         private void ExportJobParameterValuesToExcel(ObservableCollection<JobParameterValueDataModel> jobparametervalues)
@@ -983,7 +1073,7 @@ namespace wpfTDX
         {
             if(JobParameterValues != null & JobParameterValues.Any())
             {
-                return JobParameterValues.Max(paramvalues => paramvalues.ParameterValueId);
+                return allParameterValues.Max(paramvalues => paramvalues.ParameterValueId);
             }
             else
             {

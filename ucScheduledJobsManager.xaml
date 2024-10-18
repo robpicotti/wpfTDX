@@ -81,7 +81,10 @@
                                 DisplayMemberPath="DayName" 
                                 SelectedValuePath="DayID" 
                                 SelectedValue="{Binding SelectedJob.DayID, Mode=TwoWay}" />
-           
+                    <TextBlock Grid.Column="6" Margin="5" Text="Closing Time Delta" FontWeight="Bold" Grid.Row="0"/>
+                    <TextBox Grid.Column="7" Margin="5" x:Name="txtClosingTimeDelta" Grid.Row="0"
+                             Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}" />
+
                     <!-- Python Module and Class -->
                 <TextBlock Grid.Column="0" Margin="5" Text="Python Module" FontWeight="Bold" Grid.Row="1" />
                 <TextBox Grid.Column="1" Margin="5" Text="{Binding SelectedJob.PythonModule, Mode=TwoWay}" Grid.Row="1" />
