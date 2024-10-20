@@ -1017,7 +1017,6 @@ namespace wpfTDX
         }
 
 
-
         //exports job parameter values to Excel
         private void ExportJobParameterValuesToExcel(ObservableCollection<JobParameterValueDataModel> jobparametervalues)
         {
