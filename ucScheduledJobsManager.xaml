@@ -79,8 +79,8 @@
                     <ComboBox Grid.Column="5" Margin="5" x:Name="cboDays"   Grid.Row="0"
                               ItemsSource="{Binding ScheduleDays}"
                                 DisplayMemberPath="DayName" 
-                                SelectedValuePath="DayID" 
-                                SelectedValue="{Binding SelectedJob.DayID, Mode=TwoWay}" />
+                                SelectedValuePath="DayId" 
+                                SelectedValue="{Binding SelectedJob.DayId, Mode=TwoWay}" />
                     <TextBlock Grid.Column="6" Margin="5" Text="Closing Time Delta" FontWeight="Bold" Grid.Row="0"/>
                     <TextBox Grid.Column="7" Margin="5" x:Name="txtClosingTimeDelta" Grid.Row="0"
                              Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}" />

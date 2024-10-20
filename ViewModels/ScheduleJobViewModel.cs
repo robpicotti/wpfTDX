@@ -146,8 +146,10 @@ namespace wpfTDX
                     {
                         // Fetch and load parameters specific to the selected job
                         var jobParams = GetJobParameters(_selectedJob.JobId);
+
                         foreach (var param in jobParams)
                         {
+                            param.PropertyChanged += JobParameters_PropertyChanged;
                             JobParameters.Add(param);
                         }
                     }
@@ -195,31 +197,156 @@ namespace wpfTDX
             }
         }
 
+
+        private void JobParameters_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            var jobparam = sender as JobParametersDataModel;
+            string column_name = "";
+            if (jobparam != null)
+            {
+                if (e.PropertyName == nameof(JobParametersDataModel.ParameterName))
+                {
+                    // Handle frequency changes here
+                    column_name = "param_name";
+
+                }
+                
+                if (column_name != "")
+                {
+                    UpdateJobParametersTable(jobparam, column_name);
+                    //the updated values from the db
+                    GetJobParameters();
+                    //export to excel (all job parameters not just the udpated one
+                    ObservableCollection<JobParametersDataModel> _ocallparams = new ObservableCollection<JobParametersDataModel>(allJobParameters);
+                    ExportJobParametersToExcel(_ocallparams);
+                }
+            }
+        }
+
+        private void JobParameterValues_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            var jobparamvalue = sender as JobParameterValueDataModel;
+            string column_name = "";
+            if (jobparamvalue != null)
+            {
+                if (e.PropertyName == nameof(JobParameterValueDataModel.ParameterValue))
+                {
+                    // Handle frequency changes here
+                    column_name = "param_value";
+
+                }
+                else if(e.PropertyName == nameof(JobParameterValueDataModel.Environment))
+                {
+                    column_name = "environment";
+                }
+                if (column_name != "")
+                {
+                    UpdateJobParameterValuesTable(jobparamvalue, column_name);
+                    ////the updated values from the db
+                    GetJobParameterValues();
+                    ////export to excel (all job parameters not just the udpated one
+                    ObservableCollection<JobParameterValueDataModel> _ocallparamvalues = new ObservableCollection<JobParameterValueDataModel>(allParameterValues);
+                    ExportJobParameterValuesToExcel(_ocallparamvalues);
+                }
+            }
+        }
+
+        private void UpdateJobParameterValuesTable(JobParameterValueDataModel jobparamvalue, string table_column_to_update)
+        {
+            string sqltext = "UPDATE schedule_jobs_param_values SET ";
+            try
+            {
+                switch (table_column_to_update)
+                {
+                    case "param_value":
+                        sqltext += " param_value='" + jobparamvalue.ParameterValue + "'";
+                        break;
+                    case "environment":
+                        sqltext += " environment='" + jobparamvalue.Environment + "'";
+                        break;
+                }
+                sqltext += " WHERE param_value_id=" + jobparamvalue.ParameterValueId + " AND param_id=" + jobparamvalue.ParameterId;
+                ExecSQL(sqltext);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        private void UpdateJobParametersTable(JobParametersDataModel jobparam, string table_column_to_update)
+        {
+            string sqltext = "UPDATE schedule_jobs_parameters SET ";
+            try
+            {
+                switch (table_column_to_update)
+                {
+                    case "param_name":
+                        sqltext += " param_name='" + jobparam.ParameterName + "'";
+                        break;
+
+                }
+                sqltext += " WHERE param_id=" + jobparam.ParameterId + " AND job_id=" + jobparam.JobId;
+                ExecSQL(sqltext);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
         private void ScheduledJob_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             var job = sender as ScheduledJobDataModel;
-
+            string column_name = "";
             if (job != null)
             {
                 int jobid = job.JobId;
                 if (e.PropertyName == nameof(ScheduledJobDataModel.FrequencyId))
                 {
                     // Handle frequency changes here
-                    int frqid = job.FrequencyId;
+                     column_name = "freq_id";
                     
                 }
                 else if (e.PropertyName == nameof(ScheduledJobDataModel.PythonModule))
                 {
-                    string pythonmodule = job.PythonModule;
+                    column_name = "python_module";
                 }
-
-                // Handle other property changes as needed
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.PythonClass))
+                {
+                    column_name = "python_class";
+                }
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.ExecuteMethod))
+                {
+                    column_name = "execute_method";
+                }
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.DayId))
+                {
+                    column_name = "day_id";
+                }
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.GlobalClosingDeltaMinutes))
+                {
+                    column_name = "global_closing_delta_minutes";
+                }
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.BackFill))
+                {
+                    column_name = "backfill";
+                }
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.JobName))
+                {
+                    column_name = "job_name";
+                }
+                if(column_name != "")
+                {
+                    UpdateScheduleJobsTable(job, column_name);
+                    ExportScheduleJobsToExcel(ScheduledJobs);
+                }
             }
         }
 
         private void UpdateScheduleJobsTable(ScheduledJobDataModel job,string table_column_to_update)
         {
-            string sqltext = "UPDATE schedule_jobs2 SET";
+            string sqltext = "UPDATE schedule_jobs2 SET ";
             try
             {
                 switch(table_column_to_update)
@@ -230,8 +357,32 @@ namespace wpfTDX
                     case "freq_id":
                         sqltext += " freq_id=" + job.FrequencyId;
                         break;
+                    case "python_module":
+                        sqltext += "python_module='" + job.PythonModule + "'";
+                        break;
+                    case "python_class":
+                        sqltext += "python_class='" + job.PythonClass + "'";
+                        break;
+                    case "execute_method":
+                        sqltext += "execute_method='" + job.ExecuteMethod + "'";
+                        break;
+                    case "day_id":
+                        sqltext += "day_id=" + job.DayId;
+                        break;
+                    case "backfill":
+                        int _backfill = 0;
+                        if(job.BackFill)
+                        {
+                            _backfill = 1;
+                        }
+                        sqltext += "backfill=" + _backfill;
+                        break;
+                    case "global_closing_delta_minutes":
+                        sqltext += "global_closing_delta_minutes=" + job.GlobalClosingDeltaMinutes;
+                        break;
 
                 }
+                sqltext += " WHERE job_id=" + job.JobId; 
                 ExecSQL(sqltext);
             }
             catch(Exception ex)
@@ -376,6 +527,7 @@ namespace wpfTDX
                 job.PropertyChanged += ScheduledJob_PropertyChanged;
             }
         }
+
         
         private void SaveAllJobs()
         {
@@ -858,6 +1010,7 @@ namespace wpfTDX
             JobParameterValues.CollectionChanged -= JobParameterValues_CollectionChanged;
             foreach (var value in valuesForSelectedParameter)
             {
+                value.PropertyChanged += JobParameterValues_PropertyChanged;
                 JobParameterValues.Add(value);
             }
             JobParameterValues.CollectionChanged += JobParameterValues_CollectionChanged;
@@ -879,6 +1032,7 @@ namespace wpfTDX
                 worksheet.Cells[1, 1].Value = "param_value_id";
                 worksheet.Cells[1, 2].Value = "param_id";
                 worksheet.Cells[1, 3].Value = "param_value";
+                worksheet.Cells[1, 4].Value = "environment";
 
                 // Add data for each job
                 for (int i = 0; i < jobparametervalues.Count; i++)
@@ -893,7 +1047,7 @@ namespace wpfTDX
                     worksheet.Cells[i + 2, 1].Value = param.ParameterValueId;
                     worksheet.Cells[i + 2, 2].Value = param.ParameterId;
                     worksheet.Cells[i + 2, 3].Value = param.ParameterValue;
-
+                    worksheet.Cells[i + 2, 4].Value = param.Environment;
                 }
 
                 // Save the Excel file
