@@ -38,6 +38,7 @@ namespace wpfTDX
         public ObservableCollection<SubaccountDataModel> Subaccounts;
 
         private FundsDataModel _selectedFund;
+       
         public FundsDataModel SelectedFund
         {
             get => _selectedFund;

@@ -117,8 +117,7 @@ namespace wpfTDX
             lstDATABASES = new List<string>(dbnames);
             lstINSTANCES = new List<string>(instance_names);
             for (int i = 0; i < lstSERVERS.Count; i++)
-            {
-                string server = lstSERVERS[i].ToString();
+            {                string server = lstSERVERS[i].ToString();
                 string fullservername = "";
                 if (server == "(local)")
                 {

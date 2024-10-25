@@ -24,7 +24,7 @@ namespace wpfTDX
     public class ScheduleJobViewModel : INotifyPropertyChanged
     {
 
-        private string _excelpath = @"c:\TDX\";
+        private string _excelpath = @"\\ad01-har.10dynamics.com\Ray_Share\Files\files_backup\";
         public ICommand SaveCommand { get; private set; }
         public ICommand AddParameterCommand { get; private set; }
         public ICommand AddParameterValueCommand { get;private set; }
@@ -520,6 +520,7 @@ namespace wpfTDX
             //JobParameters.CollectionChanged += JobParameters_CollectionChanged;
             GetJobParameterValues();
         }
+        
         private void AddScheduleJobEventHandlers()
         {
             foreach (var job in ScheduledJobs)
@@ -528,7 +529,6 @@ namespace wpfTDX
             }
         }
 
-        
         private void SaveAllJobs()
         {
             try
@@ -1199,9 +1199,9 @@ namespace wpfTDX
 
         public int GetMaxParameterId()
         {
-            if (JobParameters != null && JobParameters.Any())
+            if (allJobParameters != null && allJobParameters.Any())
             {
-                return JobParameters.Max(parameter => parameter.ParameterId);
+                return allJobParameters.Max(parameter => parameter.ParameterId);
             }
             else
             {
