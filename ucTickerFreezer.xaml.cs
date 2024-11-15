@@ -40,21 +40,41 @@ namespace wpfTDX
         string RUN_TIME = "";
         string EXPIRATION_DATETIME;
         TickerFreezer TFR;
+        TickerFreezerViewModel viewmodel { get; set; }
         public ucTickerFreezer(SqlConnection conn,string default_fund)
         {
             InitializeComponent();
             gbl_conn = conn;
+            this.viewmodel = new TickerFreezerViewModel();
+            this.DataContext = this.viewmodel;
             try
             {
                 TFR = new TickerFreezer(gbl_conn);
-                Refresh();
+                //Refresh();
+                this.Loaded += OnLoaded;
             }
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                TFR = new TickerFreezer(gbl_conn);
+                await this.viewmodel.Refresh();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Unsubscribe to prevent the method from being called multiple times
+                this.Loaded -= OnLoaded;
+            }
+        }
         public void Refresh()
         {
             dtTickerFreezer = _db.ticker_freezer("", gbl_conn);

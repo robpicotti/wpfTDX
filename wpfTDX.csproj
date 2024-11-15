@@ -120,13 +120,18 @@
     <Compile Include="DataModels\ScheduledJobDataModel.cs" />
     <Compile Include="DataModels\ScheduleFrequenciesDataModel.cs" />
     <Compile Include="DataModels\SubaccountDataModel.cs" />
+    <Compile Include="DataModels\TickerFreezerDataModel.cs" />
     <Compile Include="Fund.cs" />
     <Compile Include="DataModels\FundsDataModel.cs" />
     <Compile Include="Limits.cs" />
     <Compile Include="DataModels\MtmDataModel.cs" />
+    <Compile Include="ucMetaDataChanges.xaml.cs">
+      <DependentUpon>ucMetaDataChanges.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ucScheduledJobsManager.xaml.cs">
       <DependentUpon>ucScheduledJobsManager.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\MetadataTableChangesViewModel.cs" />
     <Compile Include="ViewModels\MtmViewModel.cs" />
     <Compile Include="Order.cs" />
     <Compile Include="Slippage.cs" />
@@ -180,6 +185,7 @@
     <Compile Include="Util.cs" />
     <Compile Include="ViewModels\ScheduleJobViewModel.cs" />
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
+    <Compile Include="ViewModels\TickerFreezerViewModel.cs" />
     <Compile Include="winFreezeTadId.xaml.cs">
       <DependentUpon>winFreezeTadId.xaml</DependentUpon>
     </Compile>
@@ -226,6 +232,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucLimits.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ucMetaDataChanges.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

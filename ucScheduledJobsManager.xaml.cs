@@ -31,7 +31,6 @@ namespace wpfTDX
             {
                 ViewModel.SaveCompleted += OnSaveCompleted;
                 ViewModel.BeginProcess += OnBeginProcess;
-
             }
         }
 

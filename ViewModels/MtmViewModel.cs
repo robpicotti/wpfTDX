@@ -330,12 +330,14 @@ namespace wpfTDX
         /// <returns></returns>
         private string GetFundsDataSync()
         {
+            Dictionary<string, int> _where_dict = new Dictionary<string, int>();
+            _where_dict.Add("closed", 0);
             using (HttpClient client = new HttpClient())
             {
                 var requestData = new
                 {
                     table_name = "funds",
-   
+                    where_dict = _where_dict,
                 };
                 string jsonRequest = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
@@ -358,7 +360,8 @@ namespace wpfTDX
                     fundname = _fundname,
                     date_t = _date_t.ToString("yyyy-MM-dd"),
                     date_tminus1 = _date_tminus1.ToString("yyyy-MM-dd"),
-                    base_currency = _base_currency
+                    base_currency = _base_currency,
+                    filter_benchmark_tickers = true
                 };
                 string jsonRequest = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");

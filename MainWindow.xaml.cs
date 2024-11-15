@@ -576,52 +576,56 @@ namespace wpfTDX
                         ucEMS ems = new ucEMS(sql_conn,default_fund);
                         ems.Width = Window_Width + 100;
                         return ems;
-                case "Ticker Freezer":
-                    ucTickerFreezer tickerFreeze = new ucTickerFreezer(sql_conn, default_fund);
-                    tickerFreeze.Width = Window_Width + extra_width;
-                    return tickerFreeze;
-                case "Order Rejections":
-                    ucOrderRejections ordRejections = new ucOrderRejections(sql_conn);
-                    ordRejections.Width = Window_Width + extra_width;
-                    return ordRejections;
-                case "NAV":
-                    ucNav Nav = new ucNav(sql_conn);
-                    Nav.Width = Window_Width + extra_width;
-                    return Nav;
-                case "Slippage":
-                    ucSlippage slipp = new ucSlippage(sql_conn);
-                    slipp.Width = Window_Width + extra_width;
-                    return slipp;
-                case "Deposits":
-                    ucDeposits depo = new ucDeposits(sql_conn);
-                    depo.Width = 1000;
-                    return depo;
-                case "Payments":
-                    ucPayments payment = new ucPayments(sql_conn);
-                    payment.Width = 1000;
-                    return payment;
-                case "Comm fee adjustments":
-                    ucCommFeeAdj cfa = new ucCommFeeAdj(sql_conn);
-                    cfa.Width = 1000;
-                    return cfa;
-                case "Corporate actions":
-                    ucCorpActions corp = new ucCorpActions(sql_conn);
-                    corp.Width = 1875;
-                    return corp;
-                case "Orders archive":
-                    ucOrdersArchive ordArch = new ucOrdersArchive(sql_conn);
-                    ordArch.Width = 1892;
-                    return ordArch;
-                case "Limits":
-                    ucLimits Limits = new ucLimits(sql_conn);
-                    Limits.Width = 1892;
-                    return Limits;
-                case "Jobs":
-                    ucScheduledJobsManager jobs = new ucScheduledJobsManager();
-                    jobs.Width = 1892;
-                    return jobs;
-                default:
-                        return null;
+                    case "Ticker Freezer":
+                        ucTickerFreezer tickerFreeze = new ucTickerFreezer(sql_conn, default_fund);
+                        tickerFreeze.Width = Window_Width + extra_width;
+                        return tickerFreeze;
+                    case "Order Rejections":
+                        ucOrderRejections ordRejections = new ucOrderRejections(sql_conn);
+                        ordRejections.Width = Window_Width + extra_width;
+                        return ordRejections;
+                    case "NAV":
+                        ucNav Nav = new ucNav(sql_conn);
+                        Nav.Width = Window_Width + extra_width;
+                        return Nav;
+                    case "Slippage":
+                        ucSlippage slipp = new ucSlippage(sql_conn);
+                        slipp.Width = Window_Width + extra_width;
+                        return slipp;
+                    case "Deposits":
+                        ucDeposits depo = new ucDeposits(sql_conn);
+                        depo.Width = 1000;
+                        return depo;
+                    case "Payments":
+                        ucPayments payment = new ucPayments(sql_conn);
+                        payment.Width = 1000;
+                        return payment;
+                    case "Comm fee adjustments":
+                        ucCommFeeAdj cfa = new ucCommFeeAdj(sql_conn);
+                        cfa.Width = 1000;
+                        return cfa;
+                    case "Corporate actions":
+                        ucCorpActions corp = new ucCorpActions(sql_conn);
+                        corp.Width = 1875;
+                        return corp;
+                    case "Orders archive":
+                        ucOrdersArchive ordArch = new ucOrdersArchive(sql_conn);
+                        ordArch.Width = 1892;
+                        return ordArch;
+                    case "Limits":
+                        ucLimits Limits = new ucLimits(sql_conn);
+                        Limits.Width = 1892;
+                        return Limits;
+                    case "Jobs":
+                        ucScheduledJobsManager jobs = new ucScheduledJobsManager();
+                        jobs.Width = 1892;
+                        return jobs;
+                    case "Metadata Changes":
+                        ucMetaDataChanges metadata = new ucMetaDataChanges();
+                        metadata.Width = 1892;
+                        return metadata;
+                    default:
+                            return null;
                 }
         }
         /// <summary>
@@ -870,6 +874,18 @@ namespace wpfTDX
                 // Find the Border that wraps the specified ucPostions in the WrapPanel
                 Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
                                                        .FirstOrDefault(border => border.Child == jobs);
+
+                // Remove the Border from the WrapPanel
+                if (userControlBorder != null)
+                {
+                    userControlsWrapPanel.Children.Remove(userControlBorder);
+                }
+            }
+            else if (sender is ucMetaDataChanges metadata)
+            {
+                // Find the Border that wraps the specified ucPostions in the WrapPanel
+                Border userControlBorder = userControlsWrapPanel.Children.OfType<Border>()
+                                                       .FirstOrDefault(border => border.Child == metadata);
 
                 // Remove the Border from the WrapPanel
                 if (userControlBorder != null)
@@ -1321,6 +1337,38 @@ namespace wpfTDX
         {
             // Create a new instance of the user control
             ucScheduledJobsManager newUserControl = CreateNewUserControl(textblockText) as ucScheduledJobsManager;
+
+            if (newUserControl != null)
+            {
+                newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+
+                // Set margin to create spacing between user controls
+                newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+
+                // Wrap the user control in a Border with a black border color and thickness
+                Border userControlBorder = new Border
+                {
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(2),
+                    Child = newUserControl
+                };
+
+                // Add the bordered user control to the WrapPanel
+                userControlsWrapPanel.Children.Add(userControlBorder);
+            }
+        }
+
+        private void txbMeta_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                AddMetaChanges(textBlock.Text);
+            }
+        }
+        private void AddMetaChanges(string textblockText)
+        {
+            // Create a new instance of the user control
+            ucMetaDataChanges newUserControl = CreateNewUserControl(textblockText) as ucMetaDataChanges;
 
             if (newUserControl != null)
             {

@@ -28,7 +28,7 @@
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               MouseRightButtonDown="dgTickerFreezer_MouseRightButtonDown"
-                              IsReadOnly="True"
+                              IsReadOnly="True" ItemsSource="{Binding TickerFreezer, Mode=TwoWay}"
                                 Margin="5">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
