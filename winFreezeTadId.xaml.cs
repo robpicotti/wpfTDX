@@ -126,7 +126,7 @@ namespace wpfTDX
                 finally
                 {
                     Cursor = Cursors.Arrow;
-                    ucTickerFreezer.Refresh();
+                    //ucTickerFreezer.Refresh();
                 }
             }
         }

@@ -165,9 +165,9 @@ namespace wpfTDX
             ProcessPnlDataSync(this.SelectedFund.FundName, this.Date_t, this.Date_tminus1, base_currency);
         }
 
-        public void GetFunds()
+        public async Task GetFunds()
         {
-            ProcessFundsDataSync();
+            await ProcessFundsDataSync();
         }
 
         private async Task<string> GetPnlDataAsync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
@@ -293,9 +293,9 @@ namespace wpfTDX
             }
         }
 
-        private void ProcessFundsDataSync()
+        private async Task ProcessFundsDataSync()
         {
-            string jsonResponse = GetFundsDataSync();
+            string jsonResponse =  await GetFundsDataSync();
 
             try
             {
@@ -328,27 +328,21 @@ namespace wpfTDX
         /// get all the meta data from funds table
         /// </summary>
         /// <returns></returns>
-        private string GetFundsDataSync()
+        private async Task<string> GetFundsDataSync()
         {
-            Dictionary<string, int> _where_dict = new Dictionary<string, int>();
-            _where_dict.Add("closed", 0);
+            string url = "http://localhost:5001/get_funds";
+
+
+            string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
-                var requestData = new
-                {
-                    table_name = "funds",
-                    where_dict = _where_dict,
-                };
-                string jsonRequest = JsonConvert.SerializeObject(requestData);
-                var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.PostAsync(url, null);
+                response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 
-                // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table", content).Result;
-                response.EnsureSuccessStatusCode();
-
-                string jsonResponse = response.Content.ReadAsStringAsync().Result;
-                return jsonResponse;
+                jsonResponse = await response.Content.ReadAsStringAsync();
             }
+            return jsonResponse;
+
         }
 
         private string GetPnlDataSync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)

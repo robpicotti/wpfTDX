@@ -504,7 +504,7 @@ namespace TDX
         }
         public void insert_closeout_position(string account,string subaccount,string tad_id,SqlConnection conn)
         {
-            string now = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+            string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             string sql_text = "INSERT dbo.closeout_positions VALUES(";
             sql_text += "'" + now + "','" + account + "','" + subaccount + "','" + tad_id + "',1)";
             execSQL_noresults(sql_text, conn);
@@ -588,7 +588,7 @@ namespace TDX
             string execaccountname,string tad_id,string tickername,string error_code,string benchmarkname,string notes,SqlConnection conn)
         {
             //bool isNumber = int.TryParse(broker_id);
-            string sql_text = "UPDATE ticker_freezer SET resolved=1,notes='" + notes + "', runtime_resolved='" + DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss") + "'";
+            string sql_text = "UPDATE ticker_freezer SET resolved=1,notes='" + notes + "', runtime_resolved='" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "'";
             sql_text += " WHERE runtime ='" + runtime + "' AND emsname ='" + ems + "' AND broker_code_exec='" + broker_code_exec + "' AND fundname='";
             sql_text += fundname + "' and subaccountname='" + subaccountname + "' and tad_id = '" + tad_id + "'" + " AND tickername='" + tickername + "' AND error_code=" + error_code;
             sql_text += " AND benchmarkname='" + benchmarkname + "'" ;

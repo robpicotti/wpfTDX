@@ -7,28 +7,67 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel Margin="2">
-        <Border BorderBrush="Black" Background="LightPink"  BorderThickness="1" Padding="5" Margin="5">
-
+        <Border BorderBrush="Black" Background="LightPink" BorderThickness="1" Padding="5" Margin="5">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
- 
                 </Grid.ColumnDefinitions>
-                
+
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="Ticker Freezer" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" FontSize="18"/>
-                    <Button 
-                        x:Name="cmdRefresh" Content="Refresh"  FontWeight="Bold" Click="Button_Click" Width="100" Margin="5"
-                        HorizontalAlignment="Left"
-                     />
-                    
-                    <DataGrid x:Name="dgTickerFreezer" AutoGenerateColumns="True"
+
+                    <!-- Controls aligned in a horizontal layout -->
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <!-- Refresh Button -->
+                        <Button 
+                            x:Name="cmdRefresh" 
+                            Content="Refresh"  
+                            FontWeight="Bold" 
+                            Command="{Binding RefreshCommand}"  
+                            Width="100" 
+                            Margin="0,0,5,0"
+                            HorizontalAlignment="Left" />
+
+                        <!-- Select All Checkbox -->
+                        <CheckBox 
+                            Content="Select All Override"
+                            IsChecked="{Binding IsSelectAllChecked, Mode=TwoWay}"
+                            Margin="0,0,5,0" />
+
+                        <!-- Batch Thaw Button -->
+                        <Button 
+                            Content="Batch Override"
+                            Command="{Binding BatchOverrideCommand}"
+                            FontWeight="Bold"
+                            Width="100"
+                            HorizontalAlignment="Left" />
+
+
+                        <!-- Select All Checkbox -->
+                        <CheckBox 
+                            Content="Select All Thaw"
+                            IsChecked="{Binding IsSelectAllThawChecked, Mode=TwoWay}"
+                            Margin="0,0,5,0" />
+
+                        <Button 
+                            Content="Batch Thaw"
+                            Command="{Binding BatchThawCommand}"
+                            FontWeight="Bold"
+                            Width="100"
+                            HorizontalAlignment="Left" />
+                    </StackPanel>
+
+                    <DataGrid x:Name="dgTickerFreezer" 
+                              AutoGenerateColumns="True"
                                 Height="500"       
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                              MouseRightButtonDown="dgTickerFreezer_MouseRightButtonDown"
-                              IsReadOnly="True" ItemsSource="{Binding TickerFreezer, Mode=TwoWay}"
+                                SelectedItem="{Binding SelectedTicker, Mode=TwoWay}"
+                              PreviewMouseRightButtonDown="dgTickerFreezer_MouseRightButtonDown"
+                              ItemsSource="{Binding TickerFreezer, Mode=TwoWay}"
+                            IsReadOnly="False"   
+                             
                                 Margin="5">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
@@ -36,17 +75,14 @@
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
                         <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="thaw tad_id?" Click="MenuItem_Click"/>
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                <MenuItem Header="thaw tad_id?" Command="{Binding ThawTadIdCommand}"></MenuItem>
                                 <MenuItem Header="override tad_id?" Click="MenuItem_Click_1">
-                                    <MenuItem Header="expire at close?" Click="MenuItem_Click_2"/>
-                                    <MenuItem Header="no expiration?" Click="MenuItem_Click_3"/>
+                                    <MenuItem Header="expire at close?" Command="{Binding OverrideTadIdAfterCloseCommand}"/>
+                                    <MenuItem Header="no expiration?" Command="{Binding OverrideTadIdNeverCommand}"/>
                                 </MenuItem>
-                                <MenuItem Header="remove override for this tad_id?" Click="MenuItem_Click_4"/>
-                                <MenuItem  Click="MenuItem_Click_5"  >
-                                    <MenuItem.Header>
-                                        <TextBlock Text="search any tad_id to freeze?" Foreground="Red"/>
-                                    </MenuItem.Header>
+                                <MenuItem Header="remove override for this tad_id?" Command="{Binding RemoveOverrideCommand}"/>
+                                <MenuItem Header="search any tad_id to freeze?" Command="{Binding SearchTadIdCommand}" >
                                 </MenuItem>
                             </ContextMenu>
                         </DataGrid.ContextMenu>

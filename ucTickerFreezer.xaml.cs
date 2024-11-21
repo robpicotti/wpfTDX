@@ -50,14 +50,68 @@ namespace wpfTDX
             try
             {
                 TFR = new TickerFreezer(gbl_conn);
-                //Refresh();
+                Refresh();
                 this.Loaded += OnLoaded;
+                this.viewmodel.OpenFreezeTadIdDialog += Viewmodel_OpenFreezeTadIdDialog;
+                this.viewmodel.ShowMessage += ViewModel_ShowMessage;
+                this.viewmodel.OpenThawFreezerDialog += ViewModel_OpenThawFreezerDialog;
             }
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void Viewmodel_OpenFreezeTadIdDialog(object sender, EventArgs e)
+        {
+            try
+            {
+                Cursor = Cursors.Wait;
+
+                // Open the dialog window
+                winFreezeTadId winFreeze = new winFreezeTadId(gbl_conn,this);
+                winFreeze.ShowDialog();
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
+        }
+        private void ViewModel_ShowMessage(object sender, MessageEventArgs e)
+        {
+            MessageBox.Show(e.Message, e.Title, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ViewModel_OpenThawFreezerDialog(object sender, ThawFreezerEventArgs e)
+        {
+            try
+            {
+                Cursor = Cursors.Wait;
+
+                // Pass the required parameters to the dialog
+                winThawFreezer thaw = new winThawFreezer(
+                    e.RunTime,
+                    e.FundName,
+                    e.ExecAccountName,
+                    e.SubAccountName,
+                    e.TadId,
+                    e.TickerName,
+                    e.BenchmarkName,
+                    e.BrokerCodeExec,
+                    e.EmsName,
+                    e.ErrorCode,
+                    this, // Pass the parent window
+                    gbl_conn // Pass the connection
+                );
+
+                thaw.ShowDialog();
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
+        }
+
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             try
@@ -77,8 +131,7 @@ namespace wpfTDX
         }
         public void Refresh()
         {
-            dtTickerFreezer = _db.ticker_freezer("", gbl_conn);
-            dgTickerFreezer.ItemsSource = dtTickerFreezer.DefaultView;
+             this.viewmodel?.Refresh();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -99,137 +152,147 @@ namespace wpfTDX
             }
         }
 
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            winThawFreezer thaw = new winThawFreezer(
-                RUN_TIME,
-                FUND_NAME, EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID,
-                TICKERNAME, BENCHMARK_NAME,BROKER_CODE_EXEC,EMS_NAME,
-                ERROR_CODE ,this,gbl_conn);
-            thaw.ShowDialog();
-        }
+        //private void MenuItem_Click(object sender, RoutedEventArgs e)
+        //{
+        //    winThawFreezer thaw = new winThawFreezer(
+        //        RUN_TIME,
+        //        FUND_NAME, EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID,
+        //        TICKERNAME, BENCHMARK_NAME,BROKER_CODE_EXEC,EMS_NAME,
+        //        ERROR_CODE ,this,gbl_conn);
+        //    thaw.ShowDialog();
+        //}
 
         private void MenuItem_Click_1(object sender, RoutedEventArgs e)
         {
 
         }
 
-        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
-        {
-            OverrideTadId("After the close");
-        }
+        //private void MenuItem_Click_2(object sender, RoutedEventArgs e)
+        //{
+        //    OverrideTadId("After the close");
+        //}
 
-        private void MenuItem_Click_3(object sender, RoutedEventArgs e)
-        {
-            OverrideTadId("Never");
-        }
+        //private void MenuItem_Click_3(object sender, RoutedEventArgs e)
+        //{
+        //    OverrideTadId("Never");
+        //}
 
-        private void MenuItem_Click_4(object sender, RoutedEventArgs e)
-        {
-            RemoveOverride();
-        }
+        //private void MenuItem_Click_4(object sender, RoutedEventArgs e)
+        //{
+        //    RemoveOverride();
+        //}
 
         private void dgTickerFreezer_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            DataGridCell cell = GetClickedCell(e);
-
-            if (cell != null)
+            var element = e.OriginalSource as DependencyObject;
+            while (element != null && !(element is DataGridRow))
             {
-                // Get the corresponding DataGridRow
-                DataGridRow row = (DataGridRow)dgTickerFreezer.ItemContainerGenerator.ContainerFromItem(cell.DataContext);
-
-                if (row != null)
-                {
-                    // Get the data item associated with the row
-                    DataRowView rowDataView = (DataRowView)row.Item;
-
-                    // Now you have access to all column values for the clicked row
-                    IList columns = dgTickerFreezer.Columns;
-
-                    foreach (DataGridColumn column in columns)
-                    {
-                        // Access column values using reflection
-                        object runTime = rowDataView["runtime"];
-                        DateTime dtRun = (DateTime)runTime;
-                        string strRunTime = dtRun.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                        RUN_TIME = strRunTime;
-                        object fundName = rowDataView["fundname"];
-                        FUND_NAME = fundName.ToString();
-                        object subAccount = rowDataView["subaccountname"];
-                        SUBACCOUNT_NAME = subAccount.ToString();
-                        object tickerName = rowDataView["tickername"];
-                        TICKERNAME = tickerName.ToString();
-                        object tadid = rowDataView["tad_id"];
-                        TAD_ID = tadid.ToString();
-                        object execaccountname = rowDataView["execaccountname"];
-                        EXEC_ACCOUNT_NAME = execaccountname.ToString();
-                        object benchmarkname = rowDataView["benchmarkname"];
-                        BENCHMARK_NAME = benchmarkname.ToString();
-                        object brokercode_exec = rowDataView["broker_code_exec"];
-                        BROKER_CODE_EXEC = brokercode_exec.ToString();
-                        object emsname = rowDataView["emsname"];
-                        EMS_NAME = emsname.ToString();
-                        object error_code = rowDataView["error_code"];
-                        ERROR_CODE = error_code.ToString();
-                    }
-                }
+                element = VisualTreeHelper.GetParent(element);
             }
+
+            if (element is DataGridRow row)
+            {
+                dgTickerFreezer.SelectedItem = row.Item;
+            }
+            //DataGridCell cell = GetClickedCell(e);
+
+            //if (cell != null)
+            //{
+            //    // Get the corresponding DataGridRow
+            //    DataGridRow row = (DataGridRow)dgTickerFreezer.ItemContainerGenerator.ContainerFromItem(cell.DataContext);
+
+            //    if (row != null)
+            //    {
+            //        // Get the data item associated with the row
+            //        DataRowView rowDataView = (DataRowView)row.Item;
+
+            //        // Now you have access to all column values for the clicked row
+            //        IList columns = dgTickerFreezer.Columns;
+
+            //        foreach (DataGridColumn column in columns)
+            //        {
+            //            // Access column values using reflection
+            //            object runTime = rowDataView["runtime"];
+            //            DateTime dtRun = (DateTime)runTime;
+            //            string strRunTime = dtRun.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            //            RUN_TIME = strRunTime;
+            //            object fundName = rowDataView["fundname"];
+            //            FUND_NAME = fundName.ToString();
+            //            object subAccount = rowDataView["subaccountname"];
+            //            SUBACCOUNT_NAME = subAccount.ToString();
+            //            object tickerName = rowDataView["tickername"];
+            //            TICKERNAME = tickerName.ToString();
+            //            object tadid = rowDataView["tad_id"];
+            //            TAD_ID = tadid.ToString();
+            //            object execaccountname = rowDataView["execaccountname"];
+            //            EXEC_ACCOUNT_NAME = execaccountname.ToString();
+            //            object benchmarkname = rowDataView["benchmarkname"];
+            //            BENCHMARK_NAME = benchmarkname.ToString();
+            //            object brokercode_exec = rowDataView["broker_code_exec"];
+            //            BROKER_CODE_EXEC = brokercode_exec.ToString();
+            //            object emsname = rowDataView["emsname"];
+            //            EMS_NAME = emsname.ToString();
+            //            object error_code = rowDataView["error_code"];
+            //            ERROR_CODE = error_code.ToString();
+            //        }
+            //    }
+            //}
         }
         
-        private DataGridCell GetClickedCell(MouseButtonEventArgs e)
-        {
-            // Find the visual element that was clicked
-            DependencyObject dep = (DependencyObject)e.OriginalSource;
+        //private DataGridCell GetClickedCell(MouseButtonEventArgs e)
+        //{
+        //    // Find the visual element that was clicked
+        //    DependencyObject dep = (DependencyObject)e.OriginalSource;
 
-            // Traverse the visual tree to find the DataGridCell
-            while (dep != null && !(dep is DataGridCell))
-            {
-                dep = VisualTreeHelper.GetParent(dep);
-            }
+        //    // Traverse the visual tree to find the DataGridCell
+        //    while (dep != null && !(dep is DataGridCell))
+        //    {
+        //        dep = VisualTreeHelper.GetParent(dep);
+        //    }
 
-            return dep as DataGridCell;
-        }
+        //    return dep as DataGridCell;
+        //}
 
-        private void OverrideTadId(string expiration)
-        {
-            try
-            {
-                TFR.Override_freezer(RUN_TIME, EMS_NAME, BROKER_CODE_EXEC, 
-                    FUND_NAME, EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID, 
-                    ERROR_CODE, true, expiration, gbl_conn);
-                MessageBox.Show("tad_id: " + TAD_ID + " has been overridden.", 
-                    "ticker_freezer override", MessageBoxButton.OK, 
-                    MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            finally
-            {
-                Refresh();
-            }
-        }
+        //private void OverrideTadId(string expiration)
+        //{
+        //    try
+        //    {
+        //        TFR.Override_freezer(RUN_TIME, EMS_NAME, BROKER_CODE_EXEC, 
+        //            FUND_NAME, EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID, 
+        //            ERROR_CODE, true, expiration, gbl_conn);
+        //        MessageBox.Show("tad_id: " + TAD_ID + " has been overridden.", 
+        //            "ticker_freezer override", MessageBoxButton.OK, 
+        //            MessageBoxImage.Information);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message);
+        //    }
+        //    finally
+        //    {
+        //        Refresh();
+        //    }
+        //}
         
-        private void RemoveOverride()
-        {
-            try
-            {
-                TFR.Override_freezer(RUN_TIME, EMS_NAME, BROKER_CODE_EXEC, FUND_NAME,
-                    EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID, ERROR_CODE, false, 
-                    EXPIRATION_DATETIME, gbl_conn);
-                MessageBox.Show("tad_id: " + TAD_ID + " has been removed.", "remove ticker_freezer override", 
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            finally
-            {
-                Refresh();
-            }
-        }
+        //private void RemoveOverride()
+        //{
+        //    try
+        //    {
+        //        TFR.Override_freezer(RUN_TIME, EMS_NAME, BROKER_CODE_EXEC, FUND_NAME,
+        //            EXEC_ACCOUNT_NAME, SUBACCOUNT_NAME, TAD_ID, ERROR_CODE, false, 
+        //            EXPIRATION_DATETIME, gbl_conn);
+        //        MessageBox.Show("tad_id: " + TAD_ID + " has been removed.", "remove ticker_freezer override", 
+        //            MessageBoxButton.OK, MessageBoxImage.Information);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message);
+        //    }
+        //    finally
+        //    {
+        //        Refresh();
+        //    }
+        //}
 
         private void cmdClose_Click(object sender, RoutedEventArgs e)
         {
@@ -253,5 +316,6 @@ namespace wpfTDX
                 Cursor = Cursors.Arrow;
             }
         }
+
     }
 }

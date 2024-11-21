@@ -50,7 +50,7 @@ namespace TDX
             string override_freeze = "";
             if(freeze_expiration.HasValue)
             {
-                expiration = "'" + freeze_expiration.Value.ToString("dd-MMM-yyyy hh:mm:ss") + "'" ;
+                expiration = "'" + freeze_expiration.Value.ToString("dd-MMM-yyyy HH:mm:ss") + "'" ;
             }
             else
             {
@@ -58,7 +58,7 @@ namespace TDX
             }
             if(override_expiration.HasValue)
             {
-                override_expire = "'" + override_expiration.Value.ToString("dd-MMM-yyyy hh:mm:ss") + "'";
+                override_expire = "'" + override_expiration.Value.ToString("dd-MMM-yyyy HH:mm:ss") + "'";
             }
             else
             {
@@ -66,7 +66,7 @@ namespace TDX
             }
             if(runtime_resolved.HasValue)
             {
-                rt_resolved = "'" + runtime_resolved.Value.ToString("dd-MMM-yyyy hh:mm:ss") + "'";
+                rt_resolved = "'" + runtime_resolved.Value.ToString("dd-MMM-yyyy HH:mm:ss") + "'";
             }
             else
             {

@@ -28,12 +28,13 @@ namespace wpfTDX
         private int _errorcode;
         private string _errorstring;
         private int _resolved;
-        private DateTime _freezeexpiration;
-        private int _override;
-        private DateTime _overrideexpiration;
+        private DateTime? _freezeexpiration;
+        private bool _override;
+        private DateTime? _overrideexpiration;
         private string _benchmarkname;
         private string _notes;
-        private DateTime _runtimeresolved;
+        private DateTime? _runtimeresolved;
+        private bool _forceOverride = false;
         private bool _thaw = false;
 
         [JsonProperty("runtime")]
@@ -191,12 +192,13 @@ namespace wpfTDX
         }
 
         [JsonProperty("freeze_expiration")]
-        public DateTime FreezeExpiration
+        [JsonConverter(typeof(NullableDateTimeConverter))]
+        public DateTime? FreezeExpiration
         {
             get => _freezeexpiration;
             set
             {
-                if (_freezeexpiration != value)
+                if (!_freezeexpiration.Equals(value))
                 {
                     _freezeexpiration = value;
                     OnPropertyChanged();
@@ -205,7 +207,7 @@ namespace wpfTDX
         }
 
         [JsonProperty("override")]
-        public int Override
+        public bool Override
         {
             get => _override;
             set
@@ -218,7 +220,7 @@ namespace wpfTDX
             }
         }
         [JsonProperty("override_expiration")]
-        public DateTime OverrideExpiration
+        public DateTime? OverrideExpiration
         {
             get => _overrideexpiration;
             set
@@ -260,7 +262,7 @@ namespace wpfTDX
         }
 
         [JsonProperty("runtime_solved")]
-        public DateTime RuntimeResolved
+        public DateTime? RuntimeResolved
         {
             get => _runtimeresolved;
             set
@@ -273,18 +275,72 @@ namespace wpfTDX
             }
         }
     
+        public bool ForceOverride
+        {
+            get => _forceOverride;
+            set
+            {
+                if(_forceOverride != value)
+                {
+                    _forceOverride = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public bool Thaw
         {
             get => _thaw;
             set
             {
-                if(_thaw != value)
+                if (_thaw != value)
                 {
                     _thaw = value;
                     OnPropertyChanged();
                 }
             }
         }
-    
     }
+
+    public class NullableDateTimeConverter : JsonConverter
+    {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            if (value is DateTime dateTime)
+            {
+                writer.WriteValue(dateTime.ToString("o")); // Writes as ISO 8601 string
+            }
+            else
+            {
+                writer.WriteNull(); // Writes a null value
+            }
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null)
+            {
+                return null; // Handles null values
+            }
+
+            if (reader.TokenType == JsonToken.String)
+            {
+                var dateTimeString = reader.Value.ToString();
+                if (DateTime.TryParse(dateTimeString, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime parsedDateTime))
+                {
+                    return parsedDateTime;
+                }
+            }
+
+            throw new JsonSerializationException($"Unexpected token {reader.TokenType} when parsing DateTime.");
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            // Allow conversion for DateTime? (nullable) types
+            return objectType == typeof(DateTime?);
+        }
+    }
+
+
+
 }
