@@ -9,12 +9,44 @@ using System.Collections.ObjectModel;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Windows.Input;
 using System.Data;
 
 namespace wpfTDX
 {
     public class MtmViewModel: INotifyPropertyChanged
     {
+        private string _runStatus = "Run";
+        public string RunStatus
+        {
+            get => _runStatus;
+            set
+            {
+                if (_runStatus != value)
+                {
+                    _runStatus = value;
+                    OnPropertyChanged(nameof(RunStatus));
+                    (RunMtmCommand as TickerFreezerRelayCommand)?.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+        private bool _isRunning;
+        public bool IsRunning
+        {
+            get => _isRunning;
+            set
+            {
+                if (_isRunning != value)
+                {
+                    _isRunning = value;
+                    OnPropertyChanged(nameof(IsRunning));
+                    (RunMtmCommand as TickerFreezerRelayCommand)?.RaiseCanExecuteChanged();
+                }
+            }
+        }
+
+
         private MtmDataModel _mtmdatamodel;
         private ObservableCollection<MtmDataModel> _buyAndHoldData;
         private ObservableCollection<MtmDataModel> _newDealsData;
@@ -143,14 +175,15 @@ namespace wpfTDX
         public string FundName { get; set; }
         public DateTime Date_t { get; set; }
         public DateTime Date_tminus1 { get; set; }
+        public ICommand RunMtmCommand { get; }
         public MtmViewModel()
         {
             BuyAndHoldData = new ObservableCollection<MtmDataModel>();
             NewDealsData = new ObservableCollection<MtmDataModel>();
             Funds = new ObservableCollection<FundsDataModel>();
-            //TotalBuyAndHold = 0;
-            //TotalNewDeals = 0;
-            //TotalCommissions = 0;
+            RunMtmCommand = new TickerFreezerRelayCommand(
+                async () => await GetPnl(),
+                () => !IsRunning);
         }
         public void OnPropertyChanged([CallerMemberName] string name = null)
         {
@@ -158,11 +191,27 @@ namespace wpfTDX
         }
 
         //public async Task GetPnl()
-        public void GetPnl()
+        public async Task GetPnl()
         {
-            string base_currency = SelectedFund.BaseCurrency.Substring(0, 3);
-            //await ProcessPnlData("ENBW-testing", this.Date_t, this.Date_tminus1, "EUR");
-            ProcessPnlDataSync(this.SelectedFund.FundName, this.Date_t, this.Date_tminus1, base_currency);
+            if (IsRunning) return;
+
+            try
+            {
+                IsRunning = true;
+                RunStatus = "Running..";
+                await Task.Yield();
+                string base_currency = SelectedFund.BaseCurrency.Substring(0, 3);
+                await ProcessPnlDataASync(SelectedFund.FundName, Date_t, Date_tminus1, base_currency);
+                RunStatus = "Run";
+            }
+            catch (Exception ex)
+            {
+                RunStatus = "Error: " + ex.Message;
+            }
+            finally
+            {
+                IsRunning = false;
+            }
         }
 
         public async Task GetFunds()
@@ -243,9 +292,9 @@ namespace wpfTDX
             }
         }
 
-        private void ProcessPnlDataSync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
+        private async Task ProcessPnlDataASync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
         {
-            string jsonResponse = GetPnlDataSync(_fundname, _date_t, _date_tminus1, _base_currency);
+            string jsonResponse = await GetPnlDataASync(_fundname, _date_t, _date_tminus1, _base_currency);
 
             try
             {
@@ -345,7 +394,7 @@ namespace wpfTDX
 
         }
 
-        private string GetPnlDataSync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
+        private async Task<string> GetPnlDataASync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -361,7 +410,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/pnl", content).Result;
+                HttpResponseMessage response = await client.PostAsync("http://localhost:5001/pnl", content);
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;

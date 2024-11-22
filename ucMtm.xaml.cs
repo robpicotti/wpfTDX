@@ -119,23 +119,23 @@ namespace wpfTDX
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private  void cmdRun_Click(object sender, RoutedEventArgs e)
-        {
+        //private  void cmdRun_Click(object sender, RoutedEventArgs e)
+        //{
  
-            try
-            {
+        //    try
+        //    {
 
-                Mouse.OverrideCursor = Cursors.Wait;
-                ViewModel?.GetPnl();
-                MessageBox.Show("Pnl data loaded for: " + ViewModel.SelectedFund.FundName,"Mtm",MessageBoxButton.OK,MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Run pnl error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally { Mouse.OverrideCursor = null; }
+        //        Mouse.OverrideCursor = Cursors.Wait;
+        //        ViewModel?.GetPnl();
+        //        MessageBox.Show("Pnl data loaded for: " + ViewModel.SelectedFund.FundName,"Mtm",MessageBoxButton.OK,MessageBoxImage.Information);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message, "Run pnl error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //    finally { Mouse.OverrideCursor = null; }
             
-        }
+        //}
 
 
         public DataTable ConvertJsonArrayToDataTable(string jsonArray)

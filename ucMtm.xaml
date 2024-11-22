@@ -58,8 +58,12 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="4" Margin="5 23">
-                    <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold"/>
+                    <Button x:Name="cmdRun" 
+                            Command="{Binding RunMtmCommand}" 
+                            Content="{Binding RunStatus, UpdateSourceTrigger=PropertyChanged}" Background="LightGray" FontWeight="Bold"
+                            />
                 </StackPanel>
+
                 <!--<StackPanel Grid.Column="5" Margin="5 23"/>-->
                 <StackPanel Grid.Column="8" Margin="5">
                     <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x"  FontWeight="Bold" />

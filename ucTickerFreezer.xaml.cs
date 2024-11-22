@@ -118,6 +118,7 @@ namespace wpfTDX
             {
                 TFR = new TickerFreezer(gbl_conn);
                 await this.viewmodel.Refresh();
+                await this.viewmodel.GetFundsData();
             }
             catch (Exception ex)
             {

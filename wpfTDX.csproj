@@ -186,6 +186,7 @@
     <Compile Include="ViewModels\ScheduleJobViewModel.cs" />
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="ViewModels\TickerFreezerViewModel.cs" />
+    <Compile Include="WebServiceData\WebServiceData.cs" />
     <Compile Include="winFreezeTadId.xaml.cs">
       <DependentUpon>winFreezeTadId.xaml</DependentUpon>
     </Compile>

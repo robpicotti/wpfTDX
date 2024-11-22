@@ -48,6 +48,34 @@ namespace wpfTDX
             }
         }
 
+        private ObservableCollection<FundsDataModel> _fundsData { get; set; }
+        public ObservableCollection<FundsDataModel> FundsData
+        {
+            get => _fundsData;
+            set
+            {
+                if(_fundsData != value)
+                {
+                    _fundsData = value;
+                    OnPropertyChanged(nameof(FundsData));
+                }
+            }
+        }
+
+        private FundsDataModel _selectedFund;
+        public FundsDataModel SelectedFund
+        {
+            get => _selectedFund;
+            set
+            {
+                if(_selectedFund != value)
+                {
+                    _selectedFund = value;
+                    OnPropertyChanged(nameof(SelectedFund));
+                }
+            }
+        }
+
         private TickerFreezerDataModel _selectedTicker;
         public TickerFreezerDataModel SelectedTicker
         {
@@ -66,6 +94,8 @@ namespace wpfTDX
             }
         }
 
+        private WebServiceData WSD; 
+
         public ICommand ThawTadIdCommand { get; }
         public ICommand OverrideTadIdAfterCloseCommand { get; }
         public ICommand OverrideTadIdNeverCommand { get; }
@@ -76,6 +106,7 @@ namespace wpfTDX
         public ICommand BatchOverrideCommand { get; }
         public ICommand SelectAllThawCommand { get; }
         public ICommand BatchThawCommand { get; }
+        public ICommand GetFundDataCommand { get; }
 
         private bool _isSelectAllChecked;
         public bool IsSelectAllChecked
@@ -110,6 +141,7 @@ namespace wpfTDX
 
         public TickerFreezerViewModel()
         {
+            WSD  = new WebServiceData();
             ThawTadIdCommand = new TickerFreezerRelayCommand(
                 async () => await ExecuteOpenThawFreezerAsync(),
                 () => CanExecuteOpenThawFreezer());
@@ -135,6 +167,7 @@ namespace wpfTDX
             SelectAllCommand = new TickerFreezerRelayCommand<bool>(SelectAll);
             BatchOverrideCommand = new TickerFreezerRelayCommand(async () => await ExecuteBatchOverride());
             BatchThawCommand = new TickerFreezerRelayCommand(async () => await ExecuteBatchThaw());
+            GetFundDataCommand = new TickerFreezerRelayCommand(async () => await GetFundsData());
         }
         
         private void SelectAllThaw(bool isChecked)
@@ -287,6 +320,22 @@ namespace wpfTDX
             }
         }
 
+        private string GenerateFreezeSQL(string emsname,string broker_code_exec,string fundname,
+            string subaccountname,string execaccountname,string tad_id,string tickername,int error_code,
+            string error_string,int resolved,string expiration,int _override, string override_expire,
+            string benchmarkname,string notes,string runtime_resolved)
+        {
+            string tsql = "INSERT ticker_freezer VALUES('" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff") + "','";
+            tsql += emsname + "','" + broker_code_exec + "','" + fundname + "','";
+            tsql += subaccountname + "','" + execaccountname + "','" + tad_id + "','";
+            tsql += tickername + "'," + error_code.ToString() + ",'" + error_string + "',";
+            tsql += resolved.ToString() + "," + expiration + "," + _override.ToString() + "," + override_expire;
+            tsql += ",'" + benchmarkname + "','" + notes + "'," + runtime_resolved + ")";
+
+            return tsql;
+        }
+
+
         private async Task RemoveOverride()
         {
             try
@@ -371,14 +420,40 @@ namespace wpfTDX
             return SelectedTicker != null; // Only allow execution when a row is selected
         }
 
-
-
         public async Task Refresh()
         {
             await ProcessTickerFreezer();
         }
     
- 
+        public async Task GetFundsData()
+        {
+            await ProcessFundsData();
+        }
+        private async Task ProcessFundsData()
+        {
+            try
+            {
+                string jsonResponse = await WSD.GetFundsDataASync();
+                JArray fundsdata = JArray.Parse(jsonResponse);
+                var fundsdataList = JsonConvert.DeserializeObject<List<FundsDataModel>>(fundsdata.ToString());
+                if (FundsData == null)
+                {
+                    FundsData = new ObservableCollection<FundsDataModel>();
+                }
+                else
+                {
+                    FundsData.Clear();
+                }
+                foreach (var item in fundsdataList)
+                {
+                    FundsData.Add(item);
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         private string execute_sql(string tsql)
         {
             string url = "http://localhost:5001/exec_sql";
@@ -402,6 +477,7 @@ namespace wpfTDX
             }
 
         }
+        
         private async Task<string> GetTickerFreezer()
         {
             string url = "http://localhost:5001/get_unresolved_tickerfreezer";

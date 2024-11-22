@@ -22,6 +22,8 @@ namespace wpfTDX
         private string _feetype;
         private string _accountype;
         private bool _closed;
+        private bool _thaw = false;
+        private bool _freeze = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -160,6 +162,31 @@ namespace wpfTDX
                 if (_accountype != value)
                 {
                     _accountype = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        public bool Thaw
+        {
+            get => _thaw;
+            set
+            {
+                if (_thaw != value)
+                {
+                    _thaw = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool Freeze
+        {
+            get => _freeze;
+            set
+            {
+                if (_freeze != value)
+                {
+                    _freeze = value;
                     OnPropertyChanged();
                 }
             }
