@@ -24,6 +24,7 @@ namespace wpfTDX
     /// </summary>
     public partial class ucPostions : UserControl
     {
+        public PositionViewModel ViewModel { get; set; }
         public DataTable dtFunds;
         public SqlConnection gbl_conn;
         TDX.db _db = new TDX.db();
@@ -45,15 +46,19 @@ namespace wpfTDX
         }
         private void LoadForm()
         {
+            this.ViewModel = new PositionViewModel();
+            this.DataContext = ViewModel;
+            this.ViewModel?.GetFunds();
+            this.ViewModel.Conn = gbl_conn;
             //subscribe to the formatting event
             dgCashPosition.AutoGeneratingColumn += AutoGeneratingColumn;
-            dtFunds = _db.get_funds(gbl_conn);
-            cboFundname.Items.Clear();
-            foreach (DataRow row in dtFunds.Rows)
-            {
-                cboFundname.Items.Add(row["fundname"].ToString());
-            }
-            cboFundname.SelectedItem = DEFAULT_FUND;
+            //dtFunds = _db.get_funds(gbl_conn);
+            //cboFundname.Items.Clear();
+            //foreach (DataRow row in dtFunds.Rows)
+            //{
+            //    cboFundname.Items.Add(row["fundname"].ToString());
+            //}
+            //cboFundname.SelectedItem = DEFAULT_FUND;
             BuildNumericColumnLists();
             TickerFreezer = new TickerFreezer(gbl_conn);
         }
@@ -74,26 +79,27 @@ namespace wpfTDX
         {
             try
             {
-                Mouse.OverrideCursor = Cursors.Wait;
-                string fundname = cboFundname.SelectedItem.ToString();
-                if (fundname != null || fundname != "")
-                {
-                    POSN = new Position(fundname, gbl_conn);
-                    POSN.position_date = dtPickerPostionFrom.SelectedDate.Value;
-                    POSN.positions();
-                    if (POSN.position != null)
-                    {
-                        dgPosition.ItemsSource = POSN.position.DefaultView;
-                        dgCashPosition.ItemsSource = POSN.cash_position.DefaultView;
-                        MessageBox.Show("positions complete", "positions", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("POSN.position is null. Check get_position sproc",
-                            "Position", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                    
-                }
+               
+                //Mouse.OverrideCursor = Cursors.Wait;
+                //string fundname = cboFundname.SelectedItem.ToString();
+                //if (fundname != null || fundname != "")
+                //{
+                //    POSN = new Position(fundname, gbl_conn);
+                //    POSN.position_date = dtPickerPostionFrom.SelectedDate.Value;
+                //    POSN.positions();
+                //    if (POSN.position != null)
+                //    {
+                //        dgPosition.ItemsSource = POSN.position.DefaultView;
+                //        dgCashPosition.ItemsSource = POSN.cash_position.DefaultView;
+                //        MessageBox.Show("positions complete", "positions", MessageBoxButton.OK, MessageBoxImage.Information);
+                //    }
+                //    else
+                //    {
+                //        MessageBox.Show("POSN.position is null. Check get_position sproc",
+                //            "Position", MessageBoxButton.OK, MessageBoxImage.Error);
+                //    }
+
+                //}
             }
             catch(Exception ex)
             {
@@ -116,7 +122,7 @@ namespace wpfTDX
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            winScale scalePositions = new winScale(POSN,cboFundname.Text,SUBACCOUNT,TICKERNAME);
+            winScale scalePositions = new winScale(this.ViewModel.TdxPosition,this.ViewModel.SelectedFund.FundName,SUBACCOUNT,TICKERNAME);
 
             // Show the edit window as a dialog (blocks user interaction with the parent window)
             bool? result = scalePositions.ShowDialog();
@@ -142,33 +148,36 @@ namespace wpfTDX
 
         private void dgPosition_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            DataGridCell cell = GetClickedCell(e);
+            SUBACCOUNT =  this.ViewModel?.SelectedPosition.SubaccountName;
+            TICKERNAME = this.ViewModel?.SelectedPosition.TickerName;
+            TAD_ID = this.ViewModel?.SelectedPosition.TadId;
+            //DataGridCell cell = GetClickedCell(e);
 
-            if (cell != null)
-            {
-                // Get the corresponding DataGridRow
-                DataGridRow row = (DataGridRow)dgPosition.ItemContainerGenerator.ContainerFromItem(cell.DataContext);
+            //if (cell != null)
+            //{
+            //    // Get the corresponding DataGridRow
+            //    DataGridRow row = (DataGridRow)dgPosition.ItemContainerGenerator.ContainerFromItem(cell.DataContext);
 
-                if (row != null)
-                {
-                    // Get the data item associated with the row
-                    DataRowView rowDataView = (DataRowView)row.Item;
+            //    if (row != null)
+            //    {
+            //        // Get the data item associated with the row
+            //        DataRowView rowDataView = (DataRowView)row.Item;
 
-                    // Now you have access to all column values for the clicked row
-                    IList columns = dgPosition.Columns;
+            //        // Now you have access to all column values for the clicked row
+            //        IList columns = dgPosition.Columns;
 
-                    foreach (DataGridColumn column in columns)
-                    {
-                        // Access column values using reflection
-                        object subAccount = rowDataView["subaccount"];
-                        SUBACCOUNT = subAccount.ToString();
-                        object tickerName = rowDataView["tickername"];
-                        TICKERNAME = tickerName.ToString();
-                        object tadid = rowDataView["tad_id"];
-                        TAD_ID = tadid.ToString();
-                    }
-                }
-            }
+            //        foreach (DataGridColumn column in columns)
+            //        {
+            //            // Access column values using reflection
+            //            object subAccount = rowDataView["subaccount"];
+            //            SUBACCOUNT = subAccount.ToString();
+            //            object tickerName = rowDataView["tickername"];
+            //            TICKERNAME = tickerName.ToString();
+            //            object tadid = rowDataView["tad_id"];
+            //            TAD_ID = tadid.ToString();
+            //        }
+            //    }
+            //}
         }
         
         private DataGridCell GetClickedCell(MouseButtonEventArgs e)
@@ -272,6 +281,20 @@ namespace wpfTDX
             winTradeHistory winTH = new winTradeHistory(cboFundname.Text,TAD_ID,TICKERNAME, dtPickerPostionFrom.SelectedDate.Value,this.gbl_conn);
             winTH.ShowDialog();
         }
+
+        private void dtPickerPostionFrom_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dtPickerPostionFrom.SelectedDate == null)
+            {
+                ViewModel.Date_t = DateTime.Today;
+            }
+            else
+            {
+                ViewModel.Date_t = (DateTime)dtPickerPostionFrom.SelectedDate;
+            }
+        }
+
+
     }
 }
 

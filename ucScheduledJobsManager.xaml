@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:wpfTDX"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" Width="889">
 
     <StackPanel Margin="2">
         <TextBox x:Name="txtProcess" Visibility="Hidden"/>
@@ -61,6 +61,8 @@
                         <ColumnDefinition Width="3*" />
                         <ColumnDefinition Width="1.8*" />
                         <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1.8*" />
+                        <ColumnDefinition Width="3*" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Grid.Row="0" Margin="5" Text="Job Name" FontWeight="Bold"/>
@@ -84,7 +86,12 @@
                     <TextBlock Grid.Column="6" Margin="5" Text="Closing Time Delta" FontWeight="Bold" Grid.Row="0"/>
                     <TextBox Grid.Column="7" Margin="5" x:Name="txtClosingTimeDelta" Grid.Row="0"
                              Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}" />
+                    <TextBlock Grid.Column="8" Margin="5" Text="Enabled" FontWeight="Bold" Grid.Row="0"/>
+                    <CheckBox Grid.Column="9" Margin="5" x:Name="chkEnabled" Grid.Row="0"
+                            IsChecked="{Binding SelectedJob.Enabled, Mode=TwoWay, FallbackValue=False}" />
 
+                    <!--<ComboBox Grid.Column="9" Margin="5" ItemsSource="{Binding TrueFalseOptions}" 
+                            SelectedItem="{Binding SelectedJob.Enabled, Mode=TwoWay}"  Grid.Row="0"/>-->
                     <!-- Python Module and Class -->
                 <TextBlock Grid.Column="0" Margin="5" Text="Python Module" FontWeight="Bold" Grid.Row="1" />
                 <TextBox Grid.Column="1" Margin="5" Text="{Binding SelectedJob.PythonModule, Mode=TwoWay}" Grid.Row="1" />
@@ -150,11 +157,17 @@
 
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1.5*" />
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="1.5*" />
+                        <ColumnDefinition Width="1.5*" />
+                        <ColumnDefinition Width="1.5*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="2" >
-                        <DataGrid ItemsSource="{Binding JobParameterValues}" AutoGenerateColumns="False">
+                        <DataGrid ItemsSource="{Binding JobParameterValues}" 
+                                  AutoGenerateColumns="False"
+                                  SelectedItem="{Binding SelectedJobParameterValue, Mode=TwoWay}"
+                                  >
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Value" Binding="{Binding ParameterValue}" />
                                 <DataGridTextColumn Header="Environment" Binding="{Binding Environment}" />
@@ -172,6 +185,19 @@
                         Height="20"
                         Command="{Binding AddParameterValueCommand}"
                         HorizontalAlignment="Left"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="2">
+                        <Button
+                            Grid.Row="0"
+                            Grid.Column="3"
+                            Margin="2"
+                            Content="Delete Parameter Value"
+                            Width="150"
+                            Height="20"
+                            Command="{Binding DeleteParameterValueCommand}"
+                            HorizontalAlignment="Left"
+                            />
+
                     </StackPanel>
                 </Grid>
             </Border>

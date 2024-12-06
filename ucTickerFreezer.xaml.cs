@@ -318,5 +318,26 @@ namespace wpfTDX
             }
         }
 
+        private void dgFunds_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            // Check if the property being generated is "Freeze"
+            if (e.PropertyName == "Freeze")
+            {
+                // Cancel the auto-generated column for "Freeze"
+                e.Cancel = true;
+
+                // Create a custom DataGridTemplateColumn
+                var templateColumn = new DataGridTemplateColumn
+                {
+                    Header = "Freeze"
+                };
+
+                // Set the CellTemplate for the CheckBox
+                templateColumn.CellTemplate = (DataTemplate)FindResource("FreezeTemplate");
+
+                // Add the custom column to the DataGrid
+                ((DataGrid)sender).Columns.Add(templateColumn);
+            }
+        }
     }
 }

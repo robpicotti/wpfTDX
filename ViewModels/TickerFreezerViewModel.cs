@@ -107,6 +107,7 @@ namespace wpfTDX
         public ICommand SelectAllThawCommand { get; }
         public ICommand BatchThawCommand { get; }
         public ICommand GetFundDataCommand { get; }
+        public ICommand ToggleFreezeFundCommand { get; }
 
         private bool _isSelectAllChecked;
         public bool IsSelectAllChecked
@@ -168,6 +169,7 @@ namespace wpfTDX
             BatchOverrideCommand = new TickerFreezerRelayCommand(async () => await ExecuteBatchOverride());
             BatchThawCommand = new TickerFreezerRelayCommand(async () => await ExecuteBatchThaw());
             GetFundDataCommand = new TickerFreezerRelayCommand(async () => await GetFundsData());
+            ToggleFreezeFundCommand = new TickerFreezerRelayCommand(async () => await FreezeFund());
         }
         
         private void SelectAllThaw(bool isChecked)
@@ -227,6 +229,28 @@ namespace wpfTDX
             }
         }
 
+        private async Task FreezeFund()
+        {
+
+                // Show confirmation dialog
+                var result = MessageBox.Show(
+                    $"Are you sure you want to {(SelectedFund.Freeze ? "unfreeze" : "freeze")} the fund {SelectedFund.FundName}?",
+                    "Confirm Action",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                string tsql = GenerateFreezeSQL(
+                    "*", "*", SelectedFund.FundName, "*", "*", "*", "*", 2001, "Manual Freeze on Fund", 0, "", 0, "", "*", "*", DBNull.Value.ToString());
+                SelectedFund.Freeze = !SelectedFund.Freeze;
+                execute_sql(tsql);
+                Refresh();
+                    // Additional logic here if necessary
+                }
+        
+
+        }
 
         private async Task ExecuteBatchOverride()
         {
@@ -325,12 +349,17 @@ namespace wpfTDX
             string error_string,int resolved,string expiration,int _override, string override_expire,
             string benchmarkname,string notes,string runtime_resolved)
         {
+            string _runtime_resolved = runtime_resolved;
+            if (_runtime_resolved == "") { _runtime_resolved = "NULL"; } else { _runtime_resolved = "'" + _runtime_resolved + "'"; }
+            if (expiration == "") { expiration = "NULL"; } else { expiration = "'" + expiration + "'"; }
+            if (override_expire == "") { override_expire = "NULL"; } else { override_expire = "'" + override_expire + "'"; }
+ 
             string tsql = "INSERT ticker_freezer VALUES('" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff") + "','";
             tsql += emsname + "','" + broker_code_exec + "','" + fundname + "','";
             tsql += subaccountname + "','" + execaccountname + "','" + tad_id + "','";
             tsql += tickername + "'," + error_code.ToString() + ",'" + error_string + "',";
             tsql += resolved.ToString() + "," + expiration + "," + _override.ToString() + "," + override_expire;
-            tsql += ",'" + benchmarkname + "','" + notes + "'," + runtime_resolved + ")";
+            tsql += ",'" + benchmarkname + "','" + notes + "'," + _runtime_resolved + ")";
 
             return tsql;
         }
@@ -494,9 +523,10 @@ namespace wpfTDX
         
         private async Task ProcessTickerFreezer()
         {
-            string jsonResponse = await GetTickerFreezer();
+           
             try
             {
+                string jsonResponse = await GetTickerFreezer();
                 // Parse the response as a JArray since it's a list of dictionaries
                 JArray tickerfreezer = JArray.Parse(jsonResponse);
 

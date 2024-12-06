@@ -28,6 +28,7 @@ namespace wpfTDX
         public ICommand SaveCommand { get; private set; }
         public ICommand AddParameterCommand { get; private set; }
         public ICommand AddParameterValueCommand { get;private set; }
+        public ICommand DeleteParameterValueCommand { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public event Action SaveCompleted; //action for subscribing from UI for pop up msg
@@ -336,7 +337,11 @@ namespace wpfTDX
                 {
                     column_name = "job_name";
                 }
-                if(column_name != "")
+                else if (e.PropertyName == nameof(ScheduledJobDataModel.Enabled))
+                {
+                    column_name = "enabled";
+                }
+                if (column_name != "")
                 {
                     UpdateScheduleJobsTable(job, column_name);
                     ExportScheduleJobsToExcel(ScheduledJobs);
@@ -379,6 +384,14 @@ namespace wpfTDX
                         break;
                     case "global_closing_delta_minutes":
                         sqltext += "global_closing_delta_minutes=" + job.GlobalClosingDeltaMinutes;
+                        break;
+                    case "enabled":
+                        int _enabled = 0;
+                        if (job.Enabled)
+                        {
+                            _enabled = 1;
+                        }
+                        sqltext += "enabled=" + _enabled;
                         break;
 
                 }
@@ -498,6 +511,7 @@ namespace wpfTDX
             SaveCommand = new RelayCommand(SaveAllJobs);
             AddParameterCommand = new RelayCommand(SaveParameters);
             AddParameterValueCommand = new RelayCommand(SaveParameterValues);
+            DeleteParameterValueCommand = new RelayCommand(DeleteParameterValues);
             ScheduledJobs = new ObservableCollection<ScheduledJobDataModel>();
 
             ScheduleDays = new ObservableCollection<ScheduleDaysDataModel>();
@@ -559,13 +573,39 @@ namespace wpfTDX
             SaveCompleted?.Invoke();
         }
 
+        private void DeleteParameterValues()
+        {
+            BeginProcess?.Invoke();
+            try
+            {
+                string execsql = GenerateSQLDeleteParameterValues();
+                ExecSQL(execsql);
+                RefreshJobParameterValues();
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            SaveCompleted?.Invoke();
+        }
+        private void RefreshJobParameterValues()
+        {
+            GetJobParameterValues();
+            // Clear existing parameter values
+            JobParameterValues.Clear();
+            LoadParameterValuesForSelectedJobParameter(_selectedjobparameter.ParameterId);
+            ObservableCollection<JobParameterValueDataModel> _ocallparamvalues = new ObservableCollection<JobParameterValueDataModel>(allParameterValues);
+            
+            ExportJobParameterValuesToExcel(_ocallparamvalues);
+        }
         private void SaveParameterValues()
         {
             BeginProcess?.Invoke();
             CreateNewParameterValues(NewParameterValues);
-            GetJobParameterValues();
-            ObservableCollection<JobParameterValueDataModel> _ocallparamvalues = new ObservableCollection<JobParameterValueDataModel>(allParameterValues);
-            ExportJobParameterValuesToExcel(_ocallparamvalues);
+            RefreshJobParameterValues();
+            //GetJobParameterValues();
+            //ObservableCollection<JobParameterValueDataModel> _ocallparamvalues = new ObservableCollection<JobParameterValueDataModel>(allParameterValues);
+            //ExportJobParameterValuesToExcel(_ocallparamvalues);
             SaveCompleted?.Invoke();
         }
 
@@ -667,6 +707,14 @@ namespace wpfTDX
                 }
             }
             NewParameterValues.Clear();
+        }
+
+        private string GenerateSQLDeleteParameterValues()
+        {
+            string parameterValueId = SelectedJobParameterValue.ParameterValueId.ToString();
+            string parameterId = SelectedJobParameter.ParameterId.ToString();
+            string sqltext = "DELETE FROM schedule_jobs_param_values WHERE param_value_id=" + parameterValueId + " AND param_id=" + parameterId;
+            return sqltext;
         }
 
         private void CreateNewJobs(ObservableCollection<ScheduledJobDataModel> newjobs)
@@ -1124,6 +1172,7 @@ namespace wpfTDX
                     worksheet.Cells[1, 8].Value = "freq_id";
                     worksheet.Cells[1, 9].Value = "global_closing_delta_minutes";
                     worksheet.Cells[1, 10].Value = "backfill";
+                    worksheet.Cells[1, 11].Value = "enabled";
 
                     // Add data for each job
                     for (int i = 0; i < jobs.Count; i++)
@@ -1145,7 +1194,7 @@ namespace wpfTDX
                         worksheet.Cells[i + 2, 8].Value = job.FrequencyId;
                         worksheet.Cells[i + 2, 9].Value = job.GlobalClosingDeltaMinutes;
                         worksheet.Cells[i + 2, 10].Value = job.BackFill;
-
+                        worksheet.Cells[i + 2, 11].Value = job.Enabled;
                     }
 
                     // Save the Excel file

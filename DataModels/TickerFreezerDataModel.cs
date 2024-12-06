@@ -192,7 +192,6 @@ namespace wpfTDX
         }
 
         [JsonProperty("freeze_expiration")]
-        [JsonConverter(typeof(NullableDateTimeConverter))]
         public DateTime? FreezeExpiration
         {
             get => _freezeexpiration;

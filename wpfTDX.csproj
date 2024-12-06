@@ -183,6 +183,7 @@
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
     <Compile Include="Util.cs" />
+    <Compile Include="ViewModels\PositionViewModel.cs" />
     <Compile Include="ViewModels\ScheduleJobViewModel.cs" />
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="ViewModels\TickerFreezerViewModel.cs" />

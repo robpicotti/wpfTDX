@@ -6,6 +6,13 @@
              xmlns:local="clr-namespace:wpfTDX"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <DataTemplate x:Key="FreezeTemplate">
+            <CheckBox IsChecked="{Binding Freeze, Mode=TwoWay}"
+                  Command="{Binding DataContext.ToggleFreezeFundCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                  CommandParameter="{Binding}" />
+        </DataTemplate>
+    </UserControl.Resources>
     <StackPanel Margin="2">
         
         <Border BorderBrush="Black" Background="LightPink" BorderThickness="1" Padding="5" Margin="5">
@@ -15,7 +22,7 @@
                 </Grid.ColumnDefinitions>
                 
                     <StackPanel Grid.Column="0">
-                    <TextBlock Text="Ticker Freezer" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" FontSize="18"/>
+                    <TextBlock Text="Freezer" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" FontSize="18"/>
                     
                         <!-- Controls aligned in a horizontal layout -->
                     <StackPanel Orientation="Horizontal" Margin="5">
@@ -57,7 +64,7 @@
                             Width="100"
                             HorizontalAlignment="Left" />
                     </StackPanel>
-                    <Expander x:Name="ExpGeneralFreezer" Header="Deep Freeze" IsExpanded="True">
+                    <Expander x:Name="ExpGeneralFreezer" Header="Ticker Freezer" IsExpanded="True">
                     <DataGrid x:Name="dgTickerFreezer" 
                               AutoGenerateColumns="True"
                                 Height="500"       
@@ -98,7 +105,8 @@
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                 ItemsSource="{Binding FundsData, Mode=TwoWay}"
-                             
+                                 SelectedItem="{Binding SelectedFund, Mode=TwoWay}" 
+                                  AutoGeneratingColumn="dgFunds_AutoGeneratingColumn"
                                 Margin="5">
                         </DataGrid>
                     </Expander>

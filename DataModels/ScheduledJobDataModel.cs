@@ -20,6 +20,7 @@ namespace wpfTDX
         private int _frequencyid;
         private int _globalclosingdeltaminutes;
         private bool _backfill;
+        private bool _enabled = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -151,6 +152,20 @@ namespace wpfTDX
                 if (_backfill != value)
                 {
                     _backfill = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("enabled")]
+        public bool Enabled
+        {
+            get => _enabled;
+            set
+            {
+                if (_enabled != value)
+                {
+                    _enabled = value;
                     OnPropertyChanged();
                 }
             }

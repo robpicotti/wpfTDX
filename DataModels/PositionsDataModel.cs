@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace wpfTDX
 {
-    class PositionsDataModel: INotifyPropertyChanged
+    public class PositionsDataModel: INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -19,6 +19,7 @@ namespace wpfTDX
         }
 
         private string _fundname;
+        [JsonProperty("fundname")]
         public string FundName
         {
             get => _fundname;
@@ -31,19 +32,131 @@ namespace wpfTDX
                 }
             }
         }
-        private List<string> _subaccountnames;
-        public List<string> SubaccountNames
+        private string _subaccountname;
+        [JsonProperty("subaccountname")]
+        public string SubaccountName
         {
-            get => _subaccountnames;
+            get => _subaccountname;
             set
             {
-                if(_subaccountnames != value)
+                if(_subaccountname != value)
                 {
-                    _subaccountnames = value;
+                    _subaccountname = value;
                     OnPropertyChanged();
                 }
             }
         }
-
+        private string _tadid;
+        [JsonProperty("tad_id")]
+        public string TadId
+        {
+            get => _tadid;
+            set
+            {
+                if(_tadid != value)
+                {
+                    _tadid = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private string _tickername;
+        [JsonProperty("tickername")]
+        public string TickerName
+        {
+            get => _tickername;
+            set
+            {
+                if (_tickername != value)
+                {
+                    _tickername = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private double _positionlive;
+        [JsonProperty("position_live")]
+        public double PositionLive
+        {
+            get => _positionlive;
+            set
+            {
+                if (_positionlive != value)
+                {
+                    _positionlive = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private double _positionlivetm1;
+        [JsonProperty("position_live_tm1")]
+        public double PositionLiveTm1
+        {
+            get => _positionlivetm1;
+            set
+            {
+                if (_positionlivetm1 != value)
+                {
+                    _positionlivetm1 = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private double? _postiontarget;
+        [JsonProperty("position_target")]
+        public double? PositionTarget
+        {
+            get => _postiontarget;
+            set
+            {
+                if (_postiontarget != value)
+                {
+                    _postiontarget = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private double? _postiontargetraw;
+        [JsonProperty("position_target_raw")]
+        public double? PositionTargetRaw
+        {
+            get => _postiontargetraw;
+            set
+            {
+                if (_postiontargetraw != value)
+                {
+                    _postiontargetraw = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private double _numorders;
+        [JsonProperty("num_orders")]
+        public double NumOrders
+        {
+            get => _numorders;
+            set
+            {
+                if (_numorders != value)
+                {
+                    _numorders = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private double _pricelive;
+        [JsonProperty("price_live")]
+        public double PriceLive
+        {
+            get => _pricelive;
+            set
+            {
+                if (_pricelive != value)
+                {
+                    _pricelive = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }

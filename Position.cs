@@ -7,7 +7,7 @@ using System.Data;
 using System.Data.SqlClient;
 namespace TDX
 {
-    class Position
+    public class Position
     {
         public SqlConnection gbl_conn;
         TDX.db _db = new TDX.db();
