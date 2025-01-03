@@ -33,6 +33,7 @@ namespace wpfTDX
         DataTable dtOrders;
         DataTable dtOpenOrders;
         DataTable dtOpenOrdersProposed;
+        public EMSViewModel ViewModel { get; set; }
         public ucEMS(SqlConnection conn,string default_fund)
         {
             InitializeComponent();
@@ -43,17 +44,13 @@ namespace wpfTDX
         
         private void LoadForm()
         {
-            //subscribe to the formatting event
-            //dgCashPosition.AutoGeneratingColumn += AutoGeneratingColumn;
-            dtFunds = _db.get_funds(gbl_conn);
-            cboFundname.Items.Clear();
-            foreach (DataRow row in dtFunds.Rows)
-            {
-                cboFundname.Items.Add(row["fundname"].ToString());
-            }
+            this.ViewModel = new EMSViewModel();
+            this.DataContext = this.ViewModel;
+            this.ViewModel.SQLConn = gbl_conn;
+            this.ViewModel?.GetFunds();
             cboFundname.SelectedValue = DEFAULT_FUND;
-            dtPickerFrom.SelectedDate = DateTime.Today;
-            dtPickerTo.SelectedDate = DateTime.Today;
+            this.ViewModel.FromDate = DateTime.Today.AddDays(-1);
+            this.ViewModel.ToDate = DateTime.Today;
         }
         
         private void cmdClose_Click(object sender, RoutedEventArgs e)
@@ -66,7 +63,8 @@ namespace wpfTDX
             Cursor = Cursors.Wait;
             try
             {
-                GetExecutions();
+                this.ViewModel.GetExecutions();
+                //GetExecutions();
                 GetTransactions();
                 RefreshOrdersData();
                 MessageBox.Show("ems data retrieved", "ems data", MessageBoxButton.OK, MessageBoxImage.Information);

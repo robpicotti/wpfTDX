@@ -229,25 +229,52 @@ namespace wpfTDX
             }
         }
 
-        private async Task FreezeFund()
+        public async Task FreezeFund()
         {
+            if (SelectedFund == null) return;
 
-                // Show confirmation dialog
-                var result = MessageBox.Show(
-                    $"Are you sure you want to {(SelectedFund.Freeze ? "unfreeze" : "freeze")} the fund {SelectedFund.FundName}?",
+            // Store the original state of the Freeze property
+            bool originalFreezeState = SelectedFund.Freeze;
+            // Temporarily toggle the Freeze state to reflect the checkbox state
+            SelectedFund.Freeze = !SelectedFund.Freeze;
+            // Show confirmation dialog
+            var result = MessageBox.Show(
+                    $"Are you sure you want to {(SelectedFund.Freeze ? "Freeze" : "Thaw")} the fund {SelectedFund.FundName}?",
                     "Confirm Action",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
-                if (result == MessageBoxResult.Yes)
+            if (result == MessageBoxResult.Yes)
+            {
+                string tsql = "";
+                if (!originalFreezeState)
                 {
-                string tsql = GenerateFreezeSQL(
-                    "*", "*", SelectedFund.FundName, "*", "*", "*", "*", 2001, "Manual Freeze on Fund", 0, "", 0, "", "*", "*", DBNull.Value.ToString());
-                SelectedFund.Freeze = !SelectedFund.Freeze;
-                execute_sql(tsql);
-                Refresh();
-                    // Additional logic here if necessary
+                    tsql = GenerateFreezeSQL(
+                        "*", "*", SelectedFund.FundName, "*", "*", "*", "*", 2001, "Manual Freeze on Fund", 0, "", 0, "", "*", "*", DBNull.Value.ToString());
+   
                 }
+                else
+                {
+                    tsql = generate_thaw_fund_sql(SelectedFund.FundName);
+                }
+                execute_sql(tsql);
+                await Refresh();
+                // Additional logic here if necessary
+            }
+            else
+            {
+                // Reset the Freeze state to its original value
+                SelectedFund.Freeze = originalFreezeState;
+                OnPropertyChanged(nameof(FundsData));
+                //if (SelectedFund.Freeze)
+                //{
+                //    SelectedFund.Freeze = false;
+                //}
+                //else
+                //{
+                //    SelectedFund.Freeze = true;
+                //}
+            }
         
 
         }
@@ -296,7 +323,7 @@ namespace wpfTDX
                 try
                 {
                     SelectedTicker = item; // Set the SelectedTicker for SQL generation
-                    string sql = generate_thaw_sql();
+                    string sql = generate_thaw_sql("PART OF BATCH OVERRIDE PROCESS");
                     execute_sql(sql); // Assuming execute_sql is already async
                 }
                 catch (Exception ex)
@@ -431,9 +458,15 @@ namespace wpfTDX
             });
         }
 
-        private string generate_thaw_sql()
+        private string generate_thaw_fund_sql(string fundname)
         {
-            string note = "PART OF BATCH OVERRIDE PROCESS";
+            string sql_text = "UPDATE ticker_freezer SET resolved=1 WHERE fundname='" + fundname + "' AND error_code=2001 AND resolved=0";
+            return sql_text;
+        }
+
+        private string generate_thaw_sql(string note)
+        {
+            
             string sql_text = "UPDATE ticker_freezer SET resolved=1,notes='" + note + "', runtime_resolved='" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + "'";
             sql_text += " WHERE runtime ='" + SelectedTicker.Runtime.ToString("yyyy-MM-dd HH:mm:ss.fff") + "' AND emsname ='" + 
                 SelectedTicker.Emsname + "' AND broker_code_exec='" + SelectedTicker.BrokerCodeExec + "' AND fundname='";

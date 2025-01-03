@@ -113,8 +113,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DataModels\ExecutionsDataModel.cs" />
     <Compile Include="DataModels\JobParametersDataModel.cs" />
     <Compile Include="DataModels\JobParameterValueDataModel.cs" />
+    <Compile Include="DataModels\OrderDataModel.cs" />
     <Compile Include="DataModels\PositionsDataModel.cs" />
     <Compile Include="DataModels\ScheduleDaysDataModel.cs" />
     <Compile Include="DataModels\ScheduledJobDataModel.cs" />
@@ -131,6 +133,7 @@
     <Compile Include="ucScheduledJobsManager.xaml.cs">
       <DependentUpon>ucScheduledJobsManager.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\EMSViewModel.cs" />
     <Compile Include="ViewModels\MetadataTableChangesViewModel.cs" />
     <Compile Include="ViewModels\MtmViewModel.cs" />
     <Compile Include="Order.cs" />

@@ -107,7 +107,9 @@
                                 ItemsSource="{Binding FundsData, Mode=TwoWay}"
                                  SelectedItem="{Binding SelectedFund, Mode=TwoWay}" 
                                   AutoGeneratingColumn="dgFunds_AutoGeneratingColumn"
+                             
                                 Margin="5">
+
                         </DataGrid>
                     </Expander>
                 </StackPanel>

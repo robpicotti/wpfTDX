@@ -24,15 +24,20 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="fundname:" FontWeight="Bold" Margin="5 1" />
-                    <ComboBox x:Name="cboFundname" IsReadOnly="True" Margin="5"/>
+                    <ComboBox 
+                        x:Name="cboFundname" 
+                        IsReadOnly="True"
+                        ItemsSource="{Binding Funds}" DisplayMemberPath="FundName"
+                        SelectedItem="{Binding SelectedFund, Mode=TwoWay}"
+                        Margin="5"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="from:" FontWeight="Bold" Margin="5 1" />
-                    <DatePicker x:Name="dtPickerFrom" Margin="5"></DatePicker>
+                    <DatePicker x:Name="dtPickerFrom" SelectedDate="{Binding FromDate, Mode=TwoWay}"  Margin="5"></DatePicker>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="to:" FontWeight="Bold" Margin="5 1" />
-                    <DatePicker x:Name="dtPickerTo" Margin="5"></DatePicker>
+                    <DatePicker x:Name="dtPickerTo" SelectedDate="{Binding ToDate,Mode=TwoWay}" Margin="5"></DatePicker>
                 </StackPanel>
                 <StackPanel Grid.Column="3" Margin="5 23">
                     <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold" />
@@ -164,9 +169,10 @@
                         </DataGrid>
                     </StackPanel>
                 </TabItem>
-                <TabItem Header="Executions" x:Name="tabiExecutions">
+                <TabItem Header="{Binding ExecutionsTabHeader}"  x:Name="tabiExecutions">
                     <StackPanel>
                         <DataGrid x:Name="dgExecutions" AutoGenerateColumns="True"
+                                  ItemsSource="{Binding Executions}"
                                 Height="500"       
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"

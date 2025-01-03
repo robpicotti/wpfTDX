@@ -339,5 +339,9 @@ namespace wpfTDX
                 ((DataGrid)sender).Columns.Add(templateColumn);
             }
         }
+
+
+
+ 
     }
 }

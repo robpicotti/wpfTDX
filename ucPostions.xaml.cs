@@ -52,13 +52,7 @@ namespace wpfTDX
             this.ViewModel.Conn = gbl_conn;
             //subscribe to the formatting event
             dgCashPosition.AutoGeneratingColumn += AutoGeneratingColumn;
-            //dtFunds = _db.get_funds(gbl_conn);
-            //cboFundname.Items.Clear();
-            //foreach (DataRow row in dtFunds.Rows)
-            //{
-            //    cboFundname.Items.Add(row["fundname"].ToString());
-            //}
-            //cboFundname.SelectedItem = DEFAULT_FUND;
+
             BuildNumericColumnLists();
             TickerFreezer = new TickerFreezer(gbl_conn);
         }
@@ -75,38 +69,6 @@ namespace wpfTDX
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void cmdRun_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-               
-                //Mouse.OverrideCursor = Cursors.Wait;
-                //string fundname = cboFundname.SelectedItem.ToString();
-                //if (fundname != null || fundname != "")
-                //{
-                //    POSN = new Position(fundname, gbl_conn);
-                //    POSN.position_date = dtPickerPostionFrom.SelectedDate.Value;
-                //    POSN.positions();
-                //    if (POSN.position != null)
-                //    {
-                //        dgPosition.ItemsSource = POSN.position.DefaultView;
-                //        dgCashPosition.ItemsSource = POSN.cash_position.DefaultView;
-                //        MessageBox.Show("positions complete", "positions", MessageBoxButton.OK, MessageBoxImage.Information);
-                //    }
-                //    else
-                //    {
-                //        MessageBox.Show("POSN.position is null. Check get_position sproc",
-                //            "Position", MessageBoxButton.OK, MessageBoxImage.Error);
-                //    }
-
-                //}
-            }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Positions error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally { Mouse.OverrideCursor = null; }
-        }
         private void AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
         {
             if (lstNumericColumns.Contains(e.PropertyName))
