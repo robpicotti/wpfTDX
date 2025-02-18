@@ -81,10 +81,10 @@ namespace TDX
             _db.execSQL(tsql, gbl_conn);
         }
       
-        public void Thaw(string runtime, string ems, string broker_code_exec, string fundname, string subaccountname,string execaccountname, string tad_id, 
+        public string Thaw(string runtime, string ems, string broker_code_exec, string fundname, string subaccountname,string execaccountname, string tad_id, 
             string tickername,string error_code, string benchmarkname,string notes,SqlConnection gbl_conn)
         {
-            _db.thaw_tad_id(runtime, ems, broker_code_exec, fundname, subaccountname,execaccountname, tad_id,tickername, error_code,benchmarkname,notes, gbl_conn);
+            return _db.thaw_tad_id(runtime, ems, broker_code_exec, fundname, subaccountname,execaccountname, tad_id,tickername, error_code,benchmarkname,notes, gbl_conn);
         }
         
         public void Override_freezer(string runtime, string ems, string brokercode_exec, string fundname, string execaccountname, string subaccountname, string tad_id, string error_code,

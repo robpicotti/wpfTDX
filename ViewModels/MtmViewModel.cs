@@ -181,6 +181,9 @@ namespace wpfTDX
             BuyAndHoldData = new ObservableCollection<MtmDataModel>();
             NewDealsData = new ObservableCollection<MtmDataModel>();
             Funds = new ObservableCollection<FundsDataModel>();
+            Date_t = DateTime.Today;
+            Date_tminus1 = Date_t;
+            InitializePreviousBusinessDay();
             RunMtmCommand = new TickerFreezerRelayCommand(
                 async () => await GetPnl(),
                 () => !IsRunning);
@@ -213,6 +216,56 @@ namespace wpfTDX
                 IsRunning = false;
             }
         }
+        public async Task<string> GetPreviousBusinessDay(DateTime date)
+        {
+            string url = "http://localhost:5001/previous_business_day"; // Ensure correct API URL
+
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    // Prepare JSON request body
+                    var requestBody = new
+                    {
+                        date = date.ToString()  // Send date if provided, otherwise send null (default)
+                    };
+
+                    // Convert to JSON and send POST request
+                    var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await client.PostAsync(url, content);
+                    response.EnsureSuccessStatusCode(); // Ensure HTTP response is successful
+
+                    string jsonResponse = await response.Content.ReadAsStringAsync();
+                    var json = JObject.Parse(jsonResponse);
+
+                    // Parse and return the previous business day
+                    string previousBusinessDay = json["previous_business_day"].ToString();
+                    return previousBusinessDay;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching previous business day: " + ex.Message);
+                return null;
+            }
+        }
+
+
+        private async void InitializePreviousBusinessDay()
+        {
+            string previousBusinessDayString = await GetPreviousBusinessDay(Date_t);
+
+            if (DateTime.TryParse(previousBusinessDayString, out DateTime result))
+            {
+                Date_tminus1 = result;
+                OnPropertyChanged(nameof(Date_tminus1)); // Notify UI if using MVVM
+            }
+            else
+            {
+                Console.WriteLine("Error: Could not convert previous business day to DateTime.");
+            }
+        }
+
 
         public async Task GetFunds()
         {

@@ -56,23 +56,21 @@ namespace wpfTDX
             gbl_conn = conn;
             this.ViewModel = new MtmViewModel();
             this.DataContext = ViewModel;
+            SetControlValues();
             LoadForm();
 
         }
         private void LoadForm() 
         {
-
             ViewModel?.GetFunds();
             BuildNumericColumnLists();
-            SetControlValues();
-
         }
         /// <summary>
         /// set some control values e.g. datetime picker dates
         /// </summary>
         private void SetControlValues()
         {
-            dtFrom.SelectedDate = DateTime.Today.AddDays(-1);
+            dtFrom.SelectedDate = this.ViewModel?.Date_tminus1;
             dtTo.SelectedDate = DateTime.Today;
         }
         /// <summary>

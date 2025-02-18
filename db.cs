@@ -584,7 +584,7 @@ namespace TDX
             dt = execSQL(sql_text, conn);
             return dt;
         }
-        public void thaw_tad_id(string runtime,string ems,string broker_code_exec,string fundname,string subaccountname,
+        public string thaw_tad_id(string runtime,string ems,string broker_code_exec,string fundname,string subaccountname,
             string execaccountname,string tad_id,string tickername,string error_code,string benchmarkname,string notes,SqlConnection conn)
         {
             //bool isNumber = int.TryParse(broker_id);
@@ -593,6 +593,7 @@ namespace TDX
             sql_text += fundname + "' and subaccountname='" + subaccountname + "' and tad_id = '" + tad_id + "'" + " AND tickername='" + tickername + "' AND error_code=" + error_code;
             sql_text += " AND benchmarkname='" + benchmarkname + "'" ;
             execSQL(sql_text,conn);
+            return sql_text;
         }
         /// <summary>
         /// creates the SQL to update the NAV table to add a deposit

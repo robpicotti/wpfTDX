@@ -98,8 +98,8 @@ namespace wpfTDX
         {
             try
             {
-                TFR.Thaw(RUN_TIME, EMSNAME, BROKER_CODE_EXEC, FUNDNAME, SUBACCOUNTNAME, EXECACCOUNTNAME, TAD_ID, TICKERNAME, ERROR_CODE, BENCHMARKNAME, txtReason.Text, gbl_conn);
-                MessageBox.Show("Item thawed successfully", "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Information);
+                string sql_text = TFR.Thaw(RUN_TIME, EMSNAME, BROKER_CODE_EXEC, FUNDNAME, SUBACCOUNTNAME, EXECACCOUNTNAME, TAD_ID, TICKERNAME, ERROR_CODE, BENCHMARKNAME, txtReason.Text, gbl_conn);
+                MessageBox.Show("Item thawed successfully. Update statement: " + sql_text, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

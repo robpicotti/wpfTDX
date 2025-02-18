@@ -256,7 +256,31 @@ namespace wpfTDX
             }
         }
 
+        private void MenuItem_Click_7(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string message = "Are you sure you want to proceed closing out this tad_id " + ViewModel.SelectedPosition.TadId + "?";
+                MessageBoxResult result = MessageBox.Show(
+                        message,
+                        "Confirmation",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
 
+                if (result == MessageBoxResult.Yes)
+                {
+                    
+                }
+                else
+                {
+                    MessageBox.Show("closeout aborted", "Result");
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "closeout expired position error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }
 
