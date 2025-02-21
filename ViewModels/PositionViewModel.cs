@@ -298,5 +298,63 @@ namespace wpfTDX
             }
         }
 
+        public  async Task<bool> CloseoutExpiredAsync(
+            string broker, string broker_id, string broker_id_exec, string fundname,
+            string subaccountname, string action, string tad_id, string tickername,
+            double price, double executed_qty, double multiplier, string exch_currency,DateTime bbg_lasttrade_date)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                var requestData = new
+                {
+                    broker,
+                    broker_id,
+                    broker_id_exec,
+                    fundname,
+                    subaccountname,
+                    action,
+                    tad_id,
+                    tickername,
+                    price,
+                    executed_qty,
+                    multiplier,
+                    exch_currency,
+                    bbg_lasttrade_date
+                };
+
+                string jsonRequest = JsonConvert.SerializeObject(requestData);
+                var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
+
+                try
+                {
+                    HttpResponseMessage response = await client.PostAsync("http://localhost:5001/closeout_expired", content);
+                    string jsonResponse = await response.Content.ReadAsStringAsync();
+
+                    var responseDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
+
+                    if (responseDict.ContainsKey("success") && (bool)responseDict["success"] == true)
+                    {
+                        return true; 
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[ERROR] API responded with an error: {jsonResponse}");
+                        return false; 
+                    }
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    Console.WriteLine($"[ERROR] HTTP Request failed: {httpEx.Message}");
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Unexpected error: {ex.Message}");
+                    return false;
+                }
+            }
+        }
+
+
     }
 }

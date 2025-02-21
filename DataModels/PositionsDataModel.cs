@@ -158,5 +158,47 @@ namespace wpfTDX
                 }
             }
         }
+        private string _exchangecurrency;
+        [JsonProperty("exch_currency")]
+        public string ExchangeCurrency
+        {
+            get => _exchangecurrency;
+            set
+            {
+                if(_exchangecurrency!=value)
+                {
+                    _exchangecurrency = value;
+                    OnPropertyChanged(nameof(ExchangeCurrency));
+                }
+            }
+        }
+        private DateTime _bbglasttradedate;
+        [JsonProperty("bbg_lasttrade_date")]
+        public DateTime BbgLastTradeDate
+        {
+            get => _bbglasttradedate;
+            set
+            {
+                if(_bbglasttradedate != value)
+                {
+                    _bbglasttradedate = value;
+                    OnPropertyChanged(nameof(BbgLastTradeDate));
+                }
+            }
+        }
+        private double _multiplier;
+        [JsonProperty("multiplier")]
+        public double Multiplier
+        {
+            get => _multiplier;
+            set
+            {
+                if(_multiplier!=value)
+                {
+                    _multiplier = value;
+                    OnPropertyChanged(nameof(Multiplier));
+                }
+            }
+        }
     }
 }

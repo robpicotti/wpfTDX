@@ -110,36 +110,17 @@ namespace wpfTDX
 
         private void dgPosition_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            SUBACCOUNT =  this.ViewModel?.SelectedPosition.SubaccountName;
-            TICKERNAME = this.ViewModel?.SelectedPosition.TickerName;
-            TAD_ID = this.ViewModel?.SelectedPosition.TadId;
-            //DataGridCell cell = GetClickedCell(e);
-
-            //if (cell != null)
-            //{
-            //    // Get the corresponding DataGridRow
-            //    DataGridRow row = (DataGridRow)dgPosition.ItemContainerGenerator.ContainerFromItem(cell.DataContext);
-
-            //    if (row != null)
-            //    {
-            //        // Get the data item associated with the row
-            //        DataRowView rowDataView = (DataRowView)row.Item;
-
-            //        // Now you have access to all column values for the clicked row
-            //        IList columns = dgPosition.Columns;
-
-            //        foreach (DataGridColumn column in columns)
-            //        {
-            //            // Access column values using reflection
-            //            object subAccount = rowDataView["subaccount"];
-            //            SUBACCOUNT = subAccount.ToString();
-            //            object tickerName = rowDataView["tickername"];
-            //            TICKERNAME = tickerName.ToString();
-            //            object tadid = rowDataView["tad_id"];
-            //            TAD_ID = tadid.ToString();
-            //        }
-            //    }
-            //}
+            if (this.ViewModel?.SelectedPosition != null)
+            {
+                SUBACCOUNT = this.ViewModel?.SelectedPosition.SubaccountName;
+                TICKERNAME = this.ViewModel?.SelectedPosition.TickerName;
+                TAD_ID = this.ViewModel?.SelectedPosition.TadId;
+            }
+            else
+            {
+                string mesg = "Please select a row before right clicking";
+                MessageBox.Show(mesg, "selected position error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         
         private DataGridCell GetClickedCell(MouseButtonEventArgs e)
@@ -256,24 +237,61 @@ namespace wpfTDX
             }
         }
 
-        private void MenuItem_Click_7(object sender, RoutedEventArgs e)
+        private async void MenuItem_Click_7(object sender, RoutedEventArgs e)
         {
             try
             {
-                string message = "Are you sure you want to proceed closing out this tad_id " + ViewModel.SelectedPosition.TadId + "?";
-                MessageBoxResult result = MessageBox.Show(
-                        message,
-                        "Confirmation",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Yes)
+                DateTime today = DateTime.UtcNow;
+                if ((ViewModel.SelectedPosition.BbgLastTradeDate > today.Date))
                 {
-                    
+                    MessageBox.Show("This position has not expired yet. You cannot use this function to closeout the position",
+                        "closeout expired", MessageBoxButton.OK, MessageBoxImage.Error);
+
                 }
                 else
                 {
-                    MessageBox.Show("closeout aborted", "Result");
+                    if (ViewModel.Date_t != today.Date)
+                    {
+                        string messg = "You can only closeout an expired contract when the position date is LIVE. Please select todays date";
+                        MessageBox.Show(messg, "closeout expired positions error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        string message = "Are you sure you want to proceed closing out this tad_id " + ViewModel.SelectedPosition.TadId + "?";
+                        MessageBoxResult result = MessageBox.Show(
+                                message,
+                                "Confirmation",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Question);
+
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            double posnlive = ViewModel.SelectedPosition.PositionLive;
+                            string action = "";
+                            if (posnlive > 0)
+                            {
+                                action = "SELL";
+                            }
+                            else if (posnlive < 0)
+                            {
+                                action = "BUY";
+                            }
+                            bool isSuccess = await ViewModel.CloseoutExpiredAsync("TAD", "2", "12", ViewModel.SelectedPosition.FundName,
+                                ViewModel.SelectedPosition.SubaccountName, action, ViewModel.SelectedPosition.TadId, ViewModel.SelectedPosition.TickerName,
+                                ViewModel.SelectedPosition.PriceLive, Math.Abs(posnlive),
+                                ViewModel.SelectedPosition.Multiplier, ViewModel.SelectedPosition.ExchangeCurrency, ViewModel.SelectedPosition.BbgLastTradeDate);
+                            if (isSuccess)
+                            {
+                                MessageBox.Show("Closeout Expired successfully completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                                ViewModel.PositionsData.Remove(ViewModel.SelectedPosition);
+                                //ViewModel.GetPosition();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Closeout Expired failed!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            }
+                        }
+                    }
                 }
             }
             catch(Exception ex)
