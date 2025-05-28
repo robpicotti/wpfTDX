@@ -15,6 +15,9 @@ using System.Windows.Shapes;
 using TDX;
 using System.Data.SqlClient;
 using System.Windows.Threading;
+using System.Net.Http;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace wpfTDX
 {
@@ -28,13 +31,27 @@ namespace wpfTDX
         SqlConnection GBL_CONN;
         private DispatcherTimer timer;
         private int i = 1;
+        private string _hostenvironment;
+        public string HostEnvironment
+        {
+            get => _hostenvironment;
+            set
+            {
+                if (this._hostenvironment != value)
+                {
+                    this._hostenvironment = value;
+                }
+            }
+        }
+
         public ucProcess(string processName,Color colour,SqlConnection conn )
         {
             InitializeComponent();
             STATUS_COLOUR = colour;
             PROCESS_NAME = processName;
             GBL_CONN = conn;
-            LoadForm();
+            this.Loaded += UcProcessMonitor_Loaded;
+            //LoadForm();
 
             // Initialize and start the timer
             timer = new DispatcherTimer();
@@ -57,7 +74,7 @@ namespace wpfTDX
 
         private void Refresh()
         {
-            HeartBeats heartbeat = new HeartBeats(GBL_CONN);
+            HeartBeats heartbeat = new HeartBeats(GBL_CONN,this.HostEnvironment);
             foreach(ProcessBeat beat in heartbeat.ListHeartBeats)
             {
                 if(beat.process_name==PROCESS_NAME)
@@ -68,6 +85,29 @@ namespace wpfTDX
                     txtStatus.Text = PROCESS_NAME  +"\n" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 }
             }
+        }
+        private async Task<string> GetHostEnvironment()
+        {
+            string url = "http://localhost:5001/get_hostenv";
+            using (HttpClient client = new HttpClient())
+            {
+                HttpResponseMessage response = await client.PostAsync(url, null);
+                response.EnsureSuccessStatusCode();
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                JObject json = JObject.Parse(jsonResponse);
+                return json["hostenv"]?.ToString();
+            }
+        }
+        private async Task InitializeAsync()
+        {
+            this.HostEnvironment = await GetHostEnvironment();
+            LoadForm();
+        }
+        private async void UcProcessMonitor_Loaded(object sender, RoutedEventArgs e)
+        {
+            this.Loaded -= UcProcessMonitor_Loaded; // prevent double execution
+            await InitializeAsync();
         }
     }
 }

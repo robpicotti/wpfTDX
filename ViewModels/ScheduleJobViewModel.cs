@@ -741,7 +741,8 @@ namespace wpfTDX
                         {"day_id", job.DayId },
                         { "freq_id",job.FrequencyId},
                         { "global_closing_delta_minutes",job.GlobalClosingDeltaMinutes},
-                        {"backfill",job.BackFill }
+                        {"backfill",job.BackFill },
+                        {"enabled",job.Enabled }
                     };
                     jobDataList.Add(jobData);
                 }

@@ -15,6 +15,10 @@ using System.Windows.Shapes;
 using System.Data;
 using System.Data.SqlClient;
 using TDX;
+using System.Net.Http;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 
 namespace wpfTDX
 {
@@ -25,15 +29,30 @@ namespace wpfTDX
     public partial class ucProcessMonitor : UserControl
     {
         public SqlConnection gbl_conn;
+
+        private string _hostenvironment;
+        public string HostEnvironment
+        {
+            get => _hostenvironment;
+            set
+            {
+                if(this._hostenvironment != value)
+                {
+                    this._hostenvironment = value;
+                }
+            }
+        }
         public ucProcessMonitor(SqlConnection conn)
         {
             gbl_conn = conn;
             InitializeComponent();
-            LoadForm();
+            this.Loaded += UcProcessMonitor_Loaded;
+
+
         }
         private void LoadForm()
         {
-            HeartBeats heartbeats = new HeartBeats(gbl_conn);
+            HeartBeats heartbeats = new HeartBeats(gbl_conn,this.HostEnvironment);
             foreach (ProcessBeat beat in heartbeats.ListHeartBeats)
             {
                 Color itemColor = (Convert.ToInt32(beat.minutes_delta) > beat.age_limit_minutes) ? Colors.Red : Colors.Green;
@@ -50,5 +69,30 @@ namespace wpfTDX
                 processWrapPanel.Children.Add(userControlBorder); // Add the bordered user control
             }
         }
+        private async Task<string> GetHostEnvironment()
+        {
+            string url = "http://localhost:5001/get_hostenv";
+            using (HttpClient client = new HttpClient())
+            {
+                HttpResponseMessage response = await client.PostAsync(url, null);
+                response.EnsureSuccessStatusCode();
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                JObject json = JObject.Parse(jsonResponse);
+                return json["hostenv"]?.ToString();
+            }
+        }
+        private async Task InitializeAsync()
+        {
+            this.HostEnvironment = await GetHostEnvironment();
+            LoadForm();
+        }
+        private async void UcProcessMonitor_Loaded(object sender, RoutedEventArgs e)
+        {
+            this.Loaded -= UcProcessMonitor_Loaded; // prevent double execution
+            await InitializeAsync();
+        }
+
     }
+
 }

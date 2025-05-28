@@ -74,6 +74,21 @@ namespace wpfTDX
                 }
             }
         }
+
+        private string _sub_tickername;
+        [JsonProperty("sub_tickername")]
+        public string SubTickerName
+        {
+            get => _sub_tickername;
+            set
+            {
+                if(_sub_tickername != value)
+                {
+                    _sub_tickername = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         private double _positionlive;
         [JsonProperty("position_live")]
         public double PositionLive
@@ -172,9 +187,9 @@ namespace wpfTDX
                 }
             }
         }
-        private DateTime _bbglasttradedate;
+        private DateTime ? _bbglasttradedate;
         [JsonProperty("bbg_lasttrade_date")]
-        public DateTime BbgLastTradeDate
+        public DateTime ? BbgLastTradeDate
         {
             get => _bbglasttradedate;
             set
@@ -197,6 +212,90 @@ namespace wpfTDX
                 {
                     _multiplier = value;
                     OnPropertyChanged(nameof(Multiplier));
+                }
+            }
+        }
+        private string _instrument;
+        [JsonProperty("instrument")]
+        public string Instrument
+        {
+            get => _instrument;
+            set
+            {
+                if(_instrument != value)
+                {
+                    _instrument = value;
+                    OnPropertyChanged(nameof(Instrument));
+                }
+            }
+        }
+        private DateTime ? _rolldate;
+        [JsonProperty("roll_date")]
+        public DateTime ? RollDate
+        {
+            get => _rolldate;
+            set
+            {
+                if(_rolldate != value)
+                {
+                    _rolldate = value;
+                    OnPropertyChanged(nameof(RollDate));
+                }
+            }
+        }
+        private string _reportcategory;
+        [JsonProperty("report_category")]
+        public string ReportCategory
+        {
+            get => _reportcategory;
+            set
+            {
+                if(_reportcategory != value)
+                {
+                    _reportcategory = value;
+                    OnPropertyChanged(nameof(ReportCategory));
+                }
+            }
+        }
+        private double _contractincrement;
+        [JsonProperty("contract_increment")]
+        public double ContractIncrement
+        {
+            get => _contractincrement;
+            set
+            {
+                if(_contractincrement != value)
+                {
+                    _contractincrement = value;
+                    OnPropertyChanged(nameof(ContractIncrement));
+                }
+            }
+        }
+        private string _category;
+        [JsonProperty("category")]
+        public string Category
+        {
+            get => _category;
+            set
+            {
+                if(_category != value)
+                {
+                    _category = value;
+                    OnPropertyChanged(nameof(Category));
+                }
+            }
+        }
+        private string _bbgsymbolexp;
+        [JsonProperty("bbg_symbol_exp")]
+        public string BbgSymbolExp
+        {
+            get => _bbgsymbolexp;
+            set
+            {
+                if(_bbgsymbolexp !=value)
+                {
+                    _bbgsymbolexp = value;
+                    OnPropertyChanged(nameof(BbgSymbolExp));
                 }
             }
         }

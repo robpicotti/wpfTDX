@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
-        Title="TDX 2.37" Height="1000" Width="1800">
+        Title="TDX 2.38" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 

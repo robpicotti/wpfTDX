@@ -53,10 +53,12 @@ namespace TDX
         public SqlConnection gbl_conn { get; set; }
         public List<ProcessBeat> ListHeartBeats {get;set;}
         public DataTable dtBeat;
+        public string HostEnvironment { get; set; }
 
-        public HeartBeats(SqlConnection sql_conn)
+        public HeartBeats(SqlConnection sql_conn,string hostenvironment)
         {
             gbl_conn = sql_conn;
+            this.HostEnvironment = hostenvironment;
             ListHeartBeats = new List<ProcessBeat>();
             dtBeat = GetMonitoredHeartBeats(gbl_conn);
             Refresh();
@@ -77,7 +79,7 @@ namespace TDX
         {
             gbl_conn = conn;
             DataTable dtHB = new DataTable();
-            Table tbl = new Table("heartbeats", conn, "WHERE monitored =1", null, "runtime,process_name");
+            Table tbl = new Table("heartbeats", conn, "WHERE monitored =1 and env='" + this.HostEnvironment + "'", null, "runtime,process_name");
             dtHB = tbl.table_data;
             return dtHB;
         }

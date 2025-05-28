@@ -52,7 +52,7 @@
                 <StackPanel>
                     <TextBlock Text="Postions" FontWeight="Bold" Margin="5"/>
                     <DataGrid x:Name="dgPosition"
-                        AutoGenerateColumns="True"
+                        AutoGenerateColumns="False"
                         ItemsSource="{Binding PositionsData, Mode=TwoWay}"
                         SelectedItem="{Binding SelectedPosition, Mode=TwoWay}"  
                         Height="500"       
@@ -68,6 +68,30 @@
                                 <Setter Property="FontWeight" Value="Bold" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.Columns>
+                            <!-- Customize the columns you want to see -->
+                            <DataGridTextColumn Header="fund name" Binding="{Binding FundName}" Width="*"/>
+                            <DataGridTextColumn Header="subaccount name" Binding="{Binding SubaccountName}" Width="*"/>
+                            <DataGridTextColumn Header="tad id" Binding="{Binding TadId}" Width="*"/>
+                            <DataGridTextColumn Header="tickername" Binding="{Binding TickerName}" Width="*"/>
+                            <DataGridTextColumn Header="sub_tickername" Binding="{Binding SubTickerName}" Width="*"/>
+                            <DataGridTextColumn Header="position live" Binding="{Binding PositionLive}" Width="*"/>
+                            <DataGridTextColumn Header="position live t-1" Binding="{Binding PositionLiveTm1}" Width="*"/>
+                            <DataGridTextColumn Header="position target" Binding="{Binding PositionTarget}" Width="*"/>
+                            <DataGridTextColumn Header="position target raw" Binding="{Binding PositionTargetRaw}" Width="*"/>
+                            <DataGridTextColumn Header="number of orders" Binding="{Binding NumOrders}" Width="*"/>
+                            <DataGridTextColumn Header="price live" Binding="{Binding PriceLive}" Width="*"/>
+                            <DataGridTextColumn Header="exchange currency" Binding="{Binding ExchangeCurrency}" Width="*" Visibility="Hidden"/>
+                            <DataGridTextColumn Header="bbg last trade date" Binding="{Binding BbgLastTradeDate}" Width="*"/>
+                            <DataGridTextColumn Header="roll date" Binding="{Binding RollDate}" Width="*"/>
+                            <DataGridTextColumn Header="bbg symbol exp" Binding="{Binding BbgSymbolExp}" Width="*" Visibility="Hidden"/>
+                            <DataGridTextColumn Header="category" Binding="{Binding Category}" Width="*" Visibility="Hidden"/>
+                            <DataGridTextColumn Header="report category" Binding="{Binding PositionTarget}" Width="*" Visibility="Hidden"/>
+                            <DataGridTextColumn Header="contract increment" Binding="{Binding ContractIncrement}" Width="*" Visibility="Hidden"/>
+                            <DataGridTextColumn Header="exchange currency" Binding="{Binding ExchangeCurrency}" Width="*" Visibility="Hidden"/>
+                            <DataGridTextColumn Header="multiplier" Binding="{Binding Multiplier}" Width="*" Visibility="Hidden"/>
+                            <!-- Add more columns as needed -->
+                        </DataGrid.Columns>
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="scale out position" Click="MenuItem_Click"/>

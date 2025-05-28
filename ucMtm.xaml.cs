@@ -57,7 +57,14 @@ namespace wpfTDX
             this.ViewModel = new MtmViewModel();
             this.DataContext = ViewModel;
             SetControlValues();
-            LoadForm();
+            try
+            {
+                LoadForm();
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "LoadForm error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
 
         }
         private void LoadForm() 
@@ -197,31 +204,31 @@ namespace wpfTDX
 
 
 
-        public async Task ProcessPnlData(string _subaccount, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
-        {
-            string jsonResponse = await GetPnlDataAsync(_subaccount,_date_t,_date_tminus1,_base_currency);
+        //public async Task ProcessPnlData(string _subaccount, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
+        //{
+        //    string jsonResponse = await GetPnlDataAsync(_subaccount,_date_t,_date_tminus1,_base_currency);
 
-            try
-            {
-                JObject pnlData = JObject.Parse(jsonResponse);
-                // Convert each dataframe part of the response into a DataTable
-                DataTable dfbuyandhold = ConvertJsonArrayToDataTable(pnlData["dfbuyandhold"].ToString());
-                string[] buyAndHoldcolumnOrder = new string[] { 
-                    "tad_id", "tickername", "instrument", "exch_currency" ,"multiplier",
-                    "executed_quantity","closing_price_t","closing_price_tminus1",
-                    "cash_t","cash_tminus1","mtm_t","mtm_tminus1",
-                    "adjusted_mtm_tminus1","adjusted_cash_tminus1","commission_" + _base_currency,"pnl_" + _base_currency
-                };  // Replace with your desired column names
-                DataTable reorderedDfbuyandhold = ReorderColumns(dfbuyandhold, buyAndHoldcolumnOrder);
-                DataTable dfnewdeals = ConvertJsonArrayToDataTable(pnlData["dfnewdeals"].ToString());
-                dgFutures.ItemsSource = reorderedDfbuyandhold.DefaultView;
-                dgFuturesNewDeals.ItemsSource = dfnewdeals.DefaultView;
-            }
-            catch(Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
+        //    try
+        //    {
+        //        JObject pnlData = JObject.Parse(jsonResponse);
+        //        // Convert each dataframe part of the response into a DataTable
+        //        DataTable dfbuyandhold = ConvertJsonArrayToDataTable(pnlData["dfbuyandhold"].ToString());
+        //        string[] buyAndHoldcolumnOrder = new string[] { 
+        //            "tad_id", "tickername", "instrument", "exch_currency" ,"multiplier",
+        //            "executed_quantity","closing_price_t","closing_price_tminus1",
+        //            "cash_t","cash_tminus1","mtm_t","mtm_tminus1",
+        //            "adjusted_mtm_tminus1","adjusted_cash_tminus1","commission_" + _base_currency,"pnl_" + _base_currency
+        //        };  // Replace with your desired column names
+        //        DataTable reorderedDfbuyandhold = ReorderColumns(dfbuyandhold, buyAndHoldcolumnOrder);
+        //        DataTable dfnewdeals = ConvertJsonArrayToDataTable(pnlData["dfnewdeals"].ToString());
+        //        dgFutures.ItemsSource = reorderedDfbuyandhold.DefaultView;
+        //        dgFuturesNewDeals.ItemsSource = dfnewdeals.DefaultView;
+        //    }
+        //    catch(Exception ex)
+        //    {
+        //        throw new Exception(ex.Message);
+        //    }
+        //}
 
 
         public async Task<string> GetPnlDataAsync(string _fundname, DateTime _date_t, DateTime _date_tminus1, string _base_currency)
@@ -338,6 +345,24 @@ namespace wpfTDX
         private void dgFutures_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
+        }
+    }
+    public class InverseBooleanToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+                return boolValue ? Visibility.Collapsed : Visibility.Visible;
+
+            return Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is Visibility visibility)
+                return visibility != Visibility.Visible;
+
+            return false;
         }
     }
 }

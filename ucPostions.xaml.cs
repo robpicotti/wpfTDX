@@ -279,7 +279,9 @@ namespace wpfTDX
                             bool isSuccess = await ViewModel.CloseoutExpiredAsync("TAD", "2", "12", ViewModel.SelectedPosition.FundName,
                                 ViewModel.SelectedPosition.SubaccountName, action, ViewModel.SelectedPosition.TadId, ViewModel.SelectedPosition.TickerName,
                                 ViewModel.SelectedPosition.PriceLive, Math.Abs(posnlive),
-                                ViewModel.SelectedPosition.Multiplier, ViewModel.SelectedPosition.ExchangeCurrency, ViewModel.SelectedPosition.BbgLastTradeDate);
+                                ViewModel.SelectedPosition.Multiplier, ViewModel.SelectedPosition.ExchangeCurrency, ViewModel.SelectedPosition.BbgLastTradeDate,
+                                ViewModel.SelectedPosition.RollDate,ViewModel.SelectedPosition.Instrument,ViewModel.SelectedPosition.ReportCategory,
+                                ViewModel.SelectedPosition.Category,ViewModel.SelectedPosition.ContractIncrement,ViewModel.SelectedPosition.BbgSymbolExp);
                             if (isSuccess)
                             {
                                 MessageBox.Show("Closeout Expired successfully completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);

@@ -301,7 +301,9 @@ namespace wpfTDX
         public  async Task<bool> CloseoutExpiredAsync(
             string broker, string broker_id, string broker_id_exec, string fundname,
             string subaccountname, string action, string tad_id, string tickername,
-            double price, double executed_qty, double multiplier, string exch_currency,DateTime bbg_lasttrade_date)
+            double price, double executed_qty, double multiplier, string exch_currency,DateTime ? bbg_lasttrade_date,
+            DateTime ? roll_date,string instrument,string report_category,string category,double contract_increment,
+            string bbg_symbol_exp)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -319,7 +321,13 @@ namespace wpfTDX
                     executed_qty,
                     multiplier,
                     exch_currency,
-                    bbg_lasttrade_date
+                    bbg_lasttrade_date,
+                    roll_date,
+                    instrument,
+                    report_category,
+                    category,
+                    contract_increment,
+                    bbg_symbol_exp
                 };
 
                 string jsonRequest = JsonConvert.SerializeObject(requestData);

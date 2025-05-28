@@ -30,7 +30,19 @@ namespace wpfTDX
                 }
             }
         }
-
+        private string _displayRunStatus;
+        public string DisplayRunStatus
+        {
+            get { return _displayRunStatus; }
+            set
+            {
+                if (_displayRunStatus != value)
+                {
+                    _displayRunStatus = value;
+                    OnPropertyChanged(nameof(DisplayRunStatus));
+                }
+            }
+        }
         private bool _isRunning;
         public bool IsRunning
         {
@@ -173,9 +185,44 @@ namespace wpfTDX
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string FundName { get; set; }
-        public DateTime Date_t { get; set; }
-        public DateTime Date_tminus1 { get; set; }
+        private DateTime _datet;
+        public DateTime Date_t
+        {
+            get => _datet;
+            set
+            {
+                _datet = value;
+                OnPropertyChanged(nameof(Date_t));
+                OnPropertyChanged(nameof(IsMultiDay));
+            }
+        }
+        private DateTime _datetminus1;
+        public DateTime Date_tminus1 {
+            get => _datetminus1;
+            set
+            {
+                _datetminus1 = value;
+                OnPropertyChanged(nameof(Date_tminus1));
+                OnPropertyChanged(nameof(IsMultiDay));
+            }
+        }
         public ICommand RunMtmCommand { get; }
+
+        private bool _showMultiDay;
+        public bool ShowMultiDay
+        {
+            get => _showMultiDay;
+            set
+            {
+                if (_showMultiDay != value)
+                {
+                    _showMultiDay = value;
+                    OnPropertyChanged(nameof(ShowMultiDay));
+                }
+            }
+        }
+
+
         public MtmViewModel()
         {
             BuyAndHoldData = new ObservableCollection<MtmDataModel>();
@@ -188,6 +235,27 @@ namespace wpfTDX
                 async () => await GetPnl(),
                 () => !IsRunning);
         }
+        public bool IsMultiDay
+        {
+            get
+            {
+                return (Date_t - Date_tminus1).TotalDays > 1;
+            }
+        }
+        private bool _isDataLoaded;
+        public bool IsDataLoaded
+        {
+            get => _isDataLoaded;
+            set
+            {
+                if (_isDataLoaded != value)
+                {
+                    _isDataLoaded = value;
+                    OnPropertyChanged(nameof(IsDataLoaded));
+                }
+            }
+        }
+
         public void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -196,20 +264,38 @@ namespace wpfTDX
         //public async Task GetPnl()
         public async Task GetPnl()
         {
+
             if (IsRunning) return;
 
             try
             {
-                IsRunning = true;
-                RunStatus = "Running..";
-                await Task.Yield();
-                string base_currency = SelectedFund.BaseCurrency.Substring(0, 3);
-                await ProcessPnlDataASync(SelectedFund.FundName, Date_t, Date_tminus1, base_currency);
-                RunStatus = "Run";
+                if (SelectedFund != null)
+                {
+                    int datediff = (Date_t - Date_tminus1).Days;
+                    if (datediff < 0)
+                    {
+                        throw new ArgumentException("Start date cannot be greater than end date.");
+                    }
+                    IsRunning = true;
+                    RunStatus = "Running..";
+                    DisplayRunStatus = "";
+                    await Task.Yield();
+                    string base_currency = SelectedFund.BaseCurrency.Substring(0, 3);
+                    await ProcessPnlDataASync(SelectedFund.FundName, Date_t, Date_tminus1, base_currency);
+                    IsDataLoaded = true;
+                    RunStatus = "Run";
+                    // Update ShowMultiDay here
+                    ShowMultiDay = datediff > 1;
+                }
+            }
+            catch(ArgumentException ax)
+            {
+                DisplayRunStatus = "Invalid Input: " + ax.Message;
             }
             catch (Exception ex)
             {
-                RunStatus = "Error: " + ex.Message;
+                RunStatus = "Error";
+                DisplayRunStatus = ex.Message;
             }
             finally
             {
@@ -355,6 +441,7 @@ namespace wpfTDX
 
                 // Deserialize "dfbuyandhold" into a list of MtmDataModel
                 var buyAndHoldList = JsonConvert.DeserializeObject<List<MtmDataModel>>(pnlData["dfbuyandhold"].ToString());
+
                 var newDealsList = JsonConvert.DeserializeObject<List<MtmDataModel>>(pnlData["dfnewdeals"].ToString());
                 TotalBuyAndHold = pnlData["buyandhold"].Value<double?>();
                 TotalNewDeals= pnlData["newdeals"].Value<double?>();

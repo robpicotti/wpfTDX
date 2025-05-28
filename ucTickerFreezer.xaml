@@ -66,7 +66,7 @@
                     </StackPanel>
                     <Expander x:Name="ExpGeneralFreezer" Header="Ticker Freezer" IsExpanded="True">
                     <DataGrid x:Name="dgTickerFreezer" 
-                              AutoGenerateColumns="True"
+                              AutoGenerateColumns="False"
                                 Height="500"       
                                 ScrollViewer.CanContentScroll="True" 
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -82,7 +82,29 @@
                                 <Setter Property="FontWeight" Value="Bold" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
-                        <DataGrid.ContextMenu>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" />
+                                <DataGridTextColumn Header="EMSName" Binding="{Binding Emsname}" />
+                                <DataGridTextColumn Header="BrokerCodeExec" Binding="{Binding BrokerCodeExec}" />
+                                <DataGridTextColumn Header="FundName" Binding="{Binding Fundname}" />
+                                <DataGridTextColumn Header="SubaccountName" Binding="{Binding Subaccountname}" />
+                                <DataGridTextColumn Header="ExecAccountName" Binding="{Binding Execaccountname}" />
+                                <DataGridTextColumn Header="BenchmarkName" Binding="{Binding Benchmarkname}" />
+                                <DataGridTextColumn Header="TadId" Binding="{Binding Tadid}" />
+                                <DataGridTextColumn Header="TickerName" Binding="{Binding Tickername}" />
+                                <DataGridCheckBoxColumn Header="Override"
+                                 Binding="{Binding Override, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <DataGridCheckBoxColumn Header="ForceOverride"
+                                 Binding="{Binding ForceOverride, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <DataGridCheckBoxColumn Header="Thaw"
+                                 Binding="{Binding Thaw, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <DataGridTextColumn Header="ErrorCode" Binding="{Binding Errorcode}" />
+                                <DataGridTextColumn Header="Error" Binding="{Binding Errorstring}" />
+                                <DataGridTextColumn Header="FreezeExpiration" Binding="{Binding FreezeExpiration}" />
+                                <DataGridTextColumn Header="OverrideExpiration" Binding="{Binding OverrideExpiration}" />
+                                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" />
+                            </DataGrid.Columns>
+                            <DataGrid.ContextMenu>
                             <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                 <MenuItem Header="thaw tad_id?" Command="{Binding ThawTadIdCommand}"></MenuItem>
                                 <MenuItem Header="override tad_id?" Click="MenuItem_Click_1">
