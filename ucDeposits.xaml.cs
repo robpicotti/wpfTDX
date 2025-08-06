@@ -208,7 +208,7 @@ namespace wpfTDX
             cboSubaccount.SelectedIndex = -1;
             cboBrokerCode.SelectedIndex = -1;
             cboExecBrokerCode.SelectedIndex = -1;
-            cboCurrency.SelectedIndex = -1;
+            cboCurrency.SelectedIndex = -1; 
             txtTadId.Text = "";
             txtAmount.Text = "";
             SubscribeSelectionChangedEvents();
