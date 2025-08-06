@@ -229,7 +229,7 @@ namespace wpfTDX
         {
             cboFundname.SelectionChanged += cboFundname_SelectionChanged;
             cboSubaccount.SelectionChanged += cboSubaccount_SelectionChanged;
-            cboCurrency.SelectionChanged += cboCurrency_SelectionChanged;
+            cboCurrency.SelectionChanged += cboCurrency_SelectionChanged; 
         }
         private void cmdClose_Click(object sender, RoutedEventArgs e)
         {
