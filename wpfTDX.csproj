@@ -122,6 +122,7 @@
     <Compile Include="DataModels\ScheduledJobDataModel.cs" />
     <Compile Include="DataModels\ScheduleFrequenciesDataModel.cs" />
     <Compile Include="DataModels\SubaccountDataModel.cs" />
+    <Compile Include="DataModels\TadPositionsDataModel.cs" />
     <Compile Include="DataModels\TickerFreezerDataModel.cs" />
     <Compile Include="Fund.cs" />
     <Compile Include="DataModels\FundsDataModel.cs" />
