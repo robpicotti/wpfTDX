@@ -281,9 +281,13 @@ namespace wpfTDX
                                 ViewModel.SelectedPosition.PriceLive, Math.Abs(posnlive),
                                 ViewModel.SelectedPosition.Multiplier, ViewModel.SelectedPosition.ExchangeCurrency, ViewModel.SelectedPosition.BbgLastTradeDate,
                                 ViewModel.SelectedPosition.RollDate,ViewModel.SelectedPosition.Instrument,ViewModel.SelectedPosition.ReportCategory,
-                                ViewModel.SelectedPosition.Category,ViewModel.SelectedPosition.ContractIncrement,ViewModel.SelectedPosition.BbgSymbolExp);
+                                ViewModel.SelectedPosition.Category,ViewModel.SelectedPosition.ContractIncrement,ViewModel.SelectedPosition.BbgSymbolExp,
+                                ViewModel.SelectedPosition.SubTickerName);
                             if (isSuccess)
                             {
+                                string msg = "Closeout Expired successfully completed!";
+                                msg += "VERY IMPORTANT: broker_id = 2 has been used for this transaction, which is TAD.";
+                                msg += "Find this transaction in the transactions table and change the broker_id to the relevant broker_id for this subaccount";
                                 MessageBox.Show("Closeout Expired successfully completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                                 ViewModel.PositionsData.Remove(ViewModel.SelectedPosition);
                                 //ViewModel.GetPosition();

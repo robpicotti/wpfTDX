@@ -259,9 +259,10 @@ namespace wpfTDX
             string runtime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             string tickername = currency;
             string sql_text = "INSERT transactions (runtime,transaction_id,broker_id,fund,subaccount,strategy_id,action,tad_id,tickername,price,executed_qty,execution_time,settlement_date," +
-                "effective_date,tx_type,broker_id_exec,tx_type_detail) VALUES('" + runtime + "','" + transaction_id + "'," + broker.broker_id.ToString() + ",'" + fund + "','" + subaccount + "'," + strategy_id + ",'" + action + "','" + tad_id + "','" +
+                "effective_date,tx_type,broker_id_exec,tx_type_detail,sub_tickername,exch_currency,instrument) VALUES('" + runtime + "','" + transaction_id + "'," +
+                broker.broker_id.ToString() + ",'" + fund + "','" + subaccount + "'," + strategy_id + ",'" + action + "','" + tad_id + "','" +
                 tickername + "'," + price + "," + executed_qty + ",'" + tx_date + "','" + tx_date + "','" + tx_date + "','" + TX_TYPE + "'," + broker_exec.broker_id.ToString() + ",'" +
-                txtype_detail + "')";
+                txtype_detail +  "','" + tickername +  "','" + currency.Substring(0,3) + "','cash"   + "')";
             _db.execSQL_noresults(sql_text, gbl_conn);
         }
     }

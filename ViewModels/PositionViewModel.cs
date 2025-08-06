@@ -303,7 +303,7 @@ namespace wpfTDX
             string subaccountname, string action, string tad_id, string tickername,
             double price, double executed_qty, double multiplier, string exch_currency,DateTime ? bbg_lasttrade_date,
             DateTime ? roll_date,string instrument,string report_category,string category,double contract_increment,
-            string bbg_symbol_exp)
+            string bbg_symbol_exp,string sub_tickername)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -327,7 +327,8 @@ namespace wpfTDX
                     report_category,
                     category,
                     contract_increment,
-                    bbg_symbol_exp
+                    bbg_symbol_exp,
+                    sub_tickername
                 };
 
                 string jsonRequest = JsonConvert.SerializeObject(requestData);

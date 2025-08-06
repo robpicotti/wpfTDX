@@ -27,7 +27,9 @@ namespace wpfTDX
     /// </summary>
     public partial class MainWindow : Window
     {
-        public string filepath = @"\\ad01-har.10dynamics.com\Ray_Share\Files\TDX\tdx.txt";
+        public string filepath_2 = @"\\ad01-har.10dynamics.com\Ray_Share\Files\TDX\tdx.txt";
+        public string filepath = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\OneDrive - 10dynamics\IT Drive\TDX\tdx.txt");
+                                                                        //C:\\Users\\Rob\\OneDrive - 10dynamics\\TDX\\
         public string sqlServer = "";
         public string sqlInstance = "";
         public string DEFAULT_INSTANCE = "SQLEXPRESS";
@@ -62,7 +64,7 @@ namespace wpfTDX
         List<string> lstProcesses = new List<string>();
         private readonly object lockObject = new object();
         Thread monitoringThread;
-        public string VERSION = "TDX version 2.2.7";
+        public string VERSION = "TDX version 2.3.9";
         
         private Dictionary<TextBlock, UserControl> userControlDictionary = new Dictionary<TextBlock, UserControl>();
         /// <summary>
@@ -107,7 +109,7 @@ namespace wpfTDX
             Window_Width = this.Width;
             Dictionary<string, string> dict_sql = getConnectionParams();
             sqlPwd = dict_sql["@pwd"];
-            fixed_pricing = dict_sql["@fixed_pricing"];
+            //fixed_pricing = dict_sql["@fixed_pricing"];
             default_fund = dict_sql["@default_fund"];
             string[] servernames = dict_sql["@server_names"].Split(',');
             string[] dbnames = "Oris,Oris_dev,Oris_stage".Split(',');
@@ -127,7 +129,7 @@ namespace wpfTDX
                 {
                     if (server.ToLower() != Environment.MachineName.ToLower())
                     {
-                        server = server + ".10dynamics.com";
+                        server = server;//+ ".10dynamics.com";
                         fullservername = server;// + @"\sqlexpress";
                     }
                 }
@@ -155,6 +157,7 @@ namespace wpfTDX
         public Dictionary<string, string> getConnectionParams()
             {
                 Dictionary<string, string> dictConn = new Dictionary<string, string>();
+                Console.WriteLine(filepath);
                 if (File.Exists(filepath))
                 {
                     StreamReader SR = new StreamReader(filepath);
@@ -209,7 +212,7 @@ namespace wpfTDX
                         fixed_pricing = mFP.Groups[1].Value.ToString();
                         dictConn.Add("@fixed_pricing", fixed_pricing);
                     }
-                    string rgxdefault_account = "<DEFAULT_FUND:(.*?)>";
+                string rgxdefault_account = "<DEFAULT_FUND:(.*?)>";
                     Regex rgDA = new Regex(rgxdefault_account, RegexOptions.Compiled);
                     Match mDA = rgDA.Match(strFileText);
                     if (mDA.Groups.Count > 0)
@@ -364,6 +367,10 @@ namespace wpfTDX
         public SqlConnection connect_database()
         {
             sqlServer = cboServer.SelectedItem.ToString();
+            if(sqlServer !="(local)")
+            {
+                sqlServer += ",1433";
+            }
             sqlDb = cboDatabase.SelectedItem.ToString();
             sqlInstance = cboInstance.SelectedItem.ToString();
             sqlServerInstance = sqlServer + @"\" + sqlInstance;
@@ -516,6 +523,7 @@ namespace wpfTDX
                 sqlDb = null;
                 sqlInstance = DEFAULT_INSTANCE; //set to this as default
                 cboInstance.SelectedItem = DEFAULT_INSTANCE;
+                if (sqlServer != "(local)") { sqlServer += ",1433";}
                 sqlServerInstance = sqlServer + @"\" + sqlInstance;
                 cboDatabase.Text = null;
                 DisconnectDatabase();
