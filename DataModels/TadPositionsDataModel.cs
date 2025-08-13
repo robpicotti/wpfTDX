@@ -441,9 +441,9 @@ namespace wpfTDX
             }
         }
         //position stuff
-        private float _position_base_y1;
+        private float? _position_base_y1;
         [JsonProperty("position_base_y1")]
-        public float PositionBaseY1
+        public float? PositionBaseY1
         {
             get => _position_base_y1;
             set
@@ -455,9 +455,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_base_h1;
+        private float? _position_base_h1;
         [JsonProperty("position_base_h1")]
-        public float PositionBaseH1
+        public float? PositionBaseH1
         {
             get => _position_base_h1;
             set
@@ -469,9 +469,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_base_D1;
+        private float? _position_base_D1;
         [JsonProperty("position_base_D1")]
-        public float PositionBaseD1
+        public float? PositionBaseD1
         {
             get => _position_base_D1;
             set
@@ -483,9 +483,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_y1;
+        private float? _position_y1;
         [JsonProperty("position_y1")]
-        public float PositionY1
+        public float? PositionY1
         {
             get => _position_y1;
             set
@@ -497,9 +497,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_y2;
+        private float? _position_y2;
         [JsonProperty("position_y2")]
-        public float PositionY2
+        public float? PositionY2
         {
             get => _position_y2;
             set
@@ -623,9 +623,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_D1;
+        private float? _position_D1;
         [JsonProperty("position_D1")]
-        public float PositionD1
+        public float? PositionD1
         {
             get => _position_D1;
             set
@@ -750,7 +750,7 @@ namespace wpfTDX
             }
         }
         private float _position_num_trades;
-        [JsonProperty("position_num_trades")]
+        [JsonProperty("num_trades")]
         public float PositionNumTrades
         {
             get => _position_num_trades;
@@ -763,6 +763,22 @@ namespace wpfTDX
                 }
             }
         }
+        private float? _position_num_intervals;
+        [JsonProperty("num_posintervals")]
+        public float? PositionNumIntervals
+        {
+            get => _position_num_intervals;
+            set
+            {
+                if(value != _position_num_intervals)
+                {
+                    _position_num_intervals = value;
+                    OnPropertyChanged(nameof(PositionNumIntervals));
+                }
+            }
+        }
+
+
         //filter position stuff
         private float _filter_position_base_y1;
         [JsonProperty("filter_position_base_y1")]

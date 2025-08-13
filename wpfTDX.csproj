@@ -114,6 +114,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DataModels\ExecutionsDataModel.cs" />
+    <Compile Include="DataModels\FilterIntervalsDataModel.cs" />
     <Compile Include="DataModels\JobParametersDataModel.cs" />
     <Compile Include="DataModels\JobParameterValueDataModel.cs" />
     <Compile Include="DataModels\OrderDataModel.cs" />
@@ -135,6 +136,7 @@
       <DependentUpon>ucScheduledJobsManager.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\EMSViewModel.cs" />
+    <Compile Include="ViewModels\FilterIntervalsViewModel.cs" />
     <Compile Include="ViewModels\MetadataTableChangesViewModel.cs" />
     <Compile Include="ViewModels\MtmViewModel.cs" />
     <Compile Include="Order.cs" />
@@ -192,6 +194,9 @@
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="ViewModels\TickerFreezerViewModel.cs" />
     <Compile Include="WebServiceData\WebServiceData.cs" />
+    <Compile Include="winFilterIntervals.xaml.cs">
+      <DependentUpon>winFilterIntervals.xaml</DependentUpon>
+    </Compile>
     <Compile Include="winFreezeTadId.xaml.cs">
       <DependentUpon>winFreezeTadId.xaml</DependentUpon>
     </Compile>
@@ -286,6 +291,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucTickerFreezer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="winFilterIntervals.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
