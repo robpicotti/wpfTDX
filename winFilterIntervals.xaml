@@ -6,14 +6,42 @@
         xmlns:local="clr-namespace:wpfTDX"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="Adjust Intervals" Height="450" Width="800"
+        Title="Adjust Intervals" Height="450" Width="1200"
         Loaded="Window_Loaded">
+
+    <!-- Reusable resources -->
+    <Window.Resources>
+        <!-- One place for True/False options -->
+        <x:Array x:Key="BoolOptions" Type="{x:Type sys:Boolean}">
+            <sys:Boolean>True</sys:Boolean>
+            <sys:Boolean>False</sys:Boolean>
+        </x:Array>
+    </Window.Resources>
 
     <Grid>
         <DataGrid ItemsSource="{Binding MergedRows}"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
-                  Margin="10">
+                  Margin="10"
+                  EnableRowVirtualization="True"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.ScrollUnit="Pixel"
+                  FrozenColumnCount="1">
+
+            <!-- Bold headers + show underscores literally -->
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="ContentTemplate">
+                        <Setter.Value>
+                            <DataTemplate>
+                                <!-- Using TextBlock so '_' isn't treated as an access key -->
+                                <TextBlock Text="{Binding}"/>
+                            </DataTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
 
             <DataGrid.Columns>
 
@@ -24,15 +52,8 @@
 
                 <!-- Rescale: dropdown True/False, bold when changed -->
                 <DataGridComboBoxColumn Header="rescale"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding Rescale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -45,18 +66,10 @@
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-
-                <!-- LongOnly: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="long__only"
+                <!-- LongOnly -->
+                <DataGridComboBoxColumn Header="long_only"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding LongOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -69,17 +82,10 @@
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-                <!-- ShortOnly: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="short__only"
+                <!-- ShortOnly -->
+                <DataGridComboBoxColumn Header="short_only"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding ShortOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -91,17 +97,11 @@
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
-                <!-- BuyOnly: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="buy__only"
-                    SelectedItemBinding="{Binding BuyOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
 
-                    <!-- Bold the whole cell when changed -->
+                <!-- BuyOnly -->
+                <DataGridComboBoxColumn Header="buy_only"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding BuyOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -114,17 +114,10 @@
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-                <!-- SellOnly: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="sell__only"
+                <!-- SellOnly -->
+                <DataGridComboBoxColumn Header="sell_only"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding SellOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -136,18 +129,11 @@
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
-                <!-- add other columns here... -->
-                <!-- AllIntervals: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="all__intervals"
-                    SelectedItemBinding="{Binding AllIntervals, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
 
-                    <!-- Bold the whole cell when changed -->
+                <!-- all_intervals -->
+                <DataGridComboBoxColumn Header="all_intervals"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding AllIntervals, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -160,338 +146,1002 @@
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-                <!-- base_y1: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="base__y1"
+                <!-- base_y1 -->
+                <DataGridComboBoxColumn Header="base_y1"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding BaseY1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle" Value="Italic"/>
-                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
+
+                                <!-- Grey when PositionBaseY1 is null -->
                                 <DataTrigger Binding="{Binding PositionBaseY1}" Value="{x:Null}">
                                     <Setter Property="Background" Value="#FFE0E0E0"/>
                                 </DataTrigger>
-                                <!-- Light green when BaseY1 == true AND PositionBaseY1 == 1 -->
+
+                                <!-- BaseY1 true + pos 1 = green -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseY1}" Value="True"/>
                                         <Condition Binding="{Binding PositionBaseY1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="PaleGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
+
+                                <!-- BaseY1 true + pos -1 = light red -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseY1}" Value="True"/>
                                         <Condition Binding="{Binding PositionBaseY1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MistyRose"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
+
+                                <!-- BaseY1 false + pos -1 = strong red -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseY1}" Value="False"/>
                                         <Condition Binding="{Binding PositionBaseY1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="IndianRed"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
+
+                                <!-- BaseY1 false + pos 1 = green (different shade) -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseY1}" Value="False"/>
                                         <Condition Binding="{Binding PositionBaseY1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MediumSeaGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
-
                             </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-                <!-- base_h1: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="base__h1"
+                <!-- base_h1 -->
+                <DataGridComboBoxColumn Header="base_h1"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding BaseH1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle" Value="Italic"/>
-                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding PositionBaseH1}" Value="{x:Null}">
                                     <Setter Property="Background" Value="#FFE0E0E0"/>
                                 </DataTrigger>
-                                <!-- Light green when BaseY1 == true AND PositionBaseH1 == 1 -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseH1}" Value="True"/>
                                         <Condition Binding="{Binding PositionBaseH1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="PaleGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseH1}" Value="True"/>
                                         <Condition Binding="{Binding PositionBaseH1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MistyRose"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseH1}" Value="False"/>
                                         <Condition Binding="{Binding PositionBaseH1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="IndianRed"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseH1}" Value="False"/>
                                         <Condition Binding="{Binding PositionBaseH1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MediumSeaGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
-
                             </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-                <!-- base_d1: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="base__D1"
+                <!-- base_d1 -->
+                <DataGridComboBoxColumn Header="base_d1"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding BaseD1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle" Value="Italic"/>
-                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding PositionBaseD1}" Value="{x:Null}">
                                     <Setter Property="Background" Value="#FFE0E0E0"/>
                                 </DataTrigger>
-                                <!-- Light green when BaseY1 == true AND PositionBaseD1 == 1 -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseD1}" Value="True"/>
                                         <Condition Binding="{Binding PositionBaseD1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="PaleGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseD1}" Value="True"/>
                                         <Condition Binding="{Binding PositionBaseD1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MistyRose"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseD1}" Value="False"/>
                                         <Condition Binding="{Binding PositionBaseD1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="IndianRed"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding BaseD1}" Value="False"/>
                                         <Condition Binding="{Binding PositionBaseD1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MediumSeaGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
-
                             </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
-                <!-- y1: dropdown True/False, bold when changed -->
+                <!-- y1 -->
                 <DataGridComboBoxColumn Header="y1"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding y1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Y1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle" Value="Italic"/>
-                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding PositionY1}" Value="{x:Null}">
                                     <Setter Property="Background" Value="#FFE0E0E0"/>
                                 </DataTrigger>
-                                <!-- Light green when Y1 == true AND Positiony1 == 1 -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding y1}" Value="True"/>
                                         <Condition Binding="{Binding PositionY1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="PaleGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding y1}" Value="True"/>
                                         <Condition Binding="{Binding PositionY1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MistyRose"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding y1}" Value="False"/>
                                         <Condition Binding="{Binding PositionY1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="IndianRed"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding y1}" Value="False"/>
                                         <Condition Binding="{Binding PositionY1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MediumSeaGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
 
+                <!-- y2 -->
+                <DataGridComboBoxColumn Header="y2"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding y2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Y2HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionY2}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionY2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionY2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionY2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionY2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- y3 -->
+                <DataGridComboBoxColumn Header="y3"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding y3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Y3HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionY3}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y3}" Value="True"/>
+                                        <Condition Binding="{Binding PositionY3}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y3}" Value="True"/>
+                                        <Condition Binding="{Binding PositionY3}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y3}" Value="False"/>
+                                        <Condition Binding="{Binding PositionY3}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding y3}" Value="False"/>
+                                        <Condition Binding="{Binding PositionY3}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- h2 -->
+                <DataGridComboBoxColumn Header="h2"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H2HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH2}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- h3 -->
+                <DataGridComboBoxColumn Header="h3"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H3HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH3}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H3}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH3}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H3}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH3}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H3}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH3}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H3}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH3}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- h4 -->
+                <DataGridComboBoxColumn Header="h4"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H4HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH4}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H4}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH4}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H4}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH4}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H4}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH4}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H4}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH4}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- h6 -->
+                <DataGridComboBoxColumn Header="h6"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H6, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H6HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH6}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H6}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH6}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H6}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH6}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H6}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH6}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H6}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH6}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- h12 -->
+                <DataGridComboBoxColumn Header="h12"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H12, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H12HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH12}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H12}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH12}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H12}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH12}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H12}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH12}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H12}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH12}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- h16 -->
+                <DataGridComboBoxColumn Header="h16"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H16, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H16HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH16}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H16}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH16}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H16}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH16}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H16}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH16}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H16}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH16}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
 
-
-
-                <!-- D1: dropdown True/False, bold when changed -->
+                <!-- D1 -->
                 <DataGridComboBoxColumn Header="D1"
+                    ItemsSource="{StaticResource BoolOptions}"
                     SelectedItemBinding="{Binding D1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.ItemsSource>
-                        <x:Array Type="{x:Type sys:Boolean}">
-                            <sys:Boolean>True</sys:Boolean>
-                            <sys:Boolean>False</sys:Boolean>
-                        </x:Array>
-                    </DataGridComboBoxColumn.ItemsSource>
-
-                    <!-- Bold the whole cell when changed -->
                     <DataGridComboBoxColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding D1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle" Value="Italic"/>
-                                    <Setter Property="FontSize" Value="14"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding D1}" Value="{x:Null}">
+                                <DataTrigger Binding="{Binding PositionD1}" Value="{x:Null}">
                                     <Setter Property="Background" Value="#FFE0E0E0"/>
                                 </DataTrigger>
-                                <!-- Light green when D1 == true AND PositionD1 == 1 -->
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding D1}" Value="True"/>
                                         <Condition Binding="{Binding PositionD1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="PaleGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding D1}" Value="True"/>
                                         <Condition Binding="{Binding PositionD1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MistyRose"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding D1}" Value="False"/>
                                         <Condition Binding="{Binding PositionD1}" Value="-1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="IndianRed"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding D1}" Value="False"/>
                                         <Condition Binding="{Binding PositionD1}" Value="1"/>
-                                        <!-- if it's a double, "1" parses to 1.0 -->
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Background" Value="MediumSeaGreen"/>
-                                    <!-- or a softer green: #DFF6DD -->
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.CellStyle>
                 </DataGridComboBoxColumn>
 
+
+                <!-- h36 -->
+                <DataGridComboBoxColumn Header="h36"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding H36, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H36HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionH36}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H36}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH36}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H36}" Value="True"/>
+                                        <Condition Binding="{Binding PositionH36}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H36}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH36}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding H36}" Value="False"/>
+                                        <Condition Binding="{Binding PositionH36}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- D2 -->
+                <DataGridComboBoxColumn Header="D2"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding D2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D2HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionD2}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- D3 -->
+                <DataGridComboBoxColumn Header="D3"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding D3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D3HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionD3}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D3}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD3}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D3}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD3}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D3}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD3}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D3}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD3}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- D4 -->
+                <DataGridComboBoxColumn Header="D4"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding D4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D4HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionD4}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D4}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD4}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D4}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD4}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D4}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD4}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D4}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD4}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- W1 -->
+                <DataGridComboBoxColumn Header="W1"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding W1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding W1HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionW1}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W1}" Value="True"/>
+                                        <Condition Binding="{Binding PositionW1}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W1}" Value="True"/>
+                                        <Condition Binding="{Binding PositionW1}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W1}" Value="False"/>
+                                        <Condition Binding="{Binding PositionW1}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W1}" Value="False"/>
+                                        <Condition Binding="{Binding PositionW1}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- D8 -->
+                <DataGridComboBoxColumn Header="D8"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding D8, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D8HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionD8}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D8}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD8}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D8}" Value="True"/>
+                                        <Condition Binding="{Binding PositionD8}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D8}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD8}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding D8}" Value="False"/>
+                                        <Condition Binding="{Binding PositionD8}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- W2 -->
+                <DataGridComboBoxColumn Header="W2"
+                    ItemsSource="{StaticResource BoolOptions}"
+                    SelectedItemBinding="{Binding W2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridComboBoxColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding W2HasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                    <Setter Property="FontSize"   Value="14"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PositionW2}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionW2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W2}" Value="True"/>
+                                        <Condition Binding="{Binding PositionW2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionW2}" Value="-1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="IndianRed"/>
+                                </MultiDataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding W2}" Value="False"/>
+                                        <Condition Binding="{Binding PositionW2}" Value="1"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="MediumSeaGreen"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.CellStyle>
+                </DataGridComboBoxColumn>
+
+                <!-- Ticker (read-only) -->
+                <DataGridTextColumn Header="num_filtered_trades"
+                                    Binding="{Binding NumFilteredTrades}"
+                                    IsReadOnly="True" />
 
             </DataGrid.Columns>
         </DataGrid>

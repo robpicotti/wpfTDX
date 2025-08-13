@@ -511,9 +511,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_y3;
+        private float? _position_y3;
         [JsonProperty("position_y3")]
-        public float PositionY3
+        public float? PositionY3
         {
             get => _position_y3;
             set
@@ -525,9 +525,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h2;
+        private float? _position_h2;
         [JsonProperty("position_h2")]
-        public float PositionH2
+        public float? PositionH2
         {
             get => _position_h2;
             set
@@ -539,9 +539,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h3;
+        private float? _position_h3;
         [JsonProperty("position_h3")]
-        public float PositionH3
+        public float? PositionH3
         {
             get => _position_h3;
             set
@@ -553,9 +553,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h4;
+        private float? _position_h4;
         [JsonProperty("position_h4")]
-        public float PositionH4
+        public float? PositionH4
         {
             get => _position_h4;
             set
@@ -567,9 +567,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h5;
+        private float? _position_h5;
         [JsonProperty("position_h5")]
-        public float PositionH5
+        public float? PositionH5
         {
             get => _position_h5;
             set
@@ -581,9 +581,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h6;
+        private float? _position_h6;
         [JsonProperty("position_h6")]
-        public float PositionH6
+        public float? PositionH6
         {
             get => _position_h6;
             set
@@ -595,9 +595,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h12;
+        private float? _position_h12;
         [JsonProperty("position_h12")]
-        public float PositionH12
+        public float? PositionH12
         {
             get => _position_h12;
             set
@@ -609,9 +609,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h16;
+        private float? _position_h16;
         [JsonProperty("position_h16")]
-        public float PositionH16
+        public float? PositionH16
         {
             get => _position_h16;
             set
@@ -637,9 +637,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_h36;    
+        private float? _position_h36;    
         [JsonProperty("position_h36")]
-        public float PositionH36
+        public float? PositionH36
         {
             get => _position_h36;
             set
@@ -651,9 +651,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_D2;
+        private float? _position_D2;
         [JsonProperty("position_D2")]
-        public float PositionD2
+        public float? PositionD2
         {
             get => _position_D2;
             set
@@ -665,9 +665,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_D3;
+        private float? _position_D3;
         [JsonProperty("position_D3")]
-        public float PositionD3
+        public float? PositionD3
         {
             get => _position_D3;
             set
@@ -679,9 +679,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_D4;
+        private float? _position_D4;
         [JsonProperty("position_D4")]
-        public float PositionD4
+        public float? PositionD4
         {
             get => _position_D4;
             set
@@ -693,9 +693,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_W1;
+        private float? _position_W1;
         [JsonProperty("position_W1")]
-        public float PositionW1
+        public float? PositionW1
         {
             get => _position_W1;
             set
@@ -707,9 +707,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_D8; 
+        private float? _position_D8; 
         [JsonProperty("position_D8")]
-        public float PositionD8
+        public float? PositionD8
         {
             get => _position_D8;
             set
@@ -721,9 +721,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_W2;
+        private float? _position_W2;
         [JsonProperty("position_W2")]
-        public float PositionW2
+        public float? PositionW2
         {
             get => _position_W2;
             set
