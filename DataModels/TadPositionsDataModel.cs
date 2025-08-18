@@ -735,9 +735,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_deployment;
+        private float? _position_deployment;
         [JsonProperty("position_deployment")]
-        public float PositionDeployment
+        public float? PositionDeployment
             {
             get => _position_deployment;
             set
@@ -749,9 +749,9 @@ namespace wpfTDX
                 }
             }
         }
-        private float _position_num_trades;
+        private float? _position_num_trades;
         [JsonProperty("num_trades")]
-        public float PositionNumTrades
+        public float? PositionNumTrades
         {
             get => _position_num_trades;
             set

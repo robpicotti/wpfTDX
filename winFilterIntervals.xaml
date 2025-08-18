@@ -16,6 +16,14 @@
             <sys:Boolean>True</sys:Boolean>
             <sys:Boolean>False</sys:Boolean>
         </x:Array>
+        <local:IsZeroConverter x:Key="IsZeroConverter"/>
+        <local:CompareDoubleConverter x:Key="CompareDoubleConverter"/>
+        <local:CompareRoundedConverter x:Key="CompareRoundedConverter"/>
+        <local:IsZeroRoundedConverter  x:Key="IsZeroRoundedConverter"/>
+        <local:BoolToStringConverter x:Key="BoolToStringConverter"
+                                 TrueText="True"
+                                 FalseText="False"
+                                 NullText="" />
     </Window.Resources>
 
     <Grid>
@@ -26,7 +34,9 @@
                   EnableRowVirtualization="True"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.ScrollUnit="Pixel"
-                  FrozenColumnCount="1">
+                  FrozenColumnCount="1"
+                  PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
+                  >
 
             <!-- Bold headers + show underscores literally -->
             <DataGrid.ColumnHeaderStyle>
@@ -51,10 +61,13 @@
                                     IsReadOnly="True" />
 
                 <!-- Rescale: dropdown True/False, bold when changed -->
-                <DataGridComboBoxColumn Header="rescale"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding Rescale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="rescale"
+                                    IsReadOnly="True"
+                 >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Rescale" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -63,14 +76,17 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- LongOnly -->
-                <DataGridComboBoxColumn Header="long_only"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding LongOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="LO_only"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="LongOnly" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -79,14 +95,17 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- ShortOnly -->
-                <DataGridComboBoxColumn Header="short_only"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding ShortOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="SO_only"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="ShortOnly" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -95,14 +114,17 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- BuyOnly -->
-                <DataGridComboBoxColumn Header="buy_only"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding BuyOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="buy_only"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="BuyOnly" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -111,14 +133,17 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- SellOnly -->
-                <DataGridComboBoxColumn Header="sell_only"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding SellOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="sell_only"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="SellOnly" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -127,14 +152,18 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- all_intervals -->
-                <DataGridComboBoxColumn Header="all_intervals"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding AllIntervals, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="filt_intvls"
+       
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="AllIntervals" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -143,14 +172,17 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- base_y1 -->
-                <DataGridComboBoxColumn Header="base_y1"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding BaseY1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="base_y1"
+                IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="BaseY1" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -202,14 +234,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- base_h1 -->
-                <DataGridComboBoxColumn Header="base_h1"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding BaseH1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="base_h1"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="BaseH1" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -251,14 +286,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- base_d1 -->
-                <DataGridComboBoxColumn Header="base_d1"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding BaseD1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="base_d1"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="BaseD1" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -300,14 +338,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- y1 -->
-                <DataGridComboBoxColumn Header="y1"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding y1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="y1"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="y1" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -349,14 +390,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- y2 -->
-                <DataGridComboBoxColumn Header="y2"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding y2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="y2"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="y2" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -398,14 +442,16 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- y3 -->
-                <DataGridComboBoxColumn Header="y3"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding y3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="y3"
+                    IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="y3" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -447,14 +493,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- h2 -->
-                <DataGridComboBoxColumn Header="h2"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h2"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H2" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -496,14 +545,16 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- h3 -->
-                <DataGridComboBoxColumn Header="h3"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h3"
+                    IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H3" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -545,14 +596,16 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- h4 -->
-                <DataGridComboBoxColumn Header="h4"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h4"
+                    IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H4" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -594,14 +647,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- h6 -->
-                <DataGridComboBoxColumn Header="h6"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H6, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h6"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H6" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -643,14 +699,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- h12 -->
-                <DataGridComboBoxColumn Header="h12"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H12, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h12"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H12" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -692,14 +751,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- h16 -->
-                <DataGridComboBoxColumn Header="h16"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H16, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h16"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H16" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -741,15 +803,18 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
 
                 <!-- D1 -->
-                <DataGridComboBoxColumn Header="D1"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding D1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="D1"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="D1" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -791,15 +856,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
 
                 <!-- h36 -->
-                <DataGridComboBoxColumn Header="h36"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding H36, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="h36"
+                    IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="H36" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -841,14 +908,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- D2 -->
-                <DataGridComboBoxColumn Header="D2"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding D2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="D2"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="D2" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -890,14 +960,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- D3 -->
-                <DataGridComboBoxColumn Header="D3"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding D3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="D3"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="D3" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -939,14 +1012,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- D4 -->
-                <DataGridComboBoxColumn Header="D4"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding D4, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="D4"
+                   IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="D4" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -988,14 +1064,16 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- W1 -->
-                <DataGridComboBoxColumn Header="W1"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding W1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="W1"
+                    IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="W1" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -1037,14 +1115,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- D8 -->
-                <DataGridComboBoxColumn Header="D8"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding D8, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="D8"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="D8" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -1086,14 +1167,17 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <!-- W2 -->
-                <DataGridComboBoxColumn Header="W2"
-                    ItemsSource="{StaticResource BoolOptions}"
-                    SelectedItemBinding="{Binding W2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridComboBoxColumn.CellStyle>
+                <DataGridTextColumn Header="W2"
+                    IsReadOnly="True"
+                                        >
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="W2" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
@@ -1135,13 +1219,237 @@
                                 </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridComboBoxColumn.CellStyle>
-                </DataGridComboBoxColumn>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+
+                <DataGridTextColumn Header="trades"
+                                    Binding="{Binding NumTrades}"
+                                    IsReadOnly="True" />
+
+                <DataGridTextColumn Header="pos_intvls"
+                                    Binding="{Binding NumPositionIntervals}"
+                                    IsReadOnly="True" />
+
+                <DataGridTextColumn Header="deploy" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="PositionDeployment"
+                     StringFormat="{}{0:P1}"
+                     TargetNullValue=""/>
+                    </DataGridTextColumn.Binding>
+                    <!-- (optional) right-align the text -->
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
 
                 <!-- Ticker (read-only) -->
-                <DataGridTextColumn Header="num_filtered_trades"
+                <DataGridTextColumn Header="filt_trades"
                                     Binding="{Binding NumFilteredTrades}"
                                     IsReadOnly="True" />
+
+                <DataGridTextColumn Header="filt_intvls"
+                                    Binding="{Binding NumFiltIntervals}"
+                                    IsReadOnly="True" />
+
+                <DataGridTextColumn Header="filt_deploy" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="FilteredDeployment"
+                     StringFormat="{}{0:P1}"
+                     TargetNullValue=""/>
+                            </DataGridTextColumn.Binding>
+                            <!-- (optional) right-align the text -->
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+
+                <DataGridTextColumn Header="new_trades" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="NewTrades" TargetNullValue=""/>
+                    </DataGridTextColumn.Binding>
+
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <!-- NewTrades < NumFilteredTrades → MistyRose -->
+                                <DataTrigger Value="-1">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
+                                            <Binding Path="NewTrades"/>
+                                            <Binding Path="NumFilteredTrades"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                    <Setter Property="Foreground" Value="DarkRed"/>
+                                </DataTrigger>
+
+                                <!-- NewTrades > NumFilteredTrades → PaleGreen -->
+                                <DataTrigger Value="1">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
+                                            <Binding Path="NewTrades"/>
+                                            <Binding Path="NumFilteredTrades"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                    <Setter Property="Foreground" Value="DarkGreen"/>
+                                </DataTrigger>
+
+                                <!-- NewTrades == 0 → Grey (placed last so it takes precedence) -->
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <Binding Path="NewTrades" Converter="{StaticResource IsZeroConverter}"/>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="new_intvls" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="RescaledIntervals" TargetNullValue="" StringFormat="N0"/>
+                    </DataGridTextColumn.Binding>
+
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                            <Setter Property="FontWeight"   Value="SemiBold"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+
+                                <!-- rescaled < NumFiltIntervals  → MistyRose + DarkRed -->
+                                <DataTrigger Value="-1">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
+                                            <Binding Path="RescaledIntervals"/>
+                                            <Binding Path="NumFiltIntervals"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                    <Setter Property="Foreground" Value="DarkRed"/>
+                                </DataTrigger>
+
+                                <!-- rescaled > NumFiltIntervals  → PaleGreen + DarkGreen -->
+                                <DataTrigger Value="1">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
+                                            <Binding Path="RescaledIntervals"/>
+                                            <Binding Path="NumFiltIntervals"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                    <Setter Property="Foreground" Value="DarkGreen"/>
+                                </DataTrigger>
+
+                                <!-- rescaled == null → Grey (most common "zero-like" case with your clamp) -->
+                                <DataTrigger Binding="{Binding RescaledIntervals}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                    <Setter Property="Foreground" Value="{x:Null}"/>
+                                </DataTrigger>
+
+                                <!-- optional: rescaled == 0 → Grey (only if you ever allow 0) -->
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <Binding Path="RescaledIntervals" Converter="{StaticResource IsZeroConverter}"/>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                    <Setter Property="Foreground" Value="{x:Null}"/>
+                                </DataTrigger>
+
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="new_deploy" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <!-- show as %, 1 decimal; show 0 if null or binding fails -->
+                        <Binding Path="NewDeployment"
+             StringFormat="{}{0:P1}"
+             TargetNullValue="0"
+             FallbackValue="0"/>
+                    </DataGridTextColumn.Binding>
+
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+
+                                <!-- less than baseline -->
+                                <DataTrigger Value="-1">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource CompareRoundedConverter}" ConverterParameter="P1">
+                                            <Binding Path="NewDeployment"/>
+                                            <Binding Path="PositionDeployment"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="MistyRose"/>
+                                    <Setter Property="Foreground" Value="DarkRed"/>
+                                </DataTrigger>
+
+                                <!-- greater than baseline -->
+                                <DataTrigger Value="1">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource CompareRoundedConverter}" ConverterParameter="P1">
+                                            <Binding Path="NewDeployment"/>
+                                            <Binding Path="PositionDeployment"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                    <Setter Property="Foreground" Value="DarkGreen"/>
+                                </DataTrigger>
+
+                                <!-- zero (rounded to P1) -> keep text visible -->
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <Binding Path="NewDeployment"
+                     Converter="{StaticResource IsZeroRoundedConverter}"
+                     ConverterParameter="P1"/>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                    <!-- was Foreground={x:Null} which hid the text -->
+                                    <Setter Property="Foreground"
+                  Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                                </DataTrigger>
+
+                                <!-- Optional: if you still want to treat true null differently -->
+                                <DataTrigger Binding="{Binding NewDeployment}" Value="{x:Null}">
+                                    <Setter Property="Background" Value="#FFE0E0E0"/>
+                                    <Setter Property="Foreground"
+                  Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                                </DataTrigger>
+
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
 
             </DataGrid.Columns>
         </DataGrid>

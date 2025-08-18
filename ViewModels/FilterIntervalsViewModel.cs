@@ -1,18 +1,185 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace wpfTDX
 {
+
+    public class BoolToStringConverter : IValueConverter
+    {
+        public string TrueText { get; set; } = "True";
+        public string FalseText { get; set; } = "False";
+        public string NullText { get; set; } = "";
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            bool? b = value as bool?;
+            if (!b.HasValue) return NullText;
+            return b.Value ? TrueText : FalseText;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var s = (value ?? "").ToString().Trim();
+            if (string.Equals(s, TrueText, StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(s, FalseText, StringComparison.OrdinalIgnoreCase)) return false;
+            return null;
+        }
+    }
+
+    public class IsZeroConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null) return false;
+            try
+            {
+                var d = System.Convert.ToDouble(value, culture);
+                return Math.Abs(d) < 1e-9;
+            }
+            catch { return false; }
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => Binding.DoNothing;
+    }
+
+
+    public sealed class CompareRoundedConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values == null || values.Length < 2) return 0;
+
+            double a, b;
+            if (!TryToDouble(values[0], out a) || !TryToDouble(values[1], out b)) return 0;
+
+            int decimals = 1;     // default P1
+            double scale = 100.0; // percent space
+            var p = parameter as string;
+            if (!string.IsNullOrEmpty(p) && (p[0] == 'P' || p[0] == 'p'))
+            {
+                int d;
+                if (int.TryParse(p.Substring(1), out d)) decimals = d;
+            }
+
+            double ra = Math.Round(a * scale, decimals, MidpointRounding.AwayFromZero);
+            double rb = Math.Round(b * scale, decimals, MidpointRounding.AwayFromZero);
+
+            if (ra < rb) return -1;
+            if (ra > rb) return 1;
+            return 0;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+
+        private static bool TryToDouble(object v, out double d)
+        {
+            d = 0;
+            if (v == null || v == DependencyProperty.UnsetValue) return false;
+
+            try
+            {
+                if (v is double) { d = (double)v; return true; }
+                if (v is float) { d = (float)v; return true; }
+                if (v is decimal) { d = (double)(decimal)v; return true; }
+                if (v is int) { d = (int)v; return true; }
+                if (v is long) { d = (long)v; return true; }
+                if (v is string) { return double.TryParse((string)v, NumberStyles.Any, CultureInfo.InvariantCulture, out d); }
+
+                d = System.Convert.ToDouble(v, CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch { return false; }
+        }
+    }
+
+
+    public sealed class IsZeroRoundedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            double v;
+            if (!TryToDouble(value, out v)) return false;
+
+            int decimals = 1;
+            double scale = 100.0;
+            var p = parameter as string;
+            if (!string.IsNullOrEmpty(p) && (p[0] == 'P' || p[0] == 'p'))
+            {
+                int d;
+                if (int.TryParse(p.Substring(1), out d)) decimals = d;
+            }
+
+            double r = Math.Round(v * scale, decimals, MidpointRounding.AwayFromZero);
+            return r == 0.0;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+
+        private static bool TryToDouble(object v, out double d)
+        {
+            d = 0;
+            if (v == null || v == DependencyProperty.UnsetValue) return false;
+
+            try
+            {
+                if (v is double) { d = (double)v; return true; }
+                if (v is float) { d = (float)v; return true; }
+                if (v is decimal) { d = (double)(decimal)v; return true; }
+                if (v is int) { d = (int)v; return true; }
+                if (v is long) { d = (long)v; return true; }
+                if (v is string) { return double.TryParse((string)v, NumberStyles.Any, CultureInfo.InvariantCulture, out d); }
+
+                d = System.Convert.ToDouble(v, CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch { return false; }
+        }
+    }
+
+
+    // Returns -1 if a<b, 0 if equal/unknown, 1 if a>b
+    public class CompareDoubleConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values == null || values.Length < 2) return 0;
+            bool okA = TryToDouble(values[0], culture, out var a);
+            bool okB = TryToDouble(values[1], culture, out var b);
+            if (!okA || !okB) return 0;
+            if (a < b) return -1;
+            if (a > b) return 1;
+            return 0;
+        }
+
+        static bool TryToDouble(object v, CultureInfo c, out double d)
+        {
+            try { d = System.Convert.ToDouble(v, c); return true; }
+            catch { d = 0; return false; }
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+            => null;
+    }
+
     public class FilterIntervalsViewModel
     {
 
@@ -146,9 +313,9 @@ namespace wpfTDX
                     model.PositionW1 = row.Value<float?>("position_W1");
                     model.PositionD8 = row.Value<float?>("position_D8");
                     model.PositionW2 = row.Value<float?>("position_W2");
-                    model.PositionDeployment = row.Value<float?>("deployment") ?? 0;
-                    model.PositionNumTrades = row.Value<float?>("num_trades") ?? 0;
-                    model.PositionNumIntervals = row.Value<float?>("num_posintervals") ?? 0;
+                    model.PositionDeployment = row.Value<float?>("deployment");
+                    model.PositionNumTrades = row.Value<float?>("num_trades") ;
+                    model.PositionNumIntervals = row.Value<float?>("num_posintervals") ;
                 }
             }
 
@@ -185,6 +352,7 @@ namespace wpfTDX
             foreach (var m in merged.Values.OrderBy(x => x.Tickername))
                 TadPositionsData.Add(m);
         }
+        
         public async Task RebuildMerged()
         {
             MergedRows.Clear();
@@ -201,7 +369,7 @@ namespace wpfTDX
                 {
                     Tickername = tp.Tickername,
                     // FilterIntervals fields (null if missing)
-                    Runtime = fi.Runtime,
+                    Runtime = fi?.Runtime ?? default,
                     FundGroup = fi?.FundGroup,
                     Rescale = fi?.Rescale,
                     LongOnly = fi?.LongOnly,
@@ -263,10 +431,12 @@ namespace wpfTDX
                     ViewDeployment = tp.ViewDeployment,
                     PositionDeployment = tp.PositionDeployment,
                 };
-
+                row.CoerceFlagsFromPositions();
                 // 🔸 take the baseline after assigning server values
                 row.SnapshotOriginals();
-
+                row.RecalcNewTrades();
+                row.RecalcRescaledIntervals();
+                row.RecalcNewDeployment();
                 MergedRows.Add(row);
             }
 
@@ -308,11 +478,12 @@ namespace wpfTDX
                       _rescale = value;
                       OnPropertyChanged(nameof(Rescale));
                         OnPropertyChanged(nameof(RescaleHasChanged));
+                        RecalcRescaledIntervals();
                     }
               } 
             
             }
-            public bool RescaleHasChanged => _rescale != OriginalRescale;
+            public bool RescaleHasChanged => _isInitialized && _rescale != OriginalRescale;
             public bool? OriginalLongOnly { get; private set; }
             private bool? _longOnly;
             public bool? LongOnly
@@ -325,6 +496,8 @@ namespace wpfTDX
                         _longOnly = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(LongOnlyHasChanged));
+                        RecalcNewTrades();
+                        RecalcNewDeployment();
                     }
                 }
             }
@@ -342,6 +515,8 @@ namespace wpfTDX
                         _shortOnly = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(ShortOnlyHasChanged));
+                        RecalcNewTrades();
+                        RecalcNewDeployment();
                     }
                 }
             }
@@ -359,6 +534,7 @@ namespace wpfTDX
                         _buyOnly = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BuyOnlyHasChanged));
+                        RecalcNewTrades();
                     }
                 }
             }
@@ -376,6 +552,7 @@ namespace wpfTDX
                         _sellOnly = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(SellOnlyHasChanged));
+                        RecalcNewTrades();
                     }
                 }
             }
@@ -393,6 +570,7 @@ namespace wpfTDX
                         _allIntervals = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(AllIntervalsHasChanged));
+                        RecalcNewTrades();
                     }
                 }
             }
@@ -410,6 +588,8 @@ namespace wpfTDX
                         _baseY1 = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BaseY1HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -428,6 +608,8 @@ namespace wpfTDX
                         _baseH1 = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BaseH1HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -446,6 +628,8 @@ namespace wpfTDX
                         _baseD1 = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BaseD1HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -464,6 +648,8 @@ namespace wpfTDX
                         _y1 = value;
                         OnPropertyChanged(nameof(y1));
                         OnPropertyChanged(nameof(Y1HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -482,6 +668,8 @@ namespace wpfTDX
                         _y2 = value;
                         OnPropertyChanged(nameof(y2));
                         OnPropertyChanged(nameof(Y2HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -500,6 +688,8 @@ namespace wpfTDX
                         _y3 = value;
                         OnPropertyChanged(nameof(y3));
                         OnPropertyChanged(nameof(Y3HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -518,6 +708,8 @@ namespace wpfTDX
                         _h2 = value;
                         OnPropertyChanged(nameof(H2));
                         OnPropertyChanged(nameof(H2HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -536,6 +728,8 @@ namespace wpfTDX
                         _h3 = value;
                         OnPropertyChanged(nameof(H3));
                         OnPropertyChanged(nameof(H3HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -554,6 +748,8 @@ namespace wpfTDX
                         _h4 = value;
                         OnPropertyChanged(nameof(H4));
                         OnPropertyChanged(nameof(H4HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -591,6 +787,8 @@ namespace wpfTDX
                         _h6 = value;
                         OnPropertyChanged(nameof(H6));
                         OnPropertyChanged(nameof(H6HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -609,6 +807,8 @@ namespace wpfTDX
                         _h12 = value;
                         OnPropertyChanged(nameof(H12));
                         OnPropertyChanged(nameof(H12HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -628,6 +828,8 @@ namespace wpfTDX
                         _h16 = value;
                         OnPropertyChanged(nameof(H16));
                         OnPropertyChanged(nameof(H16HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -637,7 +839,7 @@ namespace wpfTDX
 
             public float? PositionD1 { get; set; } // from TadPositionsDataModel
 
-            public bool? OrginalD1 { get; private set; }    
+            public bool? OriginalD1 { get; private set; }    
             private bool? _D1;
             public bool? D1
             {
@@ -649,10 +851,12 @@ namespace wpfTDX
                         _D1 = value;
                         OnPropertyChanged(nameof(D1));
                         OnPropertyChanged(nameof(D1HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
-            public bool D1HasChanged => _isInitialized && _D1 != OrginalD1;
+            public bool D1HasChanged => _isInitialized && _D1 != OriginalD1;
 
 
             public bool? Originalh36 { get; private set; }
@@ -666,6 +870,8 @@ namespace wpfTDX
                         _h36 = value;
                         OnPropertyChanged(nameof(H36));
                         OnPropertyChanged(nameof(H36HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -684,6 +890,7 @@ namespace wpfTDX
                         _D2 = value;
                         OnPropertyChanged(nameof(D2));
                         OnPropertyChanged(nameof(D2HasChanged));
+                        RecalcNewTrades();
                     }
                 }
             }
@@ -702,6 +909,8 @@ namespace wpfTDX
                         _D3 = value;
                         OnPropertyChanged(nameof(D3));
                         OnPropertyChanged(nameof(D3HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -721,6 +930,8 @@ namespace wpfTDX
                         _D4 = value;
                         OnPropertyChanged(nameof(D4));
                         OnPropertyChanged(nameof(D4HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }   
@@ -739,6 +950,8 @@ namespace wpfTDX
                         _W1 = value;
                         OnPropertyChanged(nameof(W1));
                         OnPropertyChanged(nameof(W1HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -758,6 +971,8 @@ namespace wpfTDX
                         _D8 = value;
                         OnPropertyChanged(nameof(D8));
                         OnPropertyChanged(nameof(D8HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -776,6 +991,8 @@ namespace wpfTDX
                         _W2 = value;
                         OnPropertyChanged(nameof(W2));
                         OnPropertyChanged(nameof(W2HasChanged));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }
@@ -796,6 +1013,243 @@ namespace wpfTDX
             public float? PositionDeployment { get; set; }
 
 
+            private float? _newTrades;
+            public float? NewTrades
+            {
+                get => _newTrades;
+                private set
+                {
+                    if (_newTrades != value)
+                    {
+                        _newTrades = value;
+                        OnPropertyChanged(nameof(NewTrades));
+                    }
+                }
+            }
+
+            private int? _rescaledIntervals;
+            public int? RescaledIntervals
+            {
+                get => _rescaledIntervals;
+                private set
+                {
+                    if (_rescaledIntervals != value)
+                    {
+                        _rescaledIntervals = value;
+                        OnPropertyChanged(nameof(RescaledIntervals));
+                    }
+                }
+            }
+
+            private double? _newDeployment;
+            public double? NewDeployment
+            {
+                get => _newDeployment;
+                private set
+                {
+                    if (_newDeployment != value)
+                    {
+                        _newDeployment = value;
+                        OnPropertyChanged(nameof(NewDeployment));
+                    }
+                }
+            }
+
+
+            static void CountIfActive(bool? flag, float? pos, ref int acc, bool excludeZeroPositions)
+            {
+                if (flag == false && pos.HasValue && (!excludeZeroPositions || Math.Abs(pos.Value) > 1e-9))
+                    acc++;
+            }
+
+            int CountCurrentActive(bool excludeZeroPositions)
+            {
+                int c = 0;
+                CountIfActive(BaseY1, PositionBaseY1, ref c, excludeZeroPositions);
+                CountIfActive(BaseH1, PositionBaseH1, ref c, excludeZeroPositions);
+                CountIfActive(BaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfActive(y1, PositionY1, ref c, excludeZeroPositions);
+                CountIfActive(y2, PositionY2, ref c, excludeZeroPositions);
+                CountIfActive(y3, PositionY3, ref c, excludeZeroPositions);
+                CountIfActive(H2, PositionH2, ref c, excludeZeroPositions);
+                CountIfActive(H3, PositionH3, ref c, excludeZeroPositions);
+                CountIfActive(H4, PositionH4, ref c, excludeZeroPositions);
+                CountIfActive(H5, PositionH5, ref c, excludeZeroPositions);
+                CountIfActive(H6, PositionH6, ref c, excludeZeroPositions);
+                CountIfActive(H12, PositionH12, ref c, excludeZeroPositions);
+                CountIfActive(H16, PositionH16, ref c, excludeZeroPositions);
+                CountIfActive(H36, PositionH36, ref c, excludeZeroPositions);
+                CountIfActive(D1, PositionD1, ref c, excludeZeroPositions);
+                CountIfActive(D2, PositionD2, ref c, excludeZeroPositions);
+                CountIfActive(D3, PositionD3, ref c, excludeZeroPositions);
+                CountIfActive(D4, PositionD4, ref c, excludeZeroPositions);
+                CountIfActive(D8, PositionD8, ref c, excludeZeroPositions);
+                CountIfActive(W1, PositionW1, ref c, excludeZeroPositions);
+                CountIfActive(W2, PositionW2, ref c, excludeZeroPositions);
+                return c;
+            }
+
+            int CountBaselineActive(bool excludeZeroPositions)
+            {
+                int c = 0;
+                CountIfActive(OriginalBaseY1, PositionBaseY1, ref c, excludeZeroPositions);
+                CountIfActive(OriginalBaseH1, PositionBaseH1, ref c, excludeZeroPositions);
+                CountIfActive(OriginalBaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfActive(OriginalY1, PositionY1, ref c, excludeZeroPositions);
+                CountIfActive(OriginalY2, PositionY2, ref c, excludeZeroPositions);
+                CountIfActive(OriginalY3, PositionY3, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH2, PositionH2, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH3, PositionH3, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH4, PositionH4, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH5, PositionH5, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH6, PositionH6, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH12, PositionH12, ref c, excludeZeroPositions);
+                CountIfActive(OriginalH16, PositionH16, ref c, excludeZeroPositions);
+                CountIfActive(Originalh36, PositionH36, ref c, excludeZeroPositions);
+                CountIfActive(OriginalD1, PositionD1, ref c, excludeZeroPositions);
+                CountIfActive(OriginalD2, PositionD2, ref c, excludeZeroPositions);
+                CountIfActive(OriginalD3, PositionD3, ref c, excludeZeroPositions);
+                CountIfActive(OriginalD4, PositionD4, ref c, excludeZeroPositions);
+                CountIfActive(OriginalD8, PositionD8, ref c, excludeZeroPositions);
+                CountIfActive(OriginalW1, PositionW1, ref c, excludeZeroPositions);
+                CountIfActive(OriginalW2, PositionW2, ref c, excludeZeroPositions);
+                return c;
+            }
+
+            public void RecalcRescaledIntervals(bool excludeZeroPositions = false)
+            {
+                // AH2: cap (use NumPositionIntervals)
+                int ah2 = NumPositionIntervals.HasValue ? (int)Math.Round(NumPositionIntervals.Value) : 0;
+                if (ah2 <= 0) { RescaledIntervals = null; return; }
+
+                int x;
+                if (Rescale == true)
+                {
+                    // AE2: baseline scalar; using NumFiltIntervals by default
+                    int ae2 = NumFiltIntervals.HasValue ? (int)Math.Round(NumFiltIntervals.Value) : 0;
+                    int cur = CountCurrentActive(excludeZeroPositions);
+                    int baseC = CountBaselineActive(excludeZeroPositions);
+
+                    x = ae2 + (cur - baseC);
+                }
+                else
+                {
+                    // IF(..., ..., AH2)
+                    x = ah2;
+                }
+
+                // clamp to [1, AH2]
+                x = Math.Min(ah2, Math.Max(1, x));
+                RescaledIntervals = x;
+                RecalcNewDeployment();
+            }
+
+
+            // Helper: include pos when flag == false
+            static void AddIfNotFiltered(bool? flag, float? pos, bool? buyOnly,bool? shortOnly, ref double acc)
+            {
+                // flag == false => NOT filtered => include
+                if (flag == false && pos.HasValue)
+                {
+                    if (pos.Value < 0 && buyOnly == true) return; // skip if BuyOnly and position is negative
+                    else if (pos.Value > 0 && shortOnly == true) return; // skip if ShortOnly and position is positive
+                    else
+                    {
+                        acc += pos.Value;
+                    }
+                }
+                // flag true or null => skip
+            }
+            
+            public void RecalcNewTrades()
+            {
+                if (AllIntervals != false) { NewTrades = 0; return; }
+
+                double sum = 0;
+                // include here whichever intervals you want in the total
+                AddIfNotFiltered(BaseY1, PositionBaseY1,BuyOnly,SellOnly, ref sum); // if you expose PositionBaseH1 as H1's "H1" bucket (optional)
+                AddIfNotFiltered(BaseH1, PositionBaseH1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(BaseD1, PositionBaseD1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y1, PositionY1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y2, PositionY2, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y3, PositionY3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H2, PositionH2, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H3, PositionH3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H4, PositionH4, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H6, PositionH6, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H12, PositionH12, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H16, PositionH16, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(D1, PositionD1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(H36, PositionH36, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(D2, PositionD2, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(D3, PositionD3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(D4, PositionD4, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(W1, PositionW1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(D8, PositionD8, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(W2, PositionW2, BuyOnly, SellOnly, ref sum);
+
+                NewTrades = (float)sum;
+
+                if((NewTrades > 0) && (ShortOnly==true))
+                {
+                    NewTrades = 0;
+                }
+                else if ((NewTrades < 0) && (LongOnly == true))
+                {
+                    NewTrades = 0;
+                }
+                RecalcNewDeployment();
+            }
+
+            public void RecalcNewDeployment()
+            {
+                float? nd = null;
+
+                if (NewTrades.HasValue && RescaledIntervals.HasValue && RescaledIntervals.Value != 0f)
+                {
+                    float r = NewTrades.Value / RescaledIntervals.Value;
+
+                    if (LongOnly == true) r = Math.Max(r, 0f);   // float overload
+                    else if (ShortOnly == true) r = Math.Min(r, 0f);
+
+                    if (!float.IsNaN(r) && !float.IsInfinity(r))
+                        nd = r;
+                }
+
+                if (NewDeployment != nd)
+                    NewDeployment = nd; // make sure setter raises OnPropertyChanged
+            }
+
+            public void CoerceFlagsFromPositions()
+            {
+                if (!PositionBaseY1.HasValue) BaseY1 = null;
+                if (!PositionBaseH1.HasValue) BaseH1 = null;
+                if (!PositionBaseD1.HasValue) BaseD1 = null;
+
+                if (!PositionY1.HasValue) y1 = null;
+                if (!PositionY2.HasValue) y2 = null;
+                if (!PositionY3.HasValue) y3 = null;
+
+                if (!PositionH2.HasValue) H2 = null;
+                if (!PositionH3.HasValue) H3 = null;
+                if (!PositionH4.HasValue) H4 = null;
+                if (!PositionH5.HasValue) H5 = null;
+                if (!PositionH6.HasValue) H6 = null;
+                if (!PositionH12.HasValue) H12 = null;
+                if (!PositionH16.HasValue) H16 = null;
+                if (!PositionH36.HasValue) H36 = null;
+
+                if (!PositionD1.HasValue) D1 = null;
+                if (!PositionD2.HasValue) D2 = null;
+                if (!PositionD3.HasValue) D3 = null;
+                if (!PositionD4.HasValue) D4 = null;
+                if (!PositionD8.HasValue) D8 = null;
+
+                if (!PositionW1.HasValue) W1 = null;
+                if (!PositionW2.HasValue) W2 = null;
+            }
+
+
             public void SnapshotOriginals()
             {
                 OriginalRescale = _rescale;
@@ -805,7 +1259,7 @@ namespace wpfTDX
                 OriginalSellOnly = _sellOnly;
                 OriginalAllIntervals = _allIntervals;
                 OriginalBaseY1 = _baseY1;
-                OrginalD1 = _D1;
+                OriginalD1 = _D1;
                 OriginalBaseH1 = _baseH1;
                 OriginalBaseD1 = _baseD1;
                 OriginalY1 = _y1;
