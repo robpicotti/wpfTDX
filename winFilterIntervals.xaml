@@ -24,10 +24,45 @@
                                  TrueText="True"
                                  FalseText="False"
                                  NullText="" />
+
+        <Style x:Key="BusyButtonStyle" TargetType="Button">
+            <Setter Property="IsEnabled" Value="True"/>
+            <Setter Property="Opacity" Value="1"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsExecuting}" Value="True">
+                    <Setter Property="IsEnabled" Value="False"/>
+                    <Setter Property="Opacity" Value="0.6"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
+
+
+
     <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,0" >
+            <Button Content="Reload Positions" Click="ReloadPositionsButton_Click" Padding="12,4"
+                    Style="{StaticResource BusyButtonStyle}"
+                ToolTip="Load TAD positions, then rebuild the merged view"/>
+            <Button Content="Reload Filters" Click="ReloadFiltersButton_Click" Padding="12,4"
+                    Style="{StaticResource BusyButtonStyle}"
+                ToolTip="Load filter intervals, then rebuild the merged view"/>
+            <Button Content="Reload Both" Click="ReloadBothButton_Click" Padding="12,4"
+                    Style="{StaticResource BusyButtonStyle}"
+                ToolTip="Load both data sources, then rebuild the merged view"/>
+        </StackPanel>
+
+
         <DataGrid ItemsSource="{Binding MergedRows}"
+                  Grid.Row="1"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
                   Margin="10"
@@ -58,6 +93,10 @@
                 <!-- Ticker (read-only) -->
                 <DataGridTextColumn Header="tickername"
                                     Binding="{Binding Tickername}"
+                                    IsReadOnly="True" />
+
+                <DataGridTextColumn Header="fundgrp"
+                                    Binding="{Binding FundGroup}"
                                     IsReadOnly="True" />
 
                 <!-- Rescale: dropdown True/False, bold when changed -->

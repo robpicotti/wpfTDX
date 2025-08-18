@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace wpfTDX
 {
@@ -38,7 +39,18 @@ namespace wpfTDX
             await _viewModel.RebuildMerged();
         }
 
-
+        private async Task RunWithBusy(Func<Task> work)
+        {
+            try
+            {
+                _viewModel.IsExecuting = true;
+                await work();
+            }
+            finally
+            {
+                _viewModel.IsExecuting = false;
+            }
+        }
 
 
         // map columns -> property names (fill out the rest of your columns)
@@ -183,6 +195,37 @@ namespace wpfTDX
 
             e.Handled = true; // swallow the double-click
         }
+
+        private async void ReloadPositionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            await RunWithBusy(async () =>
+            {
+                await _viewModel.LoadTadPositionsDataAsync();
+                await _viewModel.RebuildMerged();
+            });
+        }
+
+        private async void ReloadFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            await RunWithBusy(async () =>
+            {
+                await _viewModel.LoadFilterIntervalsDataAsync();
+                await _viewModel.RebuildMerged();
+            });
+        }
+
+        private async void ReloadBothButton_Click(object sender, RoutedEventArgs e)
+        {
+            await RunWithBusy(async () =>
+            {
+                await Task.WhenAll(
+                    _viewModel.LoadFilterIntervalsDataAsync(),
+                    _viewModel.LoadTadPositionsDataAsync()
+                );
+                await _viewModel.RebuildMerged();
+            });
+        }
+
 
 
     }

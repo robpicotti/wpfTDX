@@ -180,7 +180,7 @@ namespace wpfTDX
             => null;
     }
 
-    public class FilterIntervalsViewModel
+    public class FilterIntervalsViewModel :INotifyPropertyChanged
     {
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -207,6 +207,7 @@ namespace wpfTDX
 
 
         private ObservableCollection<TadPositionsDataModel> _tadPositionsData;
+        
         public ObservableCollection<TadPositionsDataModel> TadPositionsData
         {
             get { return _tadPositionsData; }
@@ -219,6 +220,22 @@ namespace wpfTDX
                 }
             }
         }
+
+        private bool _isExecuting;
+        
+        public bool IsExecuting
+        {
+            get => _isExecuting;
+            set
+            {
+                if (_isExecuting != value)
+                {
+                    _isExecuting = value;
+                    OnPropertyChanged(); // raises PropertyChanged(nameof(IsExecuting))
+                }
+            }
+        }
+
         public FilterIntervalsViewModel()
         {
             FilterIntervalsData = new ObservableCollection<FilterIntervalsDataModel>();
