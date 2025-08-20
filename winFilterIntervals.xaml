@@ -51,17 +51,40 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,0" >
             <Button Content="Reload Positions" Click="ReloadPositionsButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
+                     Margin="0,0,8,0"
                 ToolTip="Load TAD positions, then rebuild the merged view"/>
             <Button Content="Reload Filters" Click="ReloadFiltersButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
+                     Margin="0,0,8,0"
                 ToolTip="Load filter intervals, then rebuild the merged view"/>
             <Button Content="Reload Both" Click="ReloadBothButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
+                     Margin="0,0,8,0"
                 ToolTip="Load both data sources, then rebuild the merged view"/>
+
+            <Button Content="Reload Universe" Click="ReloadUniverseButton_Click"
+                    Style="{StaticResource BusyButtonStyle}"
+                    Padding="12,4" Margin="0,0,0,0"
+                    ToolTip="Reload the cached ticker universe used by Add Ticker"/>
+            <Separator Margin="10,0" Width="1" />
+
+            <!-- Ticker filter -->
+            <TextBlock Text="Ticker:" VerticalAlignment="Center" Margin="8,0,6,0"/>
+            <TextBox Width="160" Margin="0,0,8,0"
+         ToolTip="Use * and ? wildcards (e.g. AAPL*, ?MSFT)"
+         Text="{Binding TickerFilter, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <!-- FundGroup filter -->
+            <TextBlock Text="Fund Group:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox Width="160"
+         ToolTip="Use * and ? wildcards"
+         Text="{Binding FundGroupFilter, UpdateSourceTrigger=PropertyChanged}"/>
+
         </StackPanel>
 
 
-        <DataGrid ItemsSource="{Binding MergedRows}"
+        <DataGrid ItemsSource="{Binding MergedRowsView}"
+                  x:Name="FilterGrid"
                   Grid.Row="1"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
@@ -87,6 +110,35 @@
                     </Setter>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
+
+            <DataGrid.Resources>
+                <!-- Row context menu -->
+                <ContextMenu x:Key="RowContextMenu" x:Shared="False">
+                    <MenuItem Header="Delete ticker" Click="DeleteTickerMenuItem_Click"/>
+                    <MenuItem Header="Add ticker..." Click="AddTickerMenuItem_Click"/>
+                </ContextMenu>
+
+                <!-- Grid empty-area context menu -->
+                <ContextMenu x:Key="GridContextMenu" x:Shared="False">
+                    <MenuItem Header="Add ticker..." Click="AddTickerMenuItem_Click"/>
+                </ContextMenu>
+            </DataGrid.Resources>
+
+            <!-- Select the row under cursor on right-click -->
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <EventSetter Event="PreviewMouseRightButtonDown"
+                         Handler="DataGridRow_PreviewMouseRightButtonDown"/>
+                    <!-- Important: assign a *ContextMenu*, not a MenuItem -->
+                    <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
+                </Style>
+            </DataGrid.RowStyle>
+
+            <!-- Context menu for blank grid area -->
+            <DataGrid.ContextMenu>
+                <!-- Important: the root element must be ContextMenu -->
+                <StaticResource ResourceKey="GridContextMenu"/>
+            </DataGrid.ContextMenu>
 
             <DataGrid.Columns>
 
@@ -1290,7 +1342,7 @@
                                     Binding="{Binding NumFilteredTrades}"
                                     IsReadOnly="True" />
 
-                <DataGridTextColumn Header="filt_intvls"
+                <DataGridTextColumn Header="num_filt_intvls"
                                     Binding="{Binding NumFiltIntervals}"
                                     IsReadOnly="True" />
 

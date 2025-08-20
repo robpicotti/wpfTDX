@@ -229,34 +229,6 @@ namespace wpfTDX
             }
         }
 
-        //private void SelectAll(bool isChecked)
-        //{
-        //    if (TickerFreezer == null) return;
-
-        //    foreach (var item in TickerFreezer)
-        //    {
-        //        if (isChecked)
-        //        {
-        //            // Only force override if not already overridden
-        //            if (!item.Override)
-        //            {
-        //                item.Override = true;
-        //                item.ForceOverride = true;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // Uncheck only the ones that were force-overridden
-        //            if (item.ForceOverride)
-        //            {
-        //                item.Override = false;
-        //                item.ForceOverride = false;
-        //            }
-        //        }
-        //    }
-        //}
-
-
         public async Task FreezeFund()
         {
             if (SelectedFund == null) return;

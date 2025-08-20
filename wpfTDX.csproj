@@ -194,6 +194,9 @@
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="ViewModels\TickerFreezerViewModel.cs" />
     <Compile Include="WebServiceData\WebServiceData.cs" />
+    <Compile Include="Windows\winAddTicker.xaml.cs">
+      <DependentUpon>winAddTicker.xaml</DependentUpon>
+    </Compile>
     <Compile Include="winFilterIntervals.xaml.cs">
       <DependentUpon>winFilterIntervals.xaml</DependentUpon>
     </Compile>
@@ -291,6 +294,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ucTickerFreezer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\winAddTicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -34,6 +34,7 @@ namespace wpfTDX
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            await _viewModel.LoadTickerUniverseAsync();
             await _viewModel.LoadFilterIntervalsDataAsync();
             await _viewModel.LoadTadPositionsDataAsync();
             await _viewModel.RebuildMerged();
@@ -111,8 +112,8 @@ namespace wpfTDX
             {
                 // top-level booleans (no Position* guard)
                 case "rescale": flagProp = "Rescale"; return true;
-                case "LO_only": flagProp = "LongOnly"; return true;
-                case "SO_only": flagProp = "ShortOnly"; return true;
+                case "lo_only": flagProp = "LongOnly"; return true;
+                case "so_only": flagProp = "ShortOnly"; return true;
                 case "buy_only": flagProp = "BuyOnly"; return true;
                 case "sell_only": flagProp = "SellOnly"; return true;
                 case "filt_intvls": flagProp = "AllIntervals"; return true;
@@ -201,7 +202,7 @@ namespace wpfTDX
             await RunWithBusy(async () =>
             {
                 await _viewModel.LoadTadPositionsDataAsync();
-                await _viewModel.RebuildMerged();
+                await _viewModel.RebuildMerged(preserveUserFiFlags: true);
             });
         }
 
@@ -210,7 +211,7 @@ namespace wpfTDX
             await RunWithBusy(async () =>
             {
                 await _viewModel.LoadFilterIntervalsDataAsync();
-                await _viewModel.RebuildMerged();
+                await _viewModel.RebuildMerged(preserveUserFiFlags: false);
             });
         }
 
@@ -226,7 +227,52 @@ namespace wpfTDX
             });
         }
 
+        private void DataGridRow_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var row = sender as DataGridRow;
+            if (row != null)
+                row.IsSelected = true;
+        }
 
+        private void DeleteTickerMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
+            if (row == null) return;
+            _viewModel.MergedRows.Remove(row);
+        }
+
+        private async void AddTickerMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as FilterIntervalsViewModel;
+            if (vm == null) return;
+
+            if (vm.TickerUniverse == null || vm.TickerUniverse.Count == 0)
+                await vm.LoadTickerUniverseAsync();
+
+            var dlg = new winAddTicker(vm.TickerUniverse);
+            dlg.Owner = this;
+
+            if (dlg.ShowDialog() == true && dlg.SelectedTickers != null)
+            {
+                foreach (var r in dlg.SelectedTickers)
+                {
+                    if (string.IsNullOrWhiteSpace(r.TickerName)) continue;
+
+                    bool exists = vm.MergedRows.Any(m =>
+                        string.Equals(m.Tickername, r.TickerName, StringComparison.OrdinalIgnoreCase));
+                    if (exists) continue;
+
+                    var newRow = vm.CreateDefaultRow(r.TickerName);
+                    vm.MergedRows.Add(newRow);
+                }
+            }
+        }
+        private async void ReloadUniverseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as FilterIntervalsViewModel;
+            if (vm == null) return;
+            await vm.LoadTickerUniverseAsync();
+        }
 
     }
 }

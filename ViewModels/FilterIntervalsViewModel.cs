@@ -9,10 +9,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace wpfTDX
 {
@@ -190,6 +192,7 @@ namespace wpfTDX
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
         private ObservableCollection<FilterIntervalsDataModel> _filterIntervalsData;
+        
         public ObservableCollection<FilterIntervalsDataModel> FilterIntervalsData
         {
             get { return _filterIntervalsData; }
@@ -221,6 +224,10 @@ namespace wpfTDX
             }
         }
 
+
+        // cached universe for the Add-Ticker dialog
+        public List<TickerRow> TickerUniverse { get; private set; } = new List<TickerRow>();
+
         private bool _isExecuting;
         
         public bool IsExecuting
@@ -236,11 +243,92 @@ namespace wpfTDX
             }
         }
 
+
+        public ICollectionView MergedRowsView { get; private set; }
+
+        private string _tickerFilter;
+        public string TickerFilter
+        {
+            get { return _tickerFilter; }
+            set
+            {
+                if (_tickerFilter != value)
+                {
+                    _tickerFilter = value;
+                    OnPropertyChanged(nameof(TickerFilter));
+                    if (MergedRowsView != null) MergedRowsView.Refresh();
+                }
+            }
+        }
+
+        private string _fundGroupFilter;
+        public string FundGroupFilter
+        {
+            get { return _fundGroupFilter; }
+            set
+            {
+                if (_fundGroupFilter != value)
+                {
+                    _fundGroupFilter = value;
+                    OnPropertyChanged(nameof(FundGroupFilter));
+                    if (MergedRowsView != null) MergedRowsView.Refresh();
+                }
+            }
+        }
+
+
         public FilterIntervalsViewModel()
         {
+
             FilterIntervalsData = new ObservableCollection<FilterIntervalsDataModel>();
             TadPositionsData = new ObservableCollection<TadPositionsDataModel>();
+            MergedRowsView = CollectionViewSource.GetDefaultView(MergedRows);
+            if (MergedRowsView != null)
+                MergedRowsView.Filter = RowFilter;
+
         }
+
+        private bool RowFilter(object obj)
+        {
+            var row = obj as MergedTickerRow;
+            if (row == null) return false;
+
+            if (!SmartMatch(row.Tickername, TickerFilter)) return false;
+            if (!SmartMatch(row.FundGroup, FundGroupFilter)) return false;
+
+            return true;
+        }
+        private static bool SmartMatch(string text, string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return true;   // no filter
+            if (string.IsNullOrEmpty(text)) return false;
+
+            input = input.Trim();
+
+            // If no wildcards, do a case-insensitive "contains"
+            bool hasWildcards = input.IndexOf('*') >= 0 || input.IndexOf('?') >= 0;
+            if (!hasWildcards)
+                return text.IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            // Honor * and ? when present
+            string regex = "^" + Regex.Escape(input)
+                                   .Replace(@"\*", ".*")
+                                   .Replace(@"\?", ".") + "$";
+            return Regex.IsMatch(text, regex, RegexOptions.IgnoreCase);
+        }
+
+        private static bool WildcardMatch(string text, string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern)) return true;       // no filter
+            if (string.IsNullOrEmpty(text)) return false;
+
+            // convert simple wildcards (* ?) to regex
+            string regex = "^" + Regex.Escape(pattern)
+                                   .Replace("\\*", ".*")
+                                   .Replace("\\?", ".") + "$";
+            return Regex.IsMatch(text, regex, RegexOptions.IgnoreCase);
+        }
+
         public async Task LoadFilterIntervalsDataAsync()
         {
             using (HttpClient client = new HttpClient())
@@ -369,7 +457,174 @@ namespace wpfTDX
             foreach (var m in merged.Values.OrderBy(x => x.Tickername))
                 TadPositionsData.Add(m);
         }
-        
+
+        public async Task RebuildMerged(bool preserveUserFiFlags = false)
+        {
+            // capture current rows (for preserving user edits/baselines)
+            Dictionary<string, MergedTickerRow> previous = null;
+            if (preserveUserFiFlags)
+                previous = MergedRows.ToDictionary(r => r.Tickername, r => r, StringComparer.OrdinalIgnoreCase);
+
+            MergedRows.Clear();
+
+            var fiByTicker = (FilterIntervalsData ?? new ObservableCollection<FilterIntervalsDataModel>())
+                .GroupBy(x => x.TickerName, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var tp in TadPositionsData) // left-join: every tad row shows up
+            {
+                fiByTicker.TryGetValue(tp.Tickername, out var fi);
+
+                var row = new MergedTickerRow
+                {
+                    Tickername = tp.Tickername,
+
+                    // start from server FI values…
+                    Runtime = fi?.Runtime ?? default,
+                    FundGroup = fi?.FundGroup,
+                    Rescale = fi?.Rescale,
+                    LongOnly = fi?.LongOnly,
+                    ShortOnly = fi?.ShortOnly,
+                    BuyOnly = fi?.BuyOnly,
+                    SellOnly = fi?.SellOnly,
+                    AllIntervals = fi?.AllIntervals,
+
+                    BaseY1 = fi?.BaseY1,
+                    BaseH1 = fi?.BaseH1,
+                    BaseD1 = fi?.BaseD1,
+                    y1 = fi?.Y1,
+                    y2 = fi?.Y2,
+                    y3 = fi?.Y3,
+                    H2 = fi?.H2,
+                    H3 = fi?.H3,
+                    H4 = fi?.H4,
+                    H5 = fi?.H5,
+                    H6 = fi?.H6,
+                    H12 = fi?.H12,
+                    H16 = fi?.H16,
+                    D1 = fi?.D1,
+                    H36 = fi?.H36,
+                    D2 = fi?.D2,
+                    D3 = fi?.D3,
+                    D4 = fi?.D4,
+                    W1 = fi?.W1,
+                    D8 = fi?.D8,
+                    W2 = fi?.W2,
+
+                    // positions side
+                    PositionBaseY1 = tp.PositionBaseY1,
+                    PositionBaseH1 = tp.PositionBaseH1,
+                    PositionBaseD1 = tp.PositionBaseD1,
+                    PositionY1 = tp.PositionY1,
+                    PositionY2 = tp.PositionY2,
+                    PositionY3 = tp.PositionY3,
+                    PositionH2 = tp.PositionH2,
+                    PositionH3 = tp.PositionH3,
+                    PositionH4 = tp.PositionH4,
+                    PositionH5 = tp.PositionH5,
+                    PositionH6 = tp.PositionH6,
+                    PositionH12 = tp.PositionH12,
+                    PositionH16 = tp.PositionH16,
+                    PositionD1 = tp.PositionD1,
+                    PositionH36 = tp.PositionH36,
+                    PositionD2 = tp.PositionD2,
+                    PositionD3 = tp.PositionD3,
+                    PositionD4 = tp.PositionD4,
+                    PositionW1 = tp.PositionW1,
+                    PositionD8 = tp.PositionD8,
+                    PositionW2 = tp.PositionW2,
+
+                    NumFilteredTrades = tp.NumFilteredTrades,
+                    NumFiltIntervals = tp.NumFiltIntervals,
+                    FilteredDeployment = tp.FilteredDeployment,
+                    NumTrades = tp.PositionNumTrades,
+                    NumPositionIntervals = tp.PositionNumIntervals,
+                    ViewDeployment = tp.ViewDeployment,
+                    PositionDeployment = tp.PositionDeployment,
+                };
+
+                // If we're reloading ONLY positions, keep the user's current flags and old baselines
+                if (preserveUserFiFlags && previous != null && previous.TryGetValue(tp.Tickername, out var old))
+                {
+                    // overwrite with user's CURRENT flags
+                    row.Rescale = old.Rescale;
+                    row.LongOnly = old.LongOnly;
+                    row.ShortOnly = old.ShortOnly;
+                    row.BuyOnly = old.BuyOnly;
+                    row.SellOnly = old.SellOnly;
+                    row.AllIntervals = old.AllIntervals;
+
+                    row.BaseY1 = old.BaseY1;
+                    row.BaseH1 = old.BaseH1;
+                    row.BaseD1 = old.BaseD1;
+                    row.y1 = old.y1;
+                    row.y2 = old.y2;
+                    row.y3 = old.y3;
+                    row.H2 = old.H2;
+                    row.H3 = old.H3;
+                    row.H4 = old.H4;
+                    row.H5 = old.H5;
+                    row.H6 = old.H6;
+                    row.H12 = old.H12;
+                    row.H16 = old.H16;
+                    row.D1 = old.D1;
+                    row.H36 = old.H36;
+                    row.D2 = old.D2;
+                    row.D3 = old.D3;
+                    row.D4 = old.D4;
+                    row.W1 = old.W1;
+                    row.D8 = old.D8;
+                    row.W2 = old.W2;
+
+                    // keep ORIGINALS so HasChanged continues to compare to the same baseline
+                    row.RestoreOriginalsFrom(old);
+                }
+                else
+                {
+                    // fresh baseline from server FI
+                    row.SnapshotOriginals();
+                }
+
+                // enforce your “coerce flag to null when Position* is null” rule
+                row.CoerceFlagsFromPositions();
+
+                row.RecalcNewTrades();
+                row.RecalcRescaledIntervals();
+                row.RecalcNewDeployment();
+
+                MergedRows.Add(row);
+            }
+
+            // (optional) FI-only rows remain the same logic…
+            foreach (var fiOnly in fiByTicker.Values
+                         .Where(fi => !TadPositionsData.Any(tp =>
+                                string.Equals(tp.Tickername, fi.TickerName, StringComparison.OrdinalIgnoreCase))))
+            {
+                var row = new MergedTickerRow
+                {
+                    Tickername = fiOnly.TickerName,
+                    Runtime = fiOnly.Runtime,
+                    Rescale = fiOnly.Rescale,
+                    LongOnly = fiOnly.LongOnly,
+                };
+                // if preserving edits and we had a previous row, restore it
+                if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var old))
+                {
+                    row.Rescale = old.Rescale;
+                    row.LongOnly = old.LongOnly;
+                    row.RestoreOriginalsFrom(old);
+                }
+                else
+                {
+                    row.SnapshotOriginals();
+                }
+                MergedRows.Add(row);
+            }
+
+            if (MergedRowsView != null) MergedRowsView.Refresh();
+
+        }
+
         public async Task RebuildMerged()
         {
             MergedRows.Clear();
@@ -474,7 +729,10 @@ namespace wpfTDX
                 row.SnapshotOriginals();
                 MergedRows.Add(row);
             }
+
+            if (MergedRowsView != null) MergedRowsView.Refresh();
         }
+
 
         public class MergedTickerRow : INotifyPropertyChanged
         {
@@ -1073,6 +1331,73 @@ namespace wpfTDX
             }
 
 
+            public void RestoreOriginalsFrom(MergedTickerRow src)
+            {
+                OriginalRescale = src.OriginalRescale;
+                OriginalLongOnly = src.OriginalLongOnly;
+                OriginalShortOnly = src.OriginalShortOnly;
+                OriginalBuyOnly = src.OriginalBuyOnly;
+                OriginalSellOnly = src.OriginalSellOnly;
+                OriginalAllIntervals = src.OriginalAllIntervals;
+
+                OriginalBaseY1 = src.OriginalBaseY1;
+                OriginalBaseH1 = src.OriginalBaseH1;
+                OriginalBaseD1 = src.OriginalBaseD1;
+
+                OriginalY1 = src.OriginalY1;
+                OriginalY2 = src.OriginalY2;
+                OriginalY3 = src.OriginalY3;
+
+                OriginalH2 = src.OriginalH2;
+                OriginalH3 = src.OriginalH3;
+                OriginalH4 = src.OriginalH4;
+                OriginalH5 = src.OriginalH5;
+                OriginalH6 = src.OriginalH6;
+                OriginalH12 = src.OriginalH12;
+                OriginalH16 = src.OriginalH16;
+
+                OriginalD1 = src.OriginalD1;
+                Originalh36 = src.Originalh36; // note the lowercase h in your model
+                OriginalD2 = src.OriginalD2;
+                OriginalD3 = src.OriginalD3;
+                OriginalD4 = src.OriginalD4;
+                OriginalW1 = src.OriginalW1;
+                OriginalD8 = src.OriginalD8;
+                OriginalW2 = src.OriginalW2;
+
+                _isInitialized = true;
+
+                // refresh HasChanged bindings
+                OnPropertyChanged(nameof(RescaleHasChanged));
+                OnPropertyChanged(nameof(LongOnlyHasChanged));
+                OnPropertyChanged(nameof(ShortOnlyHasChanged));
+                OnPropertyChanged(nameof(BuyOnlyHasChanged));
+                OnPropertyChanged(nameof(SellOnlyHasChanged));
+                OnPropertyChanged(nameof(AllIntervalsHasChanged));
+                OnPropertyChanged(nameof(BaseY1HasChanged));
+                OnPropertyChanged(nameof(BaseH1HasChanged));
+                OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(Y1HasChanged));
+                OnPropertyChanged(nameof(Y2HasChanged));
+                OnPropertyChanged(nameof(Y3HasChanged));
+                OnPropertyChanged(nameof(H2HasChanged));
+                OnPropertyChanged(nameof(H3HasChanged));
+                OnPropertyChanged(nameof(H4HasChanged));
+                OnPropertyChanged(nameof(H5HasChanged));
+                OnPropertyChanged(nameof(H6HasChanged));
+                OnPropertyChanged(nameof(H12HasChanged));
+                OnPropertyChanged(nameof(H16HasChanged));
+                OnPropertyChanged(nameof(D1HasChanged));
+                OnPropertyChanged(nameof(H36HasChanged));
+                OnPropertyChanged(nameof(D2HasChanged));
+                OnPropertyChanged(nameof(D3HasChanged));
+                OnPropertyChanged(nameof(D4HasChanged));
+                OnPropertyChanged(nameof(W1HasChanged));
+                OnPropertyChanged(nameof(D8HasChanged));
+                OnPropertyChanged(nameof(W2HasChanged));
+            }
+
+
             static void CountIfActive(bool? flag, float? pos, ref int acc, bool excludeZeroPositions)
             {
                 if (flag == false && pos.HasValue && (!excludeZeroPositions || Math.Abs(pos.Value) > 1e-9))
@@ -1336,5 +1661,115 @@ namespace wpfTDX
             }
         }
 
+        private static readonly HttpClient _http = new HttpClient
+        {
+            BaseAddress = new Uri("http://localhost:5001"),
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        public sealed class TickerRow
+        {
+            [JsonProperty("index")]
+            public int Index { get; set; }
+
+            [JsonProperty("tickername")]
+            public string TickerName { get; set; }
+
+            // adjust to your table’s schema
+            [JsonProperty("description")]
+            public string Description { get; set; }
+        }
+
+        public async Task LoadTickerUniverseAsync()
+        {
+            try
+            {
+                IsExecuting = true;
+
+                using (var client = new HttpClient())
+                {
+                    var request = new
+                    {
+                        table_name = "tickers",
+                        where_dict = new Dictionary<string, object> { { "valid_tickername", 1 } }
+                    };
+
+                    var content = new StringContent(
+                        JsonConvert.SerializeObject(request),
+                        Encoding.UTF8, "application/json");
+
+                    var resp = await client.PostAsync("http://localhost:5001/select_table", content);
+                    resp.EnsureSuccessStatusCode();
+
+                    var json = await resp.Content.ReadAsStringAsync();
+                    var rows = JsonConvert.DeserializeObject<List<TickerRow>>(json) ?? new List<TickerRow>();
+
+                    foreach (var r in rows)
+                    {
+                        r.TickerName = r.TickerName?.Trim();
+                        r.Description = r.Description?.Trim();
+                    }
+
+                    TickerUniverse = rows
+                        .OrderBy(r => r.TickerName, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    OnPropertyChanged(nameof(TickerUniverse));
+                }
+            }
+            finally { IsExecuting = false; }
+        }
+
+        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker)
+        {
+            var row = new FilterIntervalsViewModel.MergedTickerRow
+            {
+                Tickername = ticker,
+
+                // safe defaults — tweak if you prefer different starting flags
+                Rescale = true,
+                LongOnly = false,
+                ShortOnly = false,
+                BuyOnly = false,
+                SellOnly = false,
+                AllIntervals = false,
+                y1 = false,
+                y2 = false,
+                y3 = false,
+                H2 = false,
+                H3 = false,
+                H4 = false,
+                H5 = false,
+                H6 = false,
+                H12 = false,
+                H16 = false,
+                H36 = false,
+                D1 = false,
+                D2 = false,
+                D3 = false,
+                D4 = false,
+                D8 = false,
+                W1 = false,
+                W2 = false,
+
+                // positions/metrics start empty
+                NumTrades = 0,
+                NumPositionIntervals = 0,
+                NumFiltIntervals = 0,
+                NumFilteredTrades = 0,
+                FilteredDeployment = 0,
+                ViewDeployment = 0,
+                PositionDeployment = 0
+            };
+
+            row.SnapshotOriginals();
+            row.RecalcNewTrades();
+            row.RecalcRescaledIntervals();
+            row.RecalcNewDeployment();
+            return row;
+        }
+
     }
+
+
 }
