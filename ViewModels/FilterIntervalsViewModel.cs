@@ -14,7 +14,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
+using static System.Net.WebRequestMethods;
 
 namespace wpfTDX
 {
@@ -256,7 +258,7 @@ namespace wpfTDX
                 {
                     _tickerFilter = value;
                     OnPropertyChanged(nameof(TickerFilter));
-                    if (MergedRowsView != null) MergedRowsView.Refresh();
+                    RestartTimer();
                 }
             }
         }
@@ -271,10 +273,24 @@ namespace wpfTDX
                 {
                     _fundGroupFilter = value;
                     OnPropertyChanged(nameof(FundGroupFilter));
-                    if (MergedRowsView != null) MergedRowsView.Refresh();
+                    RestartTimer();
                 }
             }
         }
+
+        private readonly DispatcherTimer _filterTimer =
+            new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+
+
+        private Func<string, bool> _tickerPredicate = _ => true;
+        private Func<string, bool> _groupPredicate = _ => true;
+
+
+        private static readonly HttpClient _http = new HttpClient
+        {
+            BaseAddress = new Uri("http://localhost:5001"),
+            Timeout = TimeSpan.FromSeconds(60)
+        };
 
 
         public FilterIntervalsViewModel()
@@ -286,47 +302,54 @@ namespace wpfTDX
             if (MergedRowsView != null)
                 MergedRowsView.Filter = RowFilter;
 
+            _filterTimer.Tick += delegate (object sender, EventArgs e)
+            {
+                _filterTimer.Stop();
+                RebuildPredicates();          // build once per typing burst
+                if (MergedRowsView != null) MergedRowsView.Refresh();
+            };
+
+
         }
 
+
+        private void RebuildPredicates()
+        {
+            _tickerPredicate = BuildPredicate(TickerFilter);
+            _groupPredicate = BuildPredicate(FundGroupFilter);
+        }
+
+        private static Func<string, bool> BuildPredicate(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return s => true;
+
+            input = input.Trim();
+
+            // No wildcards => fast case-insensitive "contains"
+            bool hasWildcards = (input.IndexOf('*') >= 0) || (input.IndexOf('?') >= 0);
+            if (!hasWildcards)
+            {
+                return s => !string.IsNullOrEmpty(s) &&
+                            s.IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            // Wildcards present => compile regex ONCE
+            string pattern = "^" + Regex.Escape(input)
+                                      .Replace(@"\*", ".*")
+                                      .Replace(@"\?", ".") + "$";
+            var rx = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            return s => !string.IsNullOrEmpty(s) && rx.IsMatch(s);
+        }
+
+
+        private void RestartTimer() { _filterTimer.Stop(); _filterTimer.Start(); }
         private bool RowFilter(object obj)
         {
             var row = obj as MergedTickerRow;
             if (row == null) return false;
 
-            if (!SmartMatch(row.Tickername, TickerFilter)) return false;
-            if (!SmartMatch(row.FundGroup, FundGroupFilter)) return false;
-
-            return true;
-        }
-        private static bool SmartMatch(string text, string input)
-        {
-            if (string.IsNullOrWhiteSpace(input)) return true;   // no filter
-            if (string.IsNullOrEmpty(text)) return false;
-
-            input = input.Trim();
-
-            // If no wildcards, do a case-insensitive "contains"
-            bool hasWildcards = input.IndexOf('*') >= 0 || input.IndexOf('?') >= 0;
-            if (!hasWildcards)
-                return text.IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0;
-
-            // Honor * and ? when present
-            string regex = "^" + Regex.Escape(input)
-                                   .Replace(@"\*", ".*")
-                                   .Replace(@"\?", ".") + "$";
-            return Regex.IsMatch(text, regex, RegexOptions.IgnoreCase);
-        }
-
-        private static bool WildcardMatch(string text, string pattern)
-        {
-            if (string.IsNullOrEmpty(pattern)) return true;       // no filter
-            if (string.IsNullOrEmpty(text)) return false;
-
-            // convert simple wildcards (* ?) to regex
-            string regex = "^" + Regex.Escape(pattern)
-                                   .Replace("\\*", ".*")
-                                   .Replace("\\?", ".") + "$";
-            return Regex.IsMatch(text, regex, RegexOptions.IgnoreCase);
+            return _tickerPredicate(row.Tickername) &&
+                   _groupPredicate(row.FundGroup);
         }
 
         public async Task LoadFilterIntervalsDataAsync()
@@ -734,6 +757,64 @@ namespace wpfTDX
         }
 
 
+        // inside FilterIntervalsViewModel
+        public static FilterIntervalsUpsertRow ToUpsertRow(MergedTickerRow r) => new FilterIntervalsUpsertRow
+        {
+            FundGroup = r.FundGroup?.Trim(),    
+            Tickername = r.Tickername?.Trim(),
+            Rescale = r.Rescale,
+            LongOnly = r.LongOnly,
+            ShortOnly = r.ShortOnly,
+            BuyOnly = r.BuyOnly,
+            SellOnly = r.SellOnly,
+            AllIntervals = r.AllIntervals,
+            BaseY1 = r.BaseY1,
+            BaseH1 = r.BaseH1,
+            BaseD1 = r.BaseD1,
+            Y1 = r.y1,
+            Y2 = r.y2,
+            Y3 = r.y3,
+            H2 = r.H2,
+            H3 = r.H3,
+            H4 = r.H4,
+            H5 = r.H5,
+            H6 = r.H6,
+            H12 = r.H12,
+            H16 = r.H16,
+            D1 = r.D1,
+            H36 = r.H36,
+            D2 = r.D2,
+            D3 = r.D3,
+            D4 = r.D4,
+            W1 = r.W1,
+            D8 = r.D8,
+            W2 = r.W2
+        };
+
+        // inside FilterIntervalsViewModel, reuse your static _http if you like
+        public async Task<bool> UpsertFilterIntervalsAsync(IEnumerable<FilterIntervalsUpsertRow> rows)
+        {
+            var payload = new
+            {
+                action = "upsert_filter_intervals",
+                rows = rows
+            };
+
+            var json = JsonConvert.SerializeObject(payload);
+
+            // C# 7.3 classic using pattern (no "using var")
+            using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+            {
+                var url = "/upsert_filter_intervals"; // or whatever route your Flask app exposes
+                using (var resp = await _http.PostAsync(url, content))
+                {
+                    resp.EnsureSuccessStatusCode();
+                    return true;
+                }
+            }
+        }
+
+
         public class MergedTickerRow : INotifyPropertyChanged
         {
             public event PropertyChangedEventHandler PropertyChanged;
@@ -863,13 +944,27 @@ namespace wpfTDX
                         _baseY1 = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BaseY1HasChanged));
+                        OnPropertyChanged(nameof(BaseY1Brush));
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool BaseY1HasChanged => _isInitialized && _baseY1 != OriginalBaseY1;
-            public float? PositionBaseY1 { get; set; } // from TadPositionsDataModel
+            public float? PositionBaseY1
+            {
+                get => _positionBaseY1;
+                set
+                {
+                    if (_positionBaseY1 != value)
+                    {
+                        _positionBaseY1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseY1Brush));       // <—
+                    }
+                }
+            }
+            private float? _positionBaseY1;
 
             public bool? OriginalBaseH1 { get; private set; }
             private bool? _baseH1;
@@ -883,13 +978,27 @@ namespace wpfTDX
                         _baseH1 = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BaseH1HasChanged));
+                        OnPropertyChanged(nameof(BaseH1Brush));
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool BaseH1HasChanged => _isInitialized && _baseH1 != OriginalBaseH1;
-            public float? PositionBaseH1 { get; set; } // from TadPositionsDataModel
+            private float? _positionBaseH1;
+            public float? PositionBaseH1
+            {
+                get => _positionBaseH1; 
+                set
+                {
+                    if (_positionBaseH1 != value)
+                    {
+                        _positionBaseH1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseH1Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalBaseD1 { get; private set; }
             private bool? _baseD1;
@@ -903,13 +1012,28 @@ namespace wpfTDX
                         _baseD1 = value;
                         OnPropertyChanged();
                         OnPropertyChanged(nameof(BaseD1HasChanged));
+                        OnPropertyChanged(nameof(BaseD1Brush));
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool BaseD1HasChanged => _isInitialized && _baseD1 != OriginalBaseD1;
-            public float? PositionBaseD1 { get; set; } // from TadPositionsDataModel
+            private float? _positionBaseD1;
+            public float? PositionBaseD1
+            {
+                get => _positionBaseD1;
+                set
+                {
+                    if (_positionBaseD1 != value)
+                    {
+                        _positionBaseD1 = value;
+                        OnPropertyChanged(nameof(PositionBaseD1));
+                        OnPropertyChanged(nameof(BaseD1Brush));       // <—
+                    }
+                }
+            }
+            
 
             public bool? OriginalY1 { get; private set; }
             private bool? _y1;
@@ -923,13 +1047,27 @@ namespace wpfTDX
                         _y1 = value;
                         OnPropertyChanged(nameof(y1));
                         OnPropertyChanged(nameof(Y1HasChanged));
+                        OnPropertyChanged(nameof(Y1Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool Y1HasChanged => _isInitialized && _y1 != OriginalY1;
-            public float? PositionY1 { get; set; } // from TadPositionsDataModel
+            private float? _positionY1;
+            public float? PositionY1
+            {
+                get => _positionY1;
+                set
+                {
+                    if (_positionY1 != value)
+                    {
+                        _positionY1 = value;
+                        OnPropertyChanged(nameof(PositionY1));
+                        OnPropertyChanged(nameof(Y1Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalY2 { get; private set; }
             private bool? _y2;
@@ -943,13 +1081,27 @@ namespace wpfTDX
                         _y2 = value;
                         OnPropertyChanged(nameof(y2));
                         OnPropertyChanged(nameof(Y2HasChanged));
+                        OnPropertyChanged(nameof(Y2Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool Y2HasChanged => _isInitialized && _y2 != OriginalY2;
-            public float? PositionY2 { get; set; } // from TadPositionsDataModel
+            private float? _positionY2;
+            public float? PositionY2
+            {
+                get => _positionY2;
+                set
+                {
+                    if (_positionY2 != value)
+                    {
+                        _positionY2 = value;
+                        OnPropertyChanged(nameof(PositionY2));
+                        OnPropertyChanged(nameof(Y2Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalY3 { get; private set; }
             private bool? _y3;
@@ -963,13 +1115,27 @@ namespace wpfTDX
                         _y3 = value;
                         OnPropertyChanged(nameof(y3));
                         OnPropertyChanged(nameof(Y3HasChanged));
+                        OnPropertyChanged(nameof(Y3Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool Y3HasChanged => _isInitialized && _y3 != OriginalY3;
-            public float? PositionY3 { get; set; } // from TadPositionsDataModel
+            private float? _positionY3;
+            public float? PositionY3
+            {
+                get => _positionY3;
+                set
+                {
+                    if (_positionY3 != value)
+                    {
+                        _positionY3 = value;
+                        OnPropertyChanged(nameof(PositionY3));
+                        OnPropertyChanged(nameof(Y3Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalH2 { get; private set; }
             private bool? _h2;
@@ -983,13 +1149,27 @@ namespace wpfTDX
                         _h2 = value;
                         OnPropertyChanged(nameof(H2));
                         OnPropertyChanged(nameof(H2HasChanged));
+                        OnPropertyChanged(nameof(H2Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H2HasChanged => _isInitialized && _h2 != OriginalH2;
-            public float? PositionH2 { get; set; } // from TadPositionsDataModel
+            private float? _positionH2;
+            public float? PositionH2
+            {
+                get => _positionH2;
+                set
+                {
+                    if (_positionH2 != value)
+                    {
+                        _positionH2 = value;
+                        OnPropertyChanged(nameof(PositionH2));
+                        OnPropertyChanged(nameof(H2Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalH3 { get; private set; }
             private bool? _h3;
@@ -1003,13 +1183,27 @@ namespace wpfTDX
                         _h3 = value;
                         OnPropertyChanged(nameof(H3));
                         OnPropertyChanged(nameof(H3HasChanged));
+                        OnPropertyChanged(nameof(H3Brush));
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H3HasChanged => _isInitialized && _h3 != OriginalH3;
-            public float? PositionH3 { get; set; } // from TadPositionsDataModel
+            private float? _positionH3;
+            public float? PositionH3
+            {
+                get => _positionH3;
+                set
+                {
+                    if (_positionH3 != value)
+                    {
+                        _positionH3 = value;
+                        OnPropertyChanged(nameof(PositionH3));
+                        OnPropertyChanged(nameof(H3Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalH4 { get; private set; }
             private bool? _h4;
@@ -1023,13 +1217,27 @@ namespace wpfTDX
                         _h4 = value;
                         OnPropertyChanged(nameof(H4));
                         OnPropertyChanged(nameof(H4HasChanged));
+                        OnPropertyChanged(nameof(H4Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H4HasChanged => _isInitialized && _h4 != OriginalH4;
-            public float? PositionH4 { get; set; } // from TadPositionsDataModel
+            private float? _positionH4;
+            public float? PositionH4
+            {
+                get => _positionH4;
+                set
+                {
+                    if (_positionH4 != value)
+                    {
+                        _positionH4 = value;
+                        OnPropertyChanged(nameof(PositionH4));
+                        OnPropertyChanged(nameof(H4Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalH5 { get; private set; }
             private bool? _h5;
@@ -1043,11 +1251,25 @@ namespace wpfTDX
                         _h5 = value;
                         OnPropertyChanged(nameof(H5));
                         OnPropertyChanged(nameof(H5HasChanged));
+                        OnPropertyChanged(nameof(H5Brush));       // <—
                     }
                 }
             }
             public bool H5HasChanged => _isInitialized && _h5 != OriginalH5;
-            public float? PositionH5 { get; set; } // from TadPositionsDataModel
+            private float? _positionH5;
+            public float? PositionH5
+            {
+                get => _positionH5;
+                set
+                {
+                    if (_positionH5 != value)
+                    {
+                        _positionH5 = value;
+                        OnPropertyChanged(nameof(PositionH5));
+                        OnPropertyChanged(nameof(H5Brush));       // <—
+                    }
+                }
+            }
 
 
             public bool? OriginalH6 { get; private set; }
@@ -1062,13 +1284,27 @@ namespace wpfTDX
                         _h6 = value;
                         OnPropertyChanged(nameof(H6));
                         OnPropertyChanged(nameof(H6HasChanged));
+                        OnPropertyChanged(nameof(H6Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H6HasChanged => _isInitialized && _h6 != OriginalH6;
-            public float? PositionH6 { get; set; } // from TadPositionsDataModel
+            private float? _positionH6;
+            public float? PositionH6
+            {
+                get => _positionH6;
+                set
+                {
+                    if (_positionH6 != value)
+                    {
+                        _positionH6 = value;
+                        OnPropertyChanged(nameof(PositionH6));
+                        OnPropertyChanged(nameof(H6Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalH12 { get; private set; }
             private bool? _h12;
@@ -1082,13 +1318,27 @@ namespace wpfTDX
                         _h12 = value;
                         OnPropertyChanged(nameof(H12));
                         OnPropertyChanged(nameof(H12HasChanged));
+                        OnPropertyChanged(nameof(H12Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H12HasChanged => _isInitialized && _h12 != OriginalH12;
-            public float? PositionH12 { get; set; } // from TadPositionsDataModel
+            private float? _positionH12;
+            public float? PositionH12
+                {
+                get => _positionH12;
+                set
+                {
+                    if (_positionH12 != value)
+                    {
+                        _positionH12 = value;
+                        OnPropertyChanged(nameof(PositionH12));
+                        OnPropertyChanged(nameof(H12Brush));       // <—
+                    }
+                }
+            }
 
 
             public bool? OriginalH16 { get; private set; }
@@ -1103,16 +1353,30 @@ namespace wpfTDX
                         _h16 = value;
                         OnPropertyChanged(nameof(H16));
                         OnPropertyChanged(nameof(H16HasChanged));
+                        OnPropertyChanged(nameof(H16Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H16HasChanged => _isInitialized && _h16 != OriginalH16;
-            public float? PositionH16 { get; set; } // from TadPositionsDataModel
+            private float? _positionH16;
+            public float? PositionH16
+            {
+                get => _positionH16;
+                set
+                {
+                    if (_positionH16 != value)
+                    {
+                        _positionH16 = value;
+                        OnPropertyChanged(nameof(PositionH16));
+                        OnPropertyChanged(nameof(H16Brush));       // <—
+                    }
+                }
+            }
 
 
-            public float? PositionD1 { get; set; } // from TadPositionsDataModel
+            
 
             public bool? OriginalD1 { get; private set; }    
             private bool? _D1;
@@ -1126,12 +1390,27 @@ namespace wpfTDX
                         _D1 = value;
                         OnPropertyChanged(nameof(D1));
                         OnPropertyChanged(nameof(D1HasChanged));
+                        OnPropertyChanged(nameof(D1Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool D1HasChanged => _isInitialized && _D1 != OriginalD1;
+            private float? _positionD1;
+            public float? PositionD1
+            {
+                get => _positionD1;
+                set
+                {
+                    if (_positionD1 != value)
+                    {
+                        _positionD1 = value;
+                        OnPropertyChanged(nameof(PositionD1));
+                        OnPropertyChanged(nameof(D1Brush));       // <—
+                    }
+                }
+            }
 
 
             public bool? Originalh36 { get; private set; }
@@ -1145,13 +1424,27 @@ namespace wpfTDX
                         _h36 = value;
                         OnPropertyChanged(nameof(H36));
                         OnPropertyChanged(nameof(H36HasChanged));
+                        OnPropertyChanged(nameof(H36Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool H36HasChanged => _isInitialized && _h36 != Originalh36;
-            public float? PositionH36 { get; set; } // from TadPositionsDataModel
+            private float? _positionH36;
+            public float? PositionH36
+            {
+                get => _positionH36;
+                set
+                {
+                    if (_positionH36 != value)
+                    {
+                        _positionH36 = value;
+                        OnPropertyChanged(nameof(PositionH36));
+                        OnPropertyChanged(nameof(H36Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalD2 { get; private set; }
             private bool? _D2;
@@ -1165,12 +1458,26 @@ namespace wpfTDX
                         _D2 = value;
                         OnPropertyChanged(nameof(D2));
                         OnPropertyChanged(nameof(D2HasChanged));
+                        OnPropertyChanged(nameof(D2Brush));       // <—
                         RecalcNewTrades();
                     }
                 }
             }
             public bool D2HasChanged => _isInitialized && _D2 != OriginalD2;
-            public float? PositionD2 { get; set; } // from TadPositionsDataModel
+            private float? _positionD2;
+            public float? PositionD2
+            {
+                get => _positionD2;
+                set
+                {
+                    if (_positionD2 != value)
+                    {
+                        _positionD2 = value;
+                        OnPropertyChanged(nameof(PositionD2));
+                        OnPropertyChanged(nameof(D2Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalD3 { get; private set; }
             private bool? _D3;
@@ -1184,13 +1491,27 @@ namespace wpfTDX
                         _D3 = value;
                         OnPropertyChanged(nameof(D3));
                         OnPropertyChanged(nameof(D3HasChanged));
+                        OnPropertyChanged(nameof(D3Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool D3HasChanged => _isInitialized && _D3 != OriginalD3;
-            public float? PositionD3 { get; set; } // from TadPositionsDataModel
+            private float? _positionD3;
+            public float? PositionD3
+            {
+                get => _positionD3;
+                set
+                {
+                    if (_positionD3 != value)
+                    {
+                        _positionD3 = value;
+                        OnPropertyChanged(nameof(PositionD3));
+                        OnPropertyChanged(nameof(D3Brush));       // <—
+                    }
+                }
+            }
 
 
             public bool? OriginalD4 { get; private set; }
@@ -1205,13 +1526,27 @@ namespace wpfTDX
                         _D4 = value;
                         OnPropertyChanged(nameof(D4));
                         OnPropertyChanged(nameof(D4HasChanged));
+                        OnPropertyChanged(nameof(D4Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }   
             public bool D4HasChanged => _isInitialized && _D4 != OriginalD4;
-            public float? PositionD4 { get; set; } // from TadPositionsDataModel
+            private float? _positionD4;
+            public float? PositionD4
+            {
+                get => _positionD4;
+                set
+                {
+                    if (_positionD4 != value)
+                    {
+                        _positionD4 = value;
+                        OnPropertyChanged(nameof(PositionD4));
+                        OnPropertyChanged(nameof(D4Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalW1 { get; private set; }
             private bool? _W1;
@@ -1225,13 +1560,27 @@ namespace wpfTDX
                         _W1 = value;
                         OnPropertyChanged(nameof(W1));
                         OnPropertyChanged(nameof(W1HasChanged));
+                        OnPropertyChanged(nameof(W1Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool W1HasChanged => _isInitialized && _W1 != OriginalW1;
-            public float? PositionW1 { get; set; } // from TadPositionsDataModel
+            private float? _positionW1; 
+            public float? PositionW1
+            {
+                get => _positionW1;
+                set
+                {
+                    if (_positionW1 != value)
+                    {
+                        _positionW1 = value;
+                        OnPropertyChanged(nameof(PositionW1));
+                        OnPropertyChanged(nameof(W1Brush));       // <—
+                    }
+                }
+            }
 
 
             public bool? OriginalD8 { get; private set; }
@@ -1246,13 +1595,27 @@ namespace wpfTDX
                         _D8 = value;
                         OnPropertyChanged(nameof(D8));
                         OnPropertyChanged(nameof(D8HasChanged));
+                        OnPropertyChanged(nameof(D8Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool D8HasChanged => _isInitialized && _D8 != OriginalD8;
-            public float? PositionD8 { get; set; } // from TadPositionsDataModel
+            private float? _positionD8;
+            public float? PositionD8
+            {
+                get => _positionD8;
+                set
+                {
+                    if (_positionD8 != value)
+                    {
+                        _positionD8 = value;
+                        OnPropertyChanged(nameof(PositionD8));
+                        OnPropertyChanged(nameof(D8Brush));       // <—
+                    }
+                }
+            }
 
             public bool? OriginalW2 { get; private set; }
             private bool? _W2;
@@ -1266,18 +1629,32 @@ namespace wpfTDX
                         _W2 = value;
                         OnPropertyChanged(nameof(W2));
                         OnPropertyChanged(nameof(W2HasChanged));
+                        OnPropertyChanged(nameof(W2Brush));       // <—
                         RecalcNewTrades();
                         RecalcRescaledIntervals();
                     }
                 }
             }
             public bool W2HasChanged => _isInitialized && _W2 != OriginalW2;
-            public float? PositionW2 { get; set; } // from TadPositionsDataModel
+            private float? _positionW2;
+            public float? PositionW2
+            {
+                get => _positionW2;
+                set
+                {
+                    if (_positionW2 != value)
+                    {
+                        _positionW2 = value;
+                        OnPropertyChanged(nameof(PositionW2));
+                        OnPropertyChanged(nameof(W2Brush));       // <—
+                    }
+                }
+            }
 
             // from FilterIntervalsDataModel (rename types/props to yours)
             public DateTime Runtime { get; set; }
-            //public int? NumViews { get; set; }           
-
+            
+            
             //// from TadPositionsDataModel
             public float? NumTrades { get; set; }
             public float? NumPositionIntervals { get; set; }
@@ -1298,6 +1675,7 @@ namespace wpfTDX
                     {
                         _newTrades = value;
                         OnPropertyChanged(nameof(NewTrades));
+                        OnPropertyChanged(nameof(NewTradesBrush));
                     }
                 }
             }
@@ -1312,6 +1690,7 @@ namespace wpfTDX
                     {
                         _rescaledIntervals = value;
                         OnPropertyChanged(nameof(RescaledIntervals));
+                        OnPropertyChanged(nameof(RescaledIntervalsBrush));
                     }
                 }
             }
@@ -1326,7 +1705,92 @@ namespace wpfTDX
                     {
                         _newDeployment = value;
                         OnPropertyChanged(nameof(NewDeployment));
+                        OnPropertyChanged(nameof(NewDeploymentBrush));
                     }
+                }
+            }
+
+
+            //for setting colours
+            // Reuse ONE set of static, frozen brushes
+            private static readonly Brush BgGrey = new SolidColorBrush(Color.FromRgb(224, 224, 224));
+            private static readonly Brush BgPaleGreen = Brushes.PaleGreen;
+            private static readonly Brush BgMistyRose = Brushes.MistyRose;
+            private static readonly Brush BgIndianRed = Brushes.IndianRed;
+            private static readonly Brush BgMediumSeaGreen = Brushes.MediumSeaGreen;
+            private static readonly Brush BgTransparent = Brushes.Transparent;
+
+            public Brush BaseY1Brush => ComputeFlagPosBrush(BaseY1, PositionBaseY1);
+            public Brush BaseH1Brush => ComputeFlagPosBrush(BaseH1, PositionBaseH1);
+            public Brush BaseD1Brush => ComputeFlagPosBrush(BaseD1, PositionBaseD1);
+            public Brush Y1Brush => ComputeFlagPosBrush(y1, PositionY1);
+            public Brush Y2Brush => ComputeFlagPosBrush(y2, PositionY2);
+            public Brush Y3Brush => ComputeFlagPosBrush(y3, PositionY3);
+            public Brush H2Brush => ComputeFlagPosBrush(H2, PositionH2);
+            public Brush H3Brush => ComputeFlagPosBrush(H3, PositionH3);
+            public Brush H4Brush => ComputeFlagPosBrush(H4, PositionH4);
+            public Brush H5Brush => ComputeFlagPosBrush(H5, PositionH5);
+            public Brush H6Brush => ComputeFlagPosBrush(H6, PositionH6);
+            public Brush H12Brush => ComputeFlagPosBrush(H12, PositionH12);
+            public Brush H16Brush => ComputeFlagPosBrush(H16, PositionH16);
+            public Brush D1Brush => ComputeFlagPosBrush(D1, PositionD1);
+            public Brush H36Brush => ComputeFlagPosBrush(H36, PositionH36);
+            public Brush D2Brush => ComputeFlagPosBrush(D2, PositionD2);
+            public Brush D3Brush => ComputeFlagPosBrush(D3, PositionD3);
+            public Brush D4Brush => ComputeFlagPosBrush(D4, PositionD4);
+            public Brush W1Brush => ComputeFlagPosBrush(W1, PositionW1);
+            public Brush D8Brush => ComputeFlagPosBrush(D8, PositionD8);
+            public Brush W2Brush => ComputeFlagPosBrush(W2, PositionW2);
+
+
+            // same logic your XAML triggers implement
+            private static Brush ComputeFlagPosBrush(bool? flag, float? pos)
+            {
+                if (!pos.HasValue) return BgGrey;
+                if (flag == true && pos == 1) return BgPaleGreen;
+                if (flag == true && pos == -1) return BgMistyRose;
+                if (flag == false && pos == -1) return BgIndianRed;
+                if (flag == false && pos == 1) return BgMediumSeaGreen;
+                return BgTransparent;
+            }
+
+
+            public Brush NewTradesBrush
+            {
+                get
+                {
+                    if (NewTrades == null) return BgGrey;
+                    if (NumFilteredTrades == null) return BgTransparent;
+                    if (Math.Abs(NewTrades.Value) < 1e-9) return BgGrey;
+                    if (NewTrades < NumFilteredTrades) return BgMistyRose;
+                    if (NewTrades > NumFilteredTrades) return BgPaleGreen;
+                    return BgTransparent;
+                }
+            }
+
+            public Brush RescaledIntervalsBrush
+            {
+                get
+                {
+                    if (RescaledIntervals == null) return BgGrey;
+                    if (NumFiltIntervals == null) return BgTransparent;
+                    if (RescaledIntervals < NumFiltIntervals) return BgMistyRose;
+                    if (RescaledIntervals > NumFiltIntervals) return BgPaleGreen;
+                    return BgTransparent;
+                }
+            }
+
+            public Brush NewDeploymentBrush
+            {
+                get
+                {
+                    if (NewDeployment == null) return BgGrey;
+                    var a = Math.Round(NewDeployment.Value, 1);
+                    var b = Math.Round(PositionDeployment ?? 0f, 1);
+                    if (Math.Abs(a) < 1e-9) return BgGrey;
+                    if (a < b) return BgMistyRose;
+                    if (a > b) return BgPaleGreen;
+                    return BgTransparent;
                 }
             }
 
@@ -1590,8 +2054,7 @@ namespace wpfTDX
                 if (!PositionW1.HasValue) W1 = null;
                 if (!PositionW2.HasValue) W2 = null;
             }
-
-
+    
             public void SnapshotOriginals()
             {
                 OriginalRescale = _rescale;
@@ -1659,13 +2122,56 @@ namespace wpfTDX
 
                 // (repeat for others)
             }
+
+
+            public FilterIntervalsUpsertRow ToUpsertRow()
+            {
+                // coalesce nullable bools so Python doesn’t see NaN
+                Func<bool?, bool, bool> Nz = (b, defVal) => b.HasValue ? b.Value : defVal;
+
+                return new FilterIntervalsUpsertRow
+                {
+                    Tickername = this.Tickername,
+                
+
+                    Rescale = Nz(this.Rescale, true),
+                    LongOnly = Nz(this.LongOnly, false),
+                    ShortOnly = Nz(this.ShortOnly, false),
+                    BuyOnly = Nz(this.BuyOnly, false),
+                    SellOnly = Nz(this.SellOnly, false),
+                    AllIntervals = Nz(this.AllIntervals, false),
+
+                    BaseY1 = Nz(this.BaseY1, false),
+                    BaseH1 = Nz(this.BaseH1, false),
+                    BaseD1 = Nz(this.BaseD1, false),
+
+                    Y1 = Nz(this.y1, false),
+                    Y2 = Nz(this.y2, false),
+                    Y3 = Nz(this.y3, false),
+
+                    H2 = Nz(this.H2, false),
+                    H3 = Nz(this.H3, false),
+                    H4 = Nz(this.H4, false),
+                    H5 = Nz(this.H5, false),
+                    H6 = Nz(this.H6, false),
+                    H12 = Nz(this.H12, false),
+                    H16 = Nz(this.H16, false),
+                    H36 = Nz(this.H36, false),
+
+                    D1 = Nz(this.D1, false),
+                    D2 = Nz(this.D2, false),
+                    D3 = Nz(this.D3, false),
+                    D4 = Nz(this.D4, false),
+                    D8 = Nz(this.D8, false),
+
+                    W1 = Nz(this.W1, false),
+                    W2 = Nz(this.W2, false),
+                };
+            }
+
+
         }
 
-        private static readonly HttpClient _http = new HttpClient
-        {
-            BaseAddress = new Uri("http://localhost:5001"),
-            Timeout = TimeSpan.FromSeconds(30)
-        };
 
         public sealed class TickerRow
         {

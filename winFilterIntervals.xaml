@@ -72,13 +72,22 @@
             <TextBlock Text="Ticker:" VerticalAlignment="Center" Margin="8,0,6,0"/>
             <TextBox Width="160" Margin="0,0,8,0"
          ToolTip="Use * and ? wildcards (e.g. AAPL*, ?MSFT)"
-         Text="{Binding TickerFilter, UpdateSourceTrigger=PropertyChanged}"/>
+         Text="{Binding TickerFilter, UpdateSourceTrigger=PropertyChanged,Delay=250}"/>
 
             <!-- FundGroup filter -->
             <TextBlock Text="Fund Group:" VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBox Width="160"
          ToolTip="Use * and ? wildcards"
-         Text="{Binding FundGroupFilter, UpdateSourceTrigger=PropertyChanged}"/>
+         Text="{Binding FundGroupFilter, UpdateSourceTrigger=PropertyChanged,Delay=250}"/>
+
+         <Button Content="Save Filter Intervals"
+            Padding="12,4"
+            Margin="8,0,0,0"
+            Style="{StaticResource BusyButtonStyle}"
+            ToolTip="Save current filters to the server"
+            Click="Button_Click"
+        />
+
 
         </StackPanel>
 
@@ -91,8 +100,13 @@
                   Margin="10"
                   EnableRowVirtualization="True"
                   VirtualizingPanel.IsVirtualizing="True"
-                  VirtualizingPanel.ScrollUnit="Pixel"
-                  FrozenColumnCount="1"
+                  VirtualizingPanel.VirtualizationMode="Recycling"
+                  ScrollViewer.CanContentScroll="True"
+                  VirtualizingPanel.ScrollUnit="Item"
+                         VirtualizingPanel.CacheLength="2"
+                    VirtualizingPanel.CacheLengthUnit="Item"
+                    EnableColumnVirtualization="True"
+                  FrozenColumnCount="0"
                   PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
                   >
 
@@ -273,59 +287,19 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="BaseY1" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <!-- Use ElementStyle so the TextBlock can have Background bound once -->
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseY1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-
-                                <!-- Grey when PositionBaseY1 is null -->
-                                <DataTrigger Binding="{Binding PositionBaseY1}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-
-                                <!-- BaseY1 true + pos 1 = green -->
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseY1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionBaseY1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-
-                                <!-- BaseY1 true + pos -1 = light red -->
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseY1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionBaseY1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-
-                                <!-- BaseY1 false + pos -1 = strong red -->
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseY1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionBaseY1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-
-                                <!-- BaseY1 false + pos 1 = green (different shade) -->
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseY1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionBaseY1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- base_h1 -->
@@ -335,49 +309,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="BaseH1" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseH1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionBaseH1}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseH1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionBaseH1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseH1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionBaseH1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseH1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionBaseH1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseH1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionBaseH1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- base_d1 -->
@@ -387,49 +330,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="BaseD1" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseD1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionBaseD1}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseD1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionBaseD1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseD1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionBaseD1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseD1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionBaseD1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding BaseD1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionBaseD1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- y1 -->
@@ -439,49 +351,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="y1" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Y1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionY1}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionY1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionY1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionY1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionY1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- y2 -->
@@ -491,49 +372,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="y2" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y2Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Y2HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionY2}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionY2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionY2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionY2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionY2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- y3 -->
@@ -542,49 +392,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="y3" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y3Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Y3HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionY3}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y3}" Value="True"/>
-                                        <Condition Binding="{Binding PositionY3}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y3}" Value="True"/>
-                                        <Condition Binding="{Binding PositionY3}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y3}" Value="False"/>
-                                        <Condition Binding="{Binding PositionY3}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding y3}" Value="False"/>
-                                        <Condition Binding="{Binding PositionY3}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- h2 -->
@@ -594,49 +413,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H2" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H2Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H2HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH2}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- h3 -->
@@ -645,49 +433,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H3" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H3Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H3HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH3}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H3}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH3}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H3}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH3}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H3}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH3}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H3}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH3}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- h4 -->
@@ -696,49 +453,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H4" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H4Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H4HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH4}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H4}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH4}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H4}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH4}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H4}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH4}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H4}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH4}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- h6 -->
@@ -748,49 +474,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H6" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H6Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H6HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH6}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H6}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH6}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H6}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH6}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H6}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH6}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H6}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH6}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- h12 -->
@@ -800,49 +495,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H12" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H12Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H12HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH12}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H12}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH12}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H12}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH12}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H12}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH12}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H12}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH12}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- h16 -->
@@ -852,49 +516,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H16" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H16Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H16HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH16}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H16}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH16}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H16}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH16}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H16}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH16}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H16}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH16}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
 
@@ -905,49 +538,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="D1" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding D1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding D1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionD1}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
 
@@ -957,49 +559,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="H36" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding H36Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding H36HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionH36}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H36}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH36}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H36}" Value="True"/>
-                                        <Condition Binding="{Binding PositionH36}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H36}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH36}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding H36}" Value="False"/>
-                                        <Condition Binding="{Binding PositionH36}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- D2 -->
@@ -1009,49 +580,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="D2" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding D2Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding D2HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionD2}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- D3 -->
@@ -1061,49 +601,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="D3" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding D3Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding D3HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionD3}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D3}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD3}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D3}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD3}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D3}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD3}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D3}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD3}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- D4 -->
@@ -1113,49 +622,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="D4" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding D4Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding D4HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionD4}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D4}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD4}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D4}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD4}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D4}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD4}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D4}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD4}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- W1 -->
@@ -1164,49 +642,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="W1" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding W1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding W1HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionW1}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionW1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W1}" Value="True"/>
-                                        <Condition Binding="{Binding PositionW1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionW1}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W1}" Value="False"/>
-                                        <Condition Binding="{Binding PositionW1}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- D8 -->
@@ -1216,49 +663,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="D8" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding D8Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding D8HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionD8}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D8}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD8}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D8}" Value="True"/>
-                                        <Condition Binding="{Binding PositionD8}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D8}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD8}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding D8}" Value="False"/>
-                                        <Condition Binding="{Binding PositionD8}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- W2 -->
@@ -1268,49 +684,18 @@
                     <DataGridTextColumn.Binding>
                         <Binding Path="W2" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding W2Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding W2HasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontStyle"  Value="Italic"/>
-                                    <Setter Property="FontSize"   Value="14"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding PositionW2}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionW2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W2}" Value="True"/>
-                                        <Condition Binding="{Binding PositionW2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionW2}" Value="-1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="IndianRed"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding W2}" Value="False"/>
-                                        <Condition Binding="{Binding PositionW2}" Value="1"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background" Value="MediumSeaGreen"/>
-                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </DataGridTextColumn.CellStyle>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
 
@@ -1361,186 +746,47 @@
                 </DataGridTextColumn>
 
 
+                <!-- new_trades -->
                 <DataGridTextColumn Header="new_trades" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewTrades" TargetNullValue=""/>
                     </DataGridTextColumn.Binding>
-
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Right"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="Background" Value="{Binding NewTradesBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
-
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
-                            <Style.Triggers>
-                                <!-- NewTrades < NumFilteredTrades → MistyRose -->
-                                <DataTrigger Value="-1">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
-                                            <Binding Path="NewTrades"/>
-                                            <Binding Path="NumFilteredTrades"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                    <Setter Property="Foreground" Value="DarkRed"/>
-                                </DataTrigger>
-
-                                <!-- NewTrades > NumFilteredTrades → PaleGreen -->
-                                <DataTrigger Value="1">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
-                                            <Binding Path="NewTrades"/>
-                                            <Binding Path="NumFilteredTrades"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                    <Setter Property="Foreground" Value="DarkGreen"/>
-                                </DataTrigger>
-
-                                <!-- NewTrades == 0 → Grey (placed last so it takes precedence) -->
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <Binding Path="NewTrades" Converter="{StaticResource IsZeroConverter}"/>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
+                <!-- new_intvls -->
                 <DataGridTextColumn Header="new_intvls" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="RescaledIntervals" TargetNullValue="" StringFormat="N0"/>
                     </DataGridTextColumn.Binding>
-
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
                             <Setter Property="FontWeight"   Value="SemiBold"/>
+                            <Setter Property="Background"   Value="{Binding RescaledIntervalsBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
-
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
-                            <Style.Triggers>
-
-                                <!-- rescaled < NumFiltIntervals  → MistyRose + DarkRed -->
-                                <DataTrigger Value="-1">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
-                                            <Binding Path="RescaledIntervals"/>
-                                            <Binding Path="NumFiltIntervals"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                    <Setter Property="Foreground" Value="DarkRed"/>
-                                </DataTrigger>
-
-                                <!-- rescaled > NumFiltIntervals  → PaleGreen + DarkGreen -->
-                                <DataTrigger Value="1">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource CompareDoubleConverter}">
-                                            <Binding Path="RescaledIntervals"/>
-                                            <Binding Path="NumFiltIntervals"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                    <Setter Property="Foreground" Value="DarkGreen"/>
-                                </DataTrigger>
-
-                                <!-- rescaled == null → Grey (most common "zero-like" case with your clamp) -->
-                                <DataTrigger Binding="{Binding RescaledIntervals}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                    <Setter Property="Foreground" Value="{x:Null}"/>
-                                </DataTrigger>
-
-                                <!-- optional: rescaled == 0 → Grey (only if you ever allow 0) -->
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <Binding Path="RescaledIntervals" Converter="{StaticResource IsZeroConverter}"/>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                    <Setter Property="Foreground" Value="{x:Null}"/>
-                                </DataTrigger>
-
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
+                <!-- new_deploy -->
                 <DataGridTextColumn Header="new_deploy" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-                        <!-- show as %, 1 decimal; show 0 if null or binding fails -->
-                        <Binding Path="NewDeployment"
-             StringFormat="{}{0:P1}"
-             TargetNullValue="0"
-             FallbackValue="0"/>
+                        <Binding Path="NewDeployment" StringFormat="{}{0:P1}" TargetNullValue="0" FallbackValue="0"/>
                     </DataGridTextColumn.Binding>
-
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Right"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontWeight"    Value="SemiBold"/>
+                            <Setter Property="Background"    Value="{Binding NewDeploymentBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
-
-                    <DataGridTextColumn.CellStyle>
-                        <Style TargetType="DataGridCell">
-                            <Style.Triggers>
-
-                                <!-- less than baseline -->
-                                <DataTrigger Value="-1">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource CompareRoundedConverter}" ConverterParameter="P1">
-                                            <Binding Path="NewDeployment"/>
-                                            <Binding Path="PositionDeployment"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="MistyRose"/>
-                                    <Setter Property="Foreground" Value="DarkRed"/>
-                                </DataTrigger>
-
-                                <!-- greater than baseline -->
-                                <DataTrigger Value="1">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource CompareRoundedConverter}" ConverterParameter="P1">
-                                            <Binding Path="NewDeployment"/>
-                                            <Binding Path="PositionDeployment"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="PaleGreen"/>
-                                    <Setter Property="Foreground" Value="DarkGreen"/>
-                                </DataTrigger>
-
-                                <!-- zero (rounded to P1) -> keep text visible -->
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <Binding Path="NewDeployment"
-                     Converter="{StaticResource IsZeroRoundedConverter}"
-                     ConverterParameter="P1"/>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                    <!-- was Foreground={x:Null} which hid the text -->
-                                    <Setter Property="Foreground"
-                  Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-                                </DataTrigger>
-
-                                <!-- Optional: if you still want to treat true null differently -->
-                                <DataTrigger Binding="{Binding NewDeployment}" Value="{x:Null}">
-                                    <Setter Property="Background" Value="#FFE0E0E0"/>
-                                    <Setter Property="Foreground"
-                  Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-                                </DataTrigger>
-
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
-
 
             </DataGrid.Columns>
         </DataGrid>

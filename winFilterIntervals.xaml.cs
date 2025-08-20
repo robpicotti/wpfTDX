@@ -273,6 +273,41 @@ namespace wpfTDX
             if (vm == null) return;
             await vm.LoadTickerUniverseAsync();
         }
+        /// <summary>
+        /// saves data to filters interval table
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
 
+            var vm = DataContext as FilterIntervalsViewModel;
+            if (vm == null) return;
+
+            try
+            {
+                vm.IsExecuting = true;
+
+                var rows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
+
+
+                var ok = await vm.UpsertFilterIntervalsAsync(rows);
+                if (ok)
+                {
+                    MessageBox.Show(this, "Saved filter intervals.", "Save",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Save failed:\n" + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                vm.IsExecuting = false;
+            }
+        
+    }
     }
 }
