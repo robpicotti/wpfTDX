@@ -281,6 +281,7 @@ namespace wpfTDX
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private DispatcherTimer _pollTimer;
+        private DispatcherTimer _boostTimer;
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -289,32 +290,26 @@ namespace wpfTDX
 
             try
             {
-                // Stop any previous poller
-                if (_pollTimer != null)
-                {
-                    _pollTimer.Stop();
-                    _pollTimer = null;
-                }
+                // Stop any previous poll/boost
+                if (_pollTimer != null) { _pollTimer.Stop(); _pollTimer = null; }
+                if (_boostTimer != null) { _boostTimer.Stop(); _boostTimer = null; }
 
                 vm.IsExecuting = true;
+                vm.ResetBoost(); // <— start boost from 0
                 StatusTextBlock.Text = "Save started…";
 
-                // Prepare payload
                 var rows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
-
-                // Kick off long-running server job -> returns jobId
                 string jobId = await vm.UpsertFilterIntervalsStartAsync(rows);
 
-                // Immediately reflect "queued" in the VM so the bound bar/message show up
-                vm.ApplyJobStatus(new FilterIntervalsViewModel.UpsertJobStatus
+                // Start the +10%/minute visual boost (capped at 90 while running)
+                _boostTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+                _boostTimer.Tick += (s2, e2) =>
                 {
-                    JobId = jobId,
-                    Status = "queued",
-                    Progress = 0,
-                    Message = "Queued"
-                });
+                    if (vm.IsUpsertRunning) vm.IncreaseBoost(10);
+                };
+                _boostTimer.Start();
 
-                // Poll every 3 seconds
+                // Poll every 3 seconds (unchanged cadence)
                 _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
                 _pollTimer.Tick += async (s, args) =>
                 {
@@ -322,50 +317,44 @@ namespace wpfTDX
                     {
                         var st = await vm.GetUpsertFilterIntervalsStatusAsync(jobId);
 
-                        // Update the VM so XAML bindings refresh (ProgressPercent/StatusMessage/IsUpsertRunning)
-                        vm.ApplyJobStatus(st);
+                        // Keep VM in sync so ProgressPercent (and bar) blend server+boost
+                        vm.ApplyJobStatus(st); // <— IMPORTANT
 
-                        // Optional extra text in the top StatusBar
-                        StatusTextBlock.Text = $"{st.Status} {st.EffectivePercent}% – {st.Message}";
+                        var status = st?.Status ?? "running";
+                        var msg = st?.Message ?? "";
 
-                        if (st.IsTerminal)
+                        // Show the displayed (blended) percent, not raw server pct
+                        var displayPct = vm.ProgressPercent;
+                        StatusTextBlock.Text = $"{status} {displayPct}% – {msg}";
+
+                        if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
                         {
-                            _pollTimer.Stop();
-                            _pollTimer = null;
+                            _pollTimer.Stop(); _pollTimer = null;
+                            _boostTimer.Stop(); _boostTimer = null;
 
-                            vm.IsExecuting = false; // re-enable Save button now
+                            vm.IsExecuting = false;
 
-                            if (string.Equals(st.Status, "done", StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase))
                             {
+                                // vm.ProgressPercent will now be 100 via EffectivePercent
                                 MessageBox.Show(this, "Saved filter intervals.", "Save",
                                     MessageBoxButton.OK, MessageBoxImage.Information);
                             }
                             else
                             {
-                                MessageBox.Show(this, "Save failed:\n" + (st.Message ?? "unknown error"), "Error",
+                                MessageBox.Show(this, "Save failed:\n" + (msg ?? "unknown error"), "Error",
                                     MessageBoxButton.OK, MessageBoxImage.Error);
                             }
-
-                            // Optional: hide the bound progress bar after completion
-                            vm.ClearJobStatus();
                         }
                     }
                     catch (Exception pollEx)
                     {
-                        _pollTimer.Stop();
-                        _pollTimer = null;
+                        _pollTimer?.Stop(); _pollTimer = null;
+                        _boostTimer?.Stop(); _boostTimer = null;
 
                         vm.IsExecuting = false;
                         StatusTextBlock.Text = "failed – " + pollEx.Message;
-
-                        // Reflect failure in the VM so the bound UI updates too
-                        vm.ApplyJobStatus(new FilterIntervalsViewModel.UpsertJobStatus
-                        {
-                            JobId = jobId,
-                            Status = "failed",
-                            Message = pollEx.Message,
-                            Progress = 0
-                        });
 
                         MessageBox.Show(this, "Save status check failed:\n" + pollEx.Message, "Error",
                             MessageBoxButton.OK, MessageBoxImage.Error);
@@ -375,22 +364,15 @@ namespace wpfTDX
             }
             catch (Exception ex)
             {
+                _pollTimer?.Stop(); _pollTimer = null;
+                _boostTimer?.Stop(); _boostTimer = null;
+
                 vm.IsExecuting = false;
                 StatusTextBlock.Text = "failed – " + ex.Message;
-
-                // Reflect failure
-                vm.ApplyJobStatus(new FilterIntervalsViewModel.UpsertJobStatus
-                {
-                    Status = "failed",
-                    Message = ex.Message,
-                    Progress = 0
-                });
 
                 MessageBox.Show(this, "Save failed:\n" + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            // NOTE: no finally resetting IsExecuting; we flip it off when the job ends.
         }
 
     }

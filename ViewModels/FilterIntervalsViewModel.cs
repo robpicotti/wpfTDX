@@ -716,7 +716,13 @@ namespace wpfTDX
             public string UpdatedAt { get; set; }
 
             [Newtonsoft.Json.JsonIgnore]
-            public int EffectivePercent => Percent ?? Progress ?? (string.Equals(Status, "done", StringComparison.OrdinalIgnoreCase) ? 100 : 0);
+            public int EffectivePercent =>
+                Percent
+                ?? Progress
+                ?? (Processed.HasValue && Total.HasValue && Total.Value > 0
+                        ? (int)Math.Round(100.0 * Processed.Value / Total.Value)
+                        : (string.Equals(Status, "done", StringComparison.OrdinalIgnoreCase) ? 100 : 0));
+
 
             [Newtonsoft.Json.JsonIgnore]
             public bool IsTerminal => string.Equals(Status, "done", StringComparison.OrdinalIgnoreCase)
@@ -776,13 +782,46 @@ namespace wpfTDX
         public void ApplyJobStatus(UpsertJobStatus status) => JobStatus = status;
         public void ClearJobStatus() => JobStatus = null;
 
+        // ---- client-side visual boost ----
+        private int _uiBoostPercent = 0;
+
+        public void ResetBoost()
+        {
+            _uiBoostPercent = 0;
+            OnPropertyChanged(nameof(ProgressPercent));
+        }
+
+        public void IncreaseBoost(int delta)
+        {
+            int old = _uiBoostPercent;
+            _uiBoostPercent = Math.Min(90, _uiBoostPercent + delta);
+            if (_uiBoostPercent != old)
+                OnPropertyChanged(nameof(ProgressPercent));
+        }
+
+
 
         public bool IsUpsertRunning =>
-            JobStatus != null && !JobStatus.IsTerminal &&
-            (string.Equals(JobStatus.Status, "queued", StringComparison.OrdinalIgnoreCase)
-             || string.Equals(JobStatus.Status, "running", StringComparison.OrdinalIgnoreCase));
+            JobStatus != null && !JobStatus.IsTerminal;
 
-        public int ProgressPercent => JobStatus?.EffectivePercent ?? 0;
+
+        public int ProgressPercent
+        {
+            get
+            {
+                int server = JobStatus?.EffectivePercent ?? 0;
+
+                // When the job is terminal, show the real result (100 on done)
+                if (JobStatus?.IsTerminal == true)
+                {
+                    return string.Equals(JobStatus.Status, "done", StringComparison.OrdinalIgnoreCase) ? 100 : server;
+                }
+
+                // While running: blend server with client boost, but never exceed 90%
+                return Math.Min(90, Math.Max(server, _uiBoostPercent));
+            }
+        }
+
 
         public string StatusMessage => JobStatus?.Message ?? string.Empty;
 

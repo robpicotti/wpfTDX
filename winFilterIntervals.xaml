@@ -45,12 +45,10 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Toolbar -->
-            <RowDefinition Height="Auto"/>
-            <!-- Status: IsExecuting -->
-            <RowDefinition Height="Auto"/>
-            <!-- Status: Job -->
             <RowDefinition Height="*"/>
             <!-- Data grid -->
+            <RowDefinition Height="Auto"/>
+            <!-- Status bar -->
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
@@ -98,16 +96,27 @@
 
         </StackPanel>
 
-        <StatusBar Grid.Row="1">
+
+        <StatusBar Grid.Row="2" Margin="10,6,10,10">
+            <!-- Left: code-behind updates this (StatusTextBlock.Text) -->
             <TextBlock x:Name="StatusTextBlock" />
+
             <Separator Margin="6,0"/>
+
+            <!-- Shows while vm.IsExecuting == true -->
             <ProgressBar Width="120" Height="14"
                  IsIndeterminate="{Binding IsExecuting}"
-                 Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-        </StatusBar>
-        <StatusBar Grid.Row="2">
-            <TextBlock Text="{Binding StatusMessage}" />
+                 Visibility="{Binding IsExecuting,
+                                      Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
             <Separator Margin="6,0"/>
+
+            <!-- Optional: VM-driven status text (kept as-is; remove if you don’t want duplication) -->
+            <TextBlock Text="{Binding StatusMessage}" />
+
+            <Separator Margin="6,0"/>
+
+            <!-- Quantitative progress from the background job -->
             <ProgressBar Width="140" Height="14"
                  Minimum="0" Maximum="100"
                  Value="{Binding ProgressPercent, Mode=OneWay}"
@@ -116,9 +125,10 @@
         </StatusBar>
 
 
+
         <DataGrid ItemsSource="{Binding MergedRowsView}"
                   x:Name="FilterGrid"
-                  Grid.Row="3"
+                  Grid.Row="1"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
                   Margin="10"
