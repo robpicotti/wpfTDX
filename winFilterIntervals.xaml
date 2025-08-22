@@ -24,7 +24,7 @@
                                  TrueText="True"
                                  FalseText="False"
                                  NullText="" />
-
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style x:Key="BusyButtonStyle" TargetType="Button">
             <Setter Property="IsEnabled" Value="True"/>
             <Setter Property="Opacity" Value="1"/>
@@ -44,7 +44,13 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- Toolbar -->
+            <RowDefinition Height="Auto"/>
+            <!-- Status: IsExecuting -->
+            <RowDefinition Height="Auto"/>
+            <!-- Status: Job -->
             <RowDefinition Height="*"/>
+            <!-- Data grid -->
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
@@ -86,15 +92,33 @@
             Style="{StaticResource BusyButtonStyle}"
             ToolTip="Save current filters to the server"
             Click="Button_Click"
+            IsEnabled="{Binding IsSaveEnabled}"
         />
 
 
         </StackPanel>
 
+        <StatusBar Grid.Row="1">
+            <TextBlock x:Name="StatusTextBlock" />
+            <Separator Margin="6,0"/>
+            <ProgressBar Width="120" Height="14"
+                 IsIndeterminate="{Binding IsExecuting}"
+                 Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StatusBar>
+        <StatusBar Grid.Row="2">
+            <TextBlock Text="{Binding StatusMessage}" />
+            <Separator Margin="6,0"/>
+            <ProgressBar Width="140" Height="14"
+                 Minimum="0" Maximum="100"
+                 Value="{Binding ProgressPercent, Mode=OneWay}"
+                 Visibility="{Binding IsUpsertRunning,
+                                      Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StatusBar>
+
 
         <DataGrid ItemsSource="{Binding MergedRowsView}"
                   x:Name="FilterGrid"
-                  Grid.Row="1"
+                  Grid.Row="3"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
                   Margin="10"

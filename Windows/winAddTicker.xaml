@@ -3,35 +3,47 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Add Ticker" Height="500" Width="520"
         WindowStartupLocation="CenterOwner">
-    <Grid Margin="12">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Filter box -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,8">
-            <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <TextBox x:Name="FilterBox" MinWidth="280" TextChanged="FilterBox_TextChanged"
-                     ToolTip="Type part of the ticker or description"/>
-        </DockPanel>
-
-        <!-- List -->
-        <ListView x:Name="ListViewTickers" Grid.Row="1"
-                  SelectionMode="Extended">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Ticker" Width="140" DisplayMemberBinding="{Binding TickerName}"/>
-                    <GridViewColumn Header="Description" Width="320" DisplayMemberBinding="{Binding Description}"/>
-                </GridView>
-            </ListView.View>
-        </ListView>
-
-        <!-- Buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Content="Add" Width="90" Margin="0,0,8,0" IsDefault="True" Click="BtnAdd_Click"/>
-            <Button Content="Cancel" Width="90" IsCancel="True"/>
+        <!-- Filter + Add button on the same row -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox x:Name="FilterBox" Width="240" TextChanged="FilterBox_TextChanged" Margin="0,0,8,0"/>
+            <Button x:Name="BtnAdd" Content="Add" Width="90" Click="BtnAdd_Click"/>
         </StackPanel>
+
+        <DataGrid x:Name="GridTickers"
+            Grid.Row="1"
+            AutoGenerateColumns="False"
+            SelectionMode="Extended"
+            SelectionUnit="FullRow"
+            IsReadOnly="False"
+            CanUserAddRows="False">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Ticker"       Binding="{Binding TickerName}"    IsReadOnly="True"/>
+                <DataGridTextColumn Header="Description"  Binding="{Binding Description}"   IsReadOnly="True"/>
+
+                <DataGridTemplateColumn Header="Fund Group">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox
+                                    ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FundGroups}"
+                                    SelectedItem="{Binding FundGroupName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    MinWidth="140"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
+
+
+
 </Window>

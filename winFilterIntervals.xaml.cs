@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using static wpfTDX.FilterIntervalsViewModel;
+
 
 namespace wpfTDX
 {
@@ -250,22 +252,22 @@ namespace wpfTDX
                 await vm.LoadTickerUniverseAsync();
 
             var dlg = new winAddTicker(vm.TickerUniverse);
-            dlg.Owner = this;
-
-            if (dlg.ShowDialog() == true && dlg.SelectedTickers != null)
+            if (dlg.ShowDialog() == true)
             {
-                foreach (var r in dlg.SelectedTickers)
+                foreach (var tr in dlg.SelectedTickers)
                 {
-                    if (string.IsNullOrWhiteSpace(r.TickerName)) continue;
+                    var row = vm.CreateDefaultRow(tr.TickerName,tr.FundGroupName);
 
-                    bool exists = vm.MergedRows.Any(m =>
-                        string.Equals(m.Tickername, r.TickerName, StringComparison.OrdinalIgnoreCase));
-                    if (exists) continue;
+                    // Apply the fund group chosen per row (user picked it in the grid)
+                    // "ALL" can mean no specific group if you prefer null
+                    row.FundGroup = string.Equals(tr.FundGroupName, "ALL", StringComparison.OrdinalIgnoreCase)
+                                    ? null
+                                    : tr.FundGroupName;
 
-                    var newRow = vm.CreateDefaultRow(r.TickerName);
-                    vm.MergedRows.Add(newRow);
+                    vm.MergedRows.Add(row);
                 }
             }
+
         }
         private async void ReloadUniverseButton_Click(object sender, RoutedEventArgs e)
         {
@@ -278,36 +280,118 @@ namespace wpfTDX
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
+        private DispatcherTimer _pollTimer;
+
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-
             var vm = DataContext as FilterIntervalsViewModel;
             if (vm == null) return;
 
             try
             {
-                vm.IsExecuting = true;
+                // Stop any previous poller
+                if (_pollTimer != null)
+                {
+                    _pollTimer.Stop();
+                    _pollTimer = null;
+                }
 
+                vm.IsExecuting = true;
+                StatusTextBlock.Text = "Save started…";
+
+                // Prepare payload
                 var rows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
 
+                // Kick off long-running server job -> returns jobId
+                string jobId = await vm.UpsertFilterIntervalsStartAsync(rows);
 
-                var ok = await vm.UpsertFilterIntervalsAsync(rows);
-                if (ok)
+                // Immediately reflect "queued" in the VM so the bound bar/message show up
+                vm.ApplyJobStatus(new FilterIntervalsViewModel.UpsertJobStatus
                 {
-                    MessageBox.Show(this, "Saved filter intervals.", "Save",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
+                    JobId = jobId,
+                    Status = "queued",
+                    Progress = 0,
+                    Message = "Queued"
+                });
+
+                // Poll every 3 seconds
+                _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                _pollTimer.Tick += async (s, args) =>
+                {
+                    try
+                    {
+                        var st = await vm.GetUpsertFilterIntervalsStatusAsync(jobId);
+
+                        // Update the VM so XAML bindings refresh (ProgressPercent/StatusMessage/IsUpsertRunning)
+                        vm.ApplyJobStatus(st);
+
+                        // Optional extra text in the top StatusBar
+                        StatusTextBlock.Text = $"{st.Status} {st.EffectivePercent}% – {st.Message}";
+
+                        if (st.IsTerminal)
+                        {
+                            _pollTimer.Stop();
+                            _pollTimer = null;
+
+                            vm.IsExecuting = false; // re-enable Save button now
+
+                            if (string.Equals(st.Status, "done", StringComparison.OrdinalIgnoreCase))
+                            {
+                                MessageBox.Show(this, "Saved filter intervals.", "Save",
+                                    MessageBoxButton.OK, MessageBoxImage.Information);
+                            }
+                            else
+                            {
+                                MessageBox.Show(this, "Save failed:\n" + (st.Message ?? "unknown error"), "Error",
+                                    MessageBoxButton.OK, MessageBoxImage.Error);
+                            }
+
+                            // Optional: hide the bound progress bar after completion
+                            vm.ClearJobStatus();
+                        }
+                    }
+                    catch (Exception pollEx)
+                    {
+                        _pollTimer.Stop();
+                        _pollTimer = null;
+
+                        vm.IsExecuting = false;
+                        StatusTextBlock.Text = "failed – " + pollEx.Message;
+
+                        // Reflect failure in the VM so the bound UI updates too
+                        vm.ApplyJobStatus(new FilterIntervalsViewModel.UpsertJobStatus
+                        {
+                            JobId = jobId,
+                            Status = "failed",
+                            Message = pollEx.Message,
+                            Progress = 0
+                        });
+
+                        MessageBox.Show(this, "Save status check failed:\n" + pollEx.Message, "Error",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                };
+                _pollTimer.Start();
             }
             catch (Exception ex)
             {
+                vm.IsExecuting = false;
+                StatusTextBlock.Text = "failed – " + ex.Message;
+
+                // Reflect failure
+                vm.ApplyJobStatus(new FilterIntervalsViewModel.UpsertJobStatus
+                {
+                    Status = "failed",
+                    Message = ex.Message,
+                    Progress = 0
+                });
+
                 MessageBox.Show(this, "Save failed:\n" + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                vm.IsExecuting = false;
-            }
-        
-    }
+
+            // NOTE: no finally resetting IsExecuting; we flip it off when the job ends.
+        }
+
     }
 }

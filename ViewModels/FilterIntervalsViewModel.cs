@@ -241,6 +241,7 @@ namespace wpfTDX
                 {
                     _isExecuting = value;
                     OnPropertyChanged(); // raises PropertyChanged(nameof(IsExecuting))
+                    OnPropertyChanged(nameof(IsSaveEnabled));
                 }
             }
         }
@@ -648,114 +649,6 @@ namespace wpfTDX
 
         }
 
-        public async Task RebuildMerged()
-        {
-            MergedRows.Clear();
-
-            var fiByTicker = (FilterIntervalsData ?? new ObservableCollection<FilterIntervalsDataModel>())
-                .GroupBy(x => x.TickerName, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-
-            foreach (var tp in TadPositionsData) // left-join: every tad row shows up
-            {
-                fiByTicker.TryGetValue(tp.Tickername, out var fi);
-
-                var row = new MergedTickerRow
-                {
-                    Tickername = tp.Tickername,
-                    // FilterIntervals fields (null if missing)
-                    Runtime = fi?.Runtime ?? default,
-                    FundGroup = fi?.FundGroup,
-                    Rescale = fi?.Rescale,
-                    LongOnly = fi?.LongOnly,
-                    ShortOnly = fi?.ShortOnly,
-                    BuyOnly = fi?.BuyOnly,
-                    SellOnly = fi?.SellOnly,
-                    AllIntervals = fi?.AllIntervals,
-                    BaseY1 = fi?.BaseY1,
-                    PositionBaseY1 = tp.PositionBaseY1, // from TadPositionsDataModel
-                    BaseH1 = fi?.BaseH1,
-                    PositionBaseH1 = tp.PositionBaseH1, // from TadPositionsDataModel
-                    PositionD1 = tp.PositionD1, // from TadPositionsDataModel
-                    BaseD1 = fi?.BaseD1,
-                    PositionBaseD1 = tp.PositionBaseD1, // from TadPositionsDataModel
-                    y1 = fi?.Y1,
-                    PositionY1 = tp.PositionY1, // from TadPositionsDataModel
-                    y2 = fi?.Y2,
-                    PositionY2 = tp.PositionY2, // from TadPositionsDataModel
-                    y3 = fi?.Y3,
-                    PositionY3 = tp.PositionY3,
-   
-                    H2 = fi?.H2,
-                    PositionH2 = tp.PositionH2, // from TadPositionsDataModel
-
-                    H3 = fi?.H3,
-                    PositionH3 = tp.PositionH3, // from TadPositionsDataModel
-                    H4 = fi?.H4,
-                    PositionH4 = tp.PositionH4, // from TadPositionsDataModel
-                    H5 = fi?.H5,
-                    PositionH5 = tp.PositionH5, // from TadPositionsDataModel
-                    H6 = fi?.H6,
-                    PositionH6 = tp.PositionH6, // from TadPositionsDataModel
-                    H12 = fi?.H12,
-                    PositionH12 = tp.PositionH12, // from TadPositionsDataModel
-                    H16 = fi?.H16,
-                    PositionH16 = tp.PositionH16, // from TadPositionsDataModel
-                    D1 = fi?.D1,
-                    H36 = fi?.H36,
-                    PositionH36 = tp.PositionH36, // from TadPositionsDataModel
-                    D2 = fi?.D2,
-                    PositionD2 = tp.PositionD2, // from TadPositionsDataModel
-                    D3 = fi?.D3,
-                    PositionD3 = tp.PositionD3, // from TadPositionsDataModel
-                    D4 = fi?.D4,
-                    PositionD4 = tp.PositionD4, // from TadPositionsDataModel
-                    W1 = fi?.W1,
-                    PositionW1 = tp.PositionW1, // from TadPositionsDataModel
-                    D8 = fi?.D8,
-                    PositionD8 = tp.PositionD8, // from TadPositionsDataModel
-                    W2 = fi?.W2,
-                    PositionW2 = tp.PositionW2, // from TadPositionsDataModel
-
-                    // TadPositions fields
-                    NumFilteredTrades = tp.NumFilteredTrades,
-                    NumFiltIntervals = tp.NumFiltIntervals,
-                    FilteredDeployment = tp.FilteredDeployment,
-                    NumTrades = tp.PositionNumTrades,
-                    NumPositionIntervals = tp.PositionNumIntervals,
-                    ViewDeployment = tp.ViewDeployment,
-                    PositionDeployment = tp.PositionDeployment,
-                };
-                row.CoerceFlagsFromPositions();
-                // 🔸 take the baseline after assigning server values
-                row.SnapshotOriginals();
-                row.RecalcNewTrades();
-                row.RecalcRescaledIntervals();
-                row.RecalcNewDeployment();
-                MergedRows.Add(row);
-            }
-
-            // (optional) include tickers that exist only in FilterIntervals
-            foreach (var fiOnly in fiByTicker.Values
-                         .Where(fi => !TadPositionsData.Any(tp =>
-                                string.Equals(tp.Tickername, fi.TickerName, StringComparison.OrdinalIgnoreCase))))
-            {
-                var row = new MergedTickerRow
-                {
-                    Tickername = fiOnly.TickerName,
-                    Runtime = fiOnly.Runtime,
-                    Rescale = fiOnly.Rescale,
-                    LongOnly = fiOnly.LongOnly,
-                    // …any other FI-only fields you want
-                };
-
-                row.SnapshotOriginals();
-                MergedRows.Add(row);
-            }
-
-            if (MergedRowsView != null) MergedRowsView.Refresh();
-        }
-
 
         // inside FilterIntervalsViewModel
         public static FilterIntervalsUpsertRow ToUpsertRow(MergedTickerRow r) => new FilterIntervalsUpsertRow
@@ -791,29 +684,110 @@ namespace wpfTDX
             W2 = r.W2
         };
 
-        // inside FilterIntervalsViewModel, reuse your static _http if you like
-        public async Task<bool> UpsertFilterIntervalsAsync(IEnumerable<FilterIntervalsUpsertRow> rows)
-        {
-            var payload = new
-            {
-                action = "upsert_filter_intervals",
-                rows = rows
-            };
 
+        // DTO for status
+        public sealed class UpsertJobStatus
+        {
+            [Newtonsoft.Json.JsonProperty("job_id")]
+            public string JobId { get; set; }
+
+            [Newtonsoft.Json.JsonProperty("status")]
+            public string Status { get; set; }   // queued | running | done | failed
+
+            [Newtonsoft.Json.JsonProperty("message")]
+            public string Message { get; set; }
+
+            [Newtonsoft.Json.JsonProperty("progress")]
+            public int? Progress { get; set; }   // coarse 0..100
+
+            [Newtonsoft.Json.JsonProperty("processed")]
+            public int? Processed { get; set; }
+
+            [Newtonsoft.Json.JsonProperty("total")]
+            public int? Total { get; set; }
+
+            [Newtonsoft.Json.JsonProperty("percent")]
+            public int? Percent { get; set; }    // preferred % if total>0 on server
+
+            [Newtonsoft.Json.JsonProperty("started_at")]
+            public string StartedAt { get; set; }
+
+            [Newtonsoft.Json.JsonProperty("updated_at")]
+            public string UpdatedAt { get; set; }
+
+            [Newtonsoft.Json.JsonIgnore]
+            public int EffectivePercent => Percent ?? Progress ?? (string.Equals(Status, "done", StringComparison.OrdinalIgnoreCase) ? 100 : 0);
+
+            [Newtonsoft.Json.JsonIgnore]
+            public bool IsTerminal => string.Equals(Status, "done", StringComparison.OrdinalIgnoreCase)
+                                   || string.Equals(Status, "failed", StringComparison.OrdinalIgnoreCase);
+        }
+
+
+        // Start the background job
+        public async Task<string> UpsertFilterIntervalsStartAsync(IEnumerable<FilterIntervalsUpsertRow> rows)
+        {
+            var payload = new { rows = rows };
             var json = JsonConvert.SerializeObject(payload);
 
-            // C# 7.3 classic using pattern (no "using var")
             using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+            using (var resp = await _http.PostAsync("/upsert_filter_intervals/start", content))
             {
-                var url = "/upsert_filter_intervals"; // or whatever route your Flask app exposes
-                using (var resp = await _http.PostAsync(url, content))
-                {
-                    resp.EnsureSuccessStatusCode();
-                    return true;
-                }
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+                var jo = JObject.Parse(body);
+                return (string)jo["job_id"];
             }
         }
 
+        // Poll status
+        public async Task<UpsertJobStatus> GetUpsertFilterIntervalsStatusAsync(string jobId, System.Threading.CancellationToken ct = default)
+        {
+            var url = "/upsert_filter_intervals/status/" + Uri.EscapeDataString(jobId);
+            using (var resp = await _http.GetAsync(url, ct))
+            {
+                if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    return new UpsertJobStatus { JobId = jobId, Status = "failed", Message = "Unknown job" };
+
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+                var status = Newtonsoft.Json.JsonConvert.DeserializeObject<UpsertJobStatus>(body);
+                return status ?? new UpsertJobStatus { JobId = jobId, Status = "failed", Message = "Empty response" };
+            }
+        }
+
+        private UpsertJobStatus _jobStatus;
+        public UpsertJobStatus JobStatus
+        {
+            get => _jobStatus;
+            private set
+            {
+                if (!Equals(_jobStatus, value))
+                {
+                    _jobStatus = value;
+                    OnPropertyChanged(nameof(JobStatus));
+                    OnPropertyChanged(nameof(IsUpsertRunning));
+                    OnPropertyChanged(nameof(ProgressPercent));
+                    OnPropertyChanged(nameof(StatusMessage));
+                    OnPropertyChanged(nameof(IsSaveEnabled));
+                }
+            }
+        }
+        public void ApplyJobStatus(UpsertJobStatus status) => JobStatus = status;
+        public void ClearJobStatus() => JobStatus = null;
+
+
+        public bool IsUpsertRunning =>
+            JobStatus != null && !JobStatus.IsTerminal &&
+            (string.Equals(JobStatus.Status, "queued", StringComparison.OrdinalIgnoreCase)
+             || string.Equals(JobStatus.Status, "running", StringComparison.OrdinalIgnoreCase));
+
+        public int ProgressPercent => JobStatus?.EffectivePercent ?? 0;
+
+        public string StatusMessage => JobStatus?.Message ?? string.Empty;
+
+        // Handy single flag for the Save button
+        public bool IsSaveEnabled => !IsExecuting && !IsUpsertRunning;
 
         public class MergedTickerRow : INotifyPropertyChanged
         {
@@ -2132,7 +2106,7 @@ namespace wpfTDX
                 return new FilterIntervalsUpsertRow
                 {
                     Tickername = this.Tickername,
-                
+                    FundGroup = this.FundGroup,
 
                     Rescale = Nz(this.Rescale, true),
                     LongOnly = Nz(this.LongOnly, false),
@@ -2184,6 +2158,12 @@ namespace wpfTDX
             // adjust to your table’s schema
             [JsonProperty("description")]
             public string Description { get; set; }
+
+            [JsonProperty("fundgroupname")]
+            public string FundGroupName { get; set; }
+
+            [JsonProperty("fundname")]
+            public string FundName { get; set; }
         }
 
         public async Task LoadTickerUniverseAsync()
@@ -2226,12 +2206,12 @@ namespace wpfTDX
             finally { IsExecuting = false; }
         }
 
-        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker)
+        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker,string fundgroupname)
         {
             var row = new FilterIntervalsViewModel.MergedTickerRow
             {
                 Tickername = ticker,
-
+                FundGroup = fundgroupname,
                 // safe defaults — tweak if you prefer different starting flags
                 Rescale = true,
                 LongOnly = false,
