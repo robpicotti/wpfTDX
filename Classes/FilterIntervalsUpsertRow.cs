@@ -26,7 +26,7 @@ namespace wpfTDX
         [JsonProperty("h2")] public bool? H2 { get; set; }
         [JsonProperty("h3")] public bool? H3 { get; set; }
         [JsonProperty("h4")] public bool? H4 { get; set; }
-        [JsonProperty("h5")] public bool? H5 { get; set; }
+        //[JsonProperty("h5")] public bool? H5 { get; set; }
         [JsonProperty("h6")] public bool? H6 { get; set; }
         [JsonProperty("h12")] public bool? H12 { get; set; }
         [JsonProperty("h16")] public bool? H16 { get; set; }

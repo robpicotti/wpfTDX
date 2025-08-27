@@ -285,20 +285,20 @@ namespace wpfTDX
                 }
             }
         }
-        private bool? _h5;
-        [JsonProperty("h5")]
-        public bool? H5
-        {
-            get { return _h5; }
-            set
-            {
-                if (_h5 != value)
-                {
-                    _h5 = value;
-                    OnPropertyChanged(nameof(H5));
-                }
-            }
-        }
+        //private bool? _h5;
+        //[JsonProperty("h5")]
+        //public bool? H5
+        //{
+        //    get { return _h5; }
+        //    set
+        //    {
+        //        if (_h5 != value)
+        //        {
+        //            _h5 = value;
+        //            OnPropertyChanged(nameof(H5));
+        //        }
+        //    }
+        //}
 
         private bool? _h6;
         [JsonProperty("h6")]

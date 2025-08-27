@@ -159,6 +159,35 @@ namespace wpfTDX
         }
     }
 
+    public sealed class FlagTextOrBlankConverter : IMultiValueConverter
+    {
+        public string TrueText { get; set; } = "True";
+        public string FalseText { get; set; } = "False";
+
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            // values[0] = flag (bool?)
+            // values[1] = position (float?/double?)
+            if (values == null || values.Length < 2) return "";
+
+            bool? flag = values[0] as bool?;
+            object posObj = values[1];
+
+            // treat "no position" as blank
+            if (posObj == null || posObj == DependencyProperty.UnsetValue)
+                return "";
+
+            // if position exists but flag is null, also blank
+            if (!flag.HasValue) return "";
+
+            return flag.Value ? TrueText : FalseText;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+            => null;
+    }
+
+
 
     // Returns -1 if a<b, 0 if equal/unknown, 1 if a>b
     public class CompareDoubleConverter : IMultiValueConverter
@@ -430,7 +459,7 @@ namespace wpfTDX
                     model.PositionH2 = row.Value<float?>("position_h2");
                     model.PositionH3 = row.Value<float?>("position_h3");
                     model.PositionH4 = row.Value<float?>("position_h4");
-                    model.PositionH5 = row.Value<float?>("position_h5");
+                    //model.PositionH5 = row.Value<float?>("position_h5");
                     model.PositionH6 = row.Value<float?>("position_h6");
                     model.PositionH12 = row.Value<float?>("position_h12");
                     model.PositionH16 = row.Value<float?>("position_h16");
@@ -522,7 +551,7 @@ namespace wpfTDX
                     H2 = fi?.H2,
                     H3 = fi?.H3,
                     H4 = fi?.H4,
-                    H5 = fi?.H5,
+                    //H5 = fi?.H5,
                     H6 = fi?.H6,
                     H12 = fi?.H12,
                     H16 = fi?.H16,
@@ -545,7 +574,7 @@ namespace wpfTDX
                     PositionH2 = tp.PositionH2,
                     PositionH3 = tp.PositionH3,
                     PositionH4 = tp.PositionH4,
-                    PositionH5 = tp.PositionH5,
+                    //PositionH5 = tp.PositionH5,
                     PositionH6 = tp.PositionH6,
                     PositionH12 = tp.PositionH12,
                     PositionH16 = tp.PositionH16,
@@ -587,7 +616,7 @@ namespace wpfTDX
                     row.H2 = old.H2;
                     row.H3 = old.H3;
                     row.H4 = old.H4;
-                    row.H5 = old.H5;
+                    //row.H5 = old.H5;
                     row.H6 = old.H6;
                     row.H12 = old.H12;
                     row.H16 = old.H16;
@@ -610,7 +639,7 @@ namespace wpfTDX
                 }
 
                 // enforce your “coerce flag to null when Position* is null” rule
-                row.CoerceFlagsFromPositions();
+                //row.CoerceFlagsFromPositions();
 
                 row.RecalcNewTrades();
                 row.RecalcRescaledIntervals();
@@ -670,7 +699,7 @@ namespace wpfTDX
             H2 = r.H2,
             H3 = r.H3,
             H4 = r.H4,
-            H5 = r.H5,
+            //H5 = r.H5,
             H6 = r.H6,
             H12 = r.H12,
             H16 = r.H16,
@@ -1252,37 +1281,37 @@ namespace wpfTDX
                 }
             }
 
-            public bool? OriginalH5 { get; private set; }
-            private bool? _h5;
-            public bool? H5
-                {
-                get => _h5;
-                set
-                {
-                    if (_h5 != value)
-                    {
-                        _h5 = value;
-                        OnPropertyChanged(nameof(H5));
-                        OnPropertyChanged(nameof(H5HasChanged));
-                        OnPropertyChanged(nameof(H5Brush));       // <—
-                    }
-                }
-            }
-            public bool H5HasChanged => _isInitialized && _h5 != OriginalH5;
-            private float? _positionH5;
-            public float? PositionH5
-            {
-                get => _positionH5;
-                set
-                {
-                    if (_positionH5 != value)
-                    {
-                        _positionH5 = value;
-                        OnPropertyChanged(nameof(PositionH5));
-                        OnPropertyChanged(nameof(H5Brush));       // <—
-                    }
-                }
-            }
+            //public bool? OriginalH5 { get; private set; }
+            //private bool? _h5;
+            //public bool? H5
+            //    {
+            //    get => _h5;
+            //    set
+            //    {
+            //        if (_h5 != value)
+            //        {
+            //            _h5 = value;
+            //            OnPropertyChanged(nameof(H5));
+            //            OnPropertyChanged(nameof(H5HasChanged));
+            //            OnPropertyChanged(nameof(H5Brush));       // <—
+            //        }
+            //    }
+            //}
+            //public bool H5HasChanged => _isInitialized && _h5 != OriginalH5;
+            //private float? _positionH5;
+            //public float? PositionH5
+            //{
+            //    get => _positionH5;
+            //    set
+            //    {
+            //        if (_positionH5 != value)
+            //        {
+            //            _positionH5 = value;
+            //            OnPropertyChanged(nameof(PositionH5));
+            //            OnPropertyChanged(nameof(H5Brush));       // <—
+            //        }
+            //    }
+            //}
 
 
             public bool? OriginalH6 { get; private set; }
@@ -1742,7 +1771,7 @@ namespace wpfTDX
             public Brush H2Brush => ComputeFlagPosBrush(H2, PositionH2);
             public Brush H3Brush => ComputeFlagPosBrush(H3, PositionH3);
             public Brush H4Brush => ComputeFlagPosBrush(H4, PositionH4);
-            public Brush H5Brush => ComputeFlagPosBrush(H5, PositionH5);
+            //public Brush H5Brush => ComputeFlagPosBrush(H5, PositionH5);
             public Brush H6Brush => ComputeFlagPosBrush(H6, PositionH6);
             public Brush H12Brush => ComputeFlagPosBrush(H12, PositionH12);
             public Brush H16Brush => ComputeFlagPosBrush(H16, PositionH16);
@@ -1828,7 +1857,7 @@ namespace wpfTDX
                 OriginalH2 = src.OriginalH2;
                 OriginalH3 = src.OriginalH3;
                 OriginalH4 = src.OriginalH4;
-                OriginalH5 = src.OriginalH5;
+                //OriginalH5 = src.OriginalH5;
                 OriginalH6 = src.OriginalH6;
                 OriginalH12 = src.OriginalH12;
                 OriginalH16 = src.OriginalH16;
@@ -1860,7 +1889,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(H2HasChanged));
                 OnPropertyChanged(nameof(H3HasChanged));
                 OnPropertyChanged(nameof(H4HasChanged));
-                OnPropertyChanged(nameof(H5HasChanged));
+                //OnPropertyChanged(nameof(H5HasChanged));
                 OnPropertyChanged(nameof(H6HasChanged));
                 OnPropertyChanged(nameof(H12HasChanged));
                 OnPropertyChanged(nameof(H16HasChanged));
@@ -1893,7 +1922,7 @@ namespace wpfTDX
                 CountIfActive(H2, PositionH2, ref c, excludeZeroPositions);
                 CountIfActive(H3, PositionH3, ref c, excludeZeroPositions);
                 CountIfActive(H4, PositionH4, ref c, excludeZeroPositions);
-                CountIfActive(H5, PositionH5, ref c, excludeZeroPositions);
+                //CountIfActive(H5, PositionH5, ref c, excludeZeroPositions);
                 CountIfActive(H6, PositionH6, ref c, excludeZeroPositions);
                 CountIfActive(H12, PositionH12, ref c, excludeZeroPositions);
                 CountIfActive(H16, PositionH16, ref c, excludeZeroPositions);
@@ -1920,7 +1949,7 @@ namespace wpfTDX
                 CountIfActive(OriginalH2, PositionH2, ref c, excludeZeroPositions);
                 CountIfActive(OriginalH3, PositionH3, ref c, excludeZeroPositions);
                 CountIfActive(OriginalH4, PositionH4, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH5, PositionH5, ref c, excludeZeroPositions);
+                //CountIfActive(OriginalH5, PositionH5, ref c, excludeZeroPositions);
                 CountIfActive(OriginalH6, PositionH6, ref c, excludeZeroPositions);
                 CountIfActive(OriginalH12, PositionH12, ref c, excludeZeroPositions);
                 CountIfActive(OriginalH16, PositionH16, ref c, excludeZeroPositions);
@@ -2039,34 +2068,34 @@ namespace wpfTDX
                     NewDeployment = nd; // make sure setter raises OnPropertyChanged
             }
 
-            public void CoerceFlagsFromPositions()
-            {
-                if (!PositionBaseY1.HasValue) BaseY1 = null;
-                if (!PositionBaseH1.HasValue) BaseH1 = null;
-                if (!PositionBaseD1.HasValue) BaseD1 = null;
+            //public void CoerceFlagsFromPositions()
+            //{
+            //    if (!PositionBaseY1.HasValue) BaseY1 = null;
+            //    if (!PositionBaseH1.HasValue) BaseH1 = null;
+            //    if (!PositionBaseD1.HasValue) BaseD1 = null;
 
-                if (!PositionY1.HasValue) y1 = null;
-                if (!PositionY2.HasValue) y2 = null;
-                if (!PositionY3.HasValue) y3 = null;
+            //    if (!PositionY1.HasValue) y1 = null;
+            //    if (!PositionY2.HasValue) y2 = null;
+            //    if (!PositionY3.HasValue) y3 = null;
 
-                if (!PositionH2.HasValue) H2 = null;
-                if (!PositionH3.HasValue) H3 = null;
-                if (!PositionH4.HasValue) H4 = null;
-                if (!PositionH5.HasValue) H5 = null;
-                if (!PositionH6.HasValue) H6 = null;
-                if (!PositionH12.HasValue) H12 = null;
-                if (!PositionH16.HasValue) H16 = null;
-                if (!PositionH36.HasValue) H36 = null;
+            //    if (!PositionH2.HasValue) H2 = null;
+            //    if (!PositionH3.HasValue) H3 = null;
+            //    if (!PositionH4.HasValue) H4 = null;
+            //    //if (!PositionH5.HasValue) H5 = null;
+            //    if (!PositionH6.HasValue) H6 = null;
+            //    if (!PositionH12.HasValue) H12 = null;
+            //    if (!PositionH16.HasValue) H16 = null;
+            //    if (!PositionH36.HasValue) H36 = null;
 
-                if (!PositionD1.HasValue) D1 = null;
-                if (!PositionD2.HasValue) D2 = null;
-                if (!PositionD3.HasValue) D3 = null;
-                if (!PositionD4.HasValue) D4 = null;
-                if (!PositionD8.HasValue) D8 = null;
+            //    if (!PositionD1.HasValue) D1 = null;
+            //    if (!PositionD2.HasValue) D2 = null;
+            //    if (!PositionD3.HasValue) D3 = null;
+            //    if (!PositionD4.HasValue) D4 = null;
+            //    if (!PositionD8.HasValue) D8 = null;
 
-                if (!PositionW1.HasValue) W1 = null;
-                if (!PositionW2.HasValue) W2 = null;
-            }
+            //    if (!PositionW1.HasValue) W1 = null;
+            //    if (!PositionW2.HasValue) W2 = null;
+            //}
     
             public void SnapshotOriginals()
             {
@@ -2086,7 +2115,7 @@ namespace wpfTDX
                 OriginalH2 = _h2;
                 OriginalH3 = _h3;
                 OriginalH4 = _h4;
-                OriginalH5 = _h5;
+                //OriginalH5 = _h5;
                 OriginalH6 = _h6;
                 OriginalH12 = _h12;
                 OriginalH16 = _h16;
@@ -2121,7 +2150,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(H2HasChanged));
                 OnPropertyChanged(nameof(H3HasChanged));
                 OnPropertyChanged(nameof(H4HasChanged));
-                OnPropertyChanged(nameof(H5HasChanged));
+                //OnPropertyChanged(nameof(H5HasChanged));
                 OnPropertyChanged(nameof(H6HasChanged));
                 OnPropertyChanged(nameof(H12HasChanged));
                 OnPropertyChanged(nameof(H16HasChanged));
@@ -2136,51 +2165,99 @@ namespace wpfTDX
                 // (repeat for others)
             }
 
+            private static bool PickForSave(bool? current, bool? original, bool hasChanged, bool defaultValue = false)
+            {
+                var chosen = hasChanged ? current : original;   // if not changed, stick to original
+                return chosen ?? defaultValue;                  // coalesce to a deterministic bool for Python
+            }
+
 
             public FilterIntervalsUpsertRow ToUpsertRow()
             {
-                // coalesce nullable bools so Python doesn’t see NaN
-                Func<bool?, bool, bool> Nz = (b, defVal) => b.HasValue ? b.Value : defVal;
-
                 return new FilterIntervalsUpsertRow
                 {
                     Tickername = this.Tickername,
                     FundGroup = this.FundGroup,
 
-                    Rescale = Nz(this.Rescale, true),
-                    LongOnly = Nz(this.LongOnly, false),
-                    ShortOnly = Nz(this.ShortOnly, false),
-                    BuyOnly = Nz(this.BuyOnly, false),
-                    SellOnly = Nz(this.SellOnly, false),
-                    AllIntervals = Nz(this.AllIntervals, false),
+                    Rescale = PickForSave(this.Rescale, this.OriginalRescale, this.RescaleHasChanged, true),
+                    LongOnly = PickForSave(this.LongOnly, this.OriginalLongOnly, this.LongOnlyHasChanged),
+                    ShortOnly = PickForSave(this.ShortOnly, this.OriginalShortOnly, this.ShortOnlyHasChanged),
+                    BuyOnly = PickForSave(this.BuyOnly, this.OriginalBuyOnly, this.BuyOnlyHasChanged),
+                    SellOnly = PickForSave(this.SellOnly, this.OriginalSellOnly, this.SellOnlyHasChanged),
+                    AllIntervals = PickForSave(this.AllIntervals, this.OriginalAllIntervals, this.AllIntervalsHasChanged),
 
-                    BaseY1 = Nz(this.BaseY1, false),
-                    BaseH1 = Nz(this.BaseH1, false),
-                    BaseD1 = Nz(this.BaseD1, false),
+                    BaseY1 = PickForSave(this.BaseY1, this.OriginalBaseY1, this.BaseY1HasChanged),
+                    BaseH1 = PickForSave(this.BaseH1, this.OriginalBaseH1, this.BaseH1HasChanged),
+                    BaseD1 = PickForSave(this.BaseD1, this.OriginalBaseD1, this.BaseD1HasChanged),
 
-                    Y1 = Nz(this.y1, false),
-                    Y2 = Nz(this.y2, false),
-                    Y3 = Nz(this.y3, false),
+                    Y1 = PickForSave(this.y1, this.OriginalY1, this.Y1HasChanged),
+                    Y2 = PickForSave(this.y2, this.OriginalY2, this.Y2HasChanged),
+                    Y3 = PickForSave(this.y3, this.OriginalY3, this.Y3HasChanged),
 
-                    H2 = Nz(this.H2, false),
-                    H3 = Nz(this.H3, false),
-                    H4 = Nz(this.H4, false),
-                    H5 = Nz(this.H5, false),
-                    H6 = Nz(this.H6, false),
-                    H12 = Nz(this.H12, false),
-                    H16 = Nz(this.H16, false),
-                    H36 = Nz(this.H36, false),
+                    H2 = PickForSave(this.H2, this.OriginalH2, this.H2HasChanged),
+                    H3 = PickForSave(this.H3, this.OriginalH3, this.H3HasChanged),
+                    H4 = PickForSave(this.H4, this.OriginalH4, this.H4HasChanged),
+                    H6 = PickForSave(this.H6, this.OriginalH6, this.H6HasChanged),
+                    H12 = PickForSave(this.H12, this.OriginalH12, this.H12HasChanged),
+                    H16 = PickForSave(this.H16, this.OriginalH16, this.H16HasChanged),
+                    H36 = PickForSave(this.H36, this.Originalh36, this.H36HasChanged),
 
-                    D1 = Nz(this.D1, false),
-                    D2 = Nz(this.D2, false),
-                    D3 = Nz(this.D3, false),
-                    D4 = Nz(this.D4, false),
-                    D8 = Nz(this.D8, false),
+                    D1 = PickForSave(this.D1, this.OriginalD1, this.D1HasChanged),
+                    D2 = PickForSave(this.D2, this.OriginalD2, this.D2HasChanged),
+                    D3 = PickForSave(this.D3, this.OriginalD3, this.D3HasChanged),
+                    D4 = PickForSave(this.D4, this.OriginalD4, this.D4HasChanged),
+                    D8 = PickForSave(this.D8, this.OriginalD8, this.D8HasChanged),
 
-                    W1 = Nz(this.W1, false),
-                    W2 = Nz(this.W2, false),
+                    W1 = PickForSave(this.W1, this.OriginalW1, this.W1HasChanged),
+                    W2 = PickForSave(this.W2, this.OriginalW2, this.W2HasChanged),
                 };
             }
+
+
+            //public FilterIntervalsUpsertRow ToUpsertRow()
+            //{
+            //    // coalesce nullable bools so Python doesn’t see NaN
+            //    Func<bool?, bool, bool> Nz = (b, defVal) => b.HasValue ? b.Value : defVal;
+
+            //    return new FilterIntervalsUpsertRow
+            //    {
+            //        Tickername = this.Tickername,
+            //        FundGroup = this.FundGroup,
+
+            //        Rescale = Nz(this.Rescale, true),
+            //        LongOnly = Nz(this.LongOnly, false),
+            //        ShortOnly = Nz(this.ShortOnly, false),
+            //        BuyOnly = Nz(this.BuyOnly, false),
+            //        SellOnly = Nz(this.SellOnly, false),
+            //        AllIntervals = Nz(this.AllIntervals, false),
+
+            //        BaseY1 = Nz(this.BaseY1, false),
+            //        BaseH1 = Nz(this.BaseH1, false),
+            //        BaseD1 = Nz(this.BaseD1, false),
+
+            //        Y1 = Nz(this.y1, false),
+            //        Y2 = Nz(this.y2, false),
+            //        Y3 = Nz(this.y3, false),
+
+            //        H2 = Nz(this.H2, false),
+            //        H3 = Nz(this.H3, false),
+            //        H4 = Nz(this.H4, false),
+            //        //H5 = Nz(this.H5, false),
+            //        H6 = Nz(this.H6, false),
+            //        H12 = Nz(this.H12, false),
+            //        H16 = Nz(this.H16, false),
+            //        H36 = Nz(this.H36, false),
+
+            //        D1 = Nz(this.D1, false),
+            //        D2 = Nz(this.D2, false),
+            //        D3 = Nz(this.D3, false),
+            //        D4 = Nz(this.D4, false),
+            //        D8 = Nz(this.D8, false),
+
+            //        W1 = Nz(this.W1, false),
+            //        W2 = Nz(this.W2, false),
+            //    };
+            //}
 
 
         }
@@ -2264,7 +2341,6 @@ namespace wpfTDX
                 H2 = false,
                 H3 = false,
                 H4 = false,
-                H5 = false,
                 H6 = false,
                 H12 = false,
                 H16 = false,
@@ -2276,6 +2352,25 @@ namespace wpfTDX
                 D8 = false,
                 W1 = false,
                 W2 = false,
+                // make intervals editable-looking (NOT grey) for *new* tickers:
+                PositionY1 = 0f,
+                PositionY2 = 0f,
+                PositionY3 = 0f,
+                PositionH2 = 0f,
+                PositionH3 = 0f,
+                PositionH4 = 0f,
+                // PositionH5 intentionally NOT set (you said H5 isn’t in the DB)
+                PositionH6 = 0f,
+                PositionH12 = 0f,
+                PositionH16 = 0f,
+                PositionH36 = 0f,
+                PositionD1 = 0f,
+                PositionD2 = 0f,
+                PositionD3 = 0f,
+                PositionD4 = 0f,
+                PositionD8 = 0f,
+                PositionW1 = 0f,
+                PositionW2 = 0f,
 
                 // positions/metrics start empty
                 NumTrades = 0,

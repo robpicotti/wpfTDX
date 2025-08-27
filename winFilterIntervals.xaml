@@ -24,6 +24,8 @@
                                  TrueText="True"
                                  FalseText="False"
                                  NullText="" />
+        <local:FlagTextOrBlankConverter x:Key="FlagTextOrBlankConverter" TrueText="True" FalseText="False"/>
+
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style x:Key="BusyButtonStyle" TargetType="Button">
             <Setter Property="IsEnabled" Value="True"/>
@@ -319,7 +321,10 @@
                 IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="BaseY1" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseY1"/>
+                            <Binding Path="PositionBaseY1" />
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <!-- Use ElementStyle so the TextBlock can have Background bound once -->
                     <DataGridTextColumn.ElementStyle>
@@ -341,7 +346,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="BaseH1" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseH1" />
+                            <Binding Path="PositionBaseH1" />
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -362,7 +370,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="BaseD1" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseD1" />
+                            <Binding Path="PositionBaseD1"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -383,7 +394,11 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="y1" Converter="{StaticResource BoolToStringConverter}"/>
+
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y1" />
+                            <Binding Path="PositionY1"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -404,7 +419,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="y2" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y2" />
+                            <Binding Path="PositionY2"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -424,7 +442,10 @@
                 <DataGridTextColumn Header="y3"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="y3" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y3" />
+                            <Binding Path="PositionY3"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -445,7 +466,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H2" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H2" />
+                            <Binding Path="PositionH2"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -465,7 +489,10 @@
                 <DataGridTextColumn Header="h3"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H3" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H3" />
+                            <Binding Path="PositionH3"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -485,7 +512,10 @@
                 <DataGridTextColumn Header="h4"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H4" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H4" />
+                            <Binding Path="PositionH4"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -506,7 +536,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H6" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H6" />
+                            <Binding Path="PositionH6" />
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -527,7 +560,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H12" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H12" />
+                            <Binding Path="PositionH12"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -548,7 +584,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H16" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H16" />
+                            <Binding Path="PositionH16"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -570,7 +609,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="D1" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="D1" />
+                            <Binding Path="PositionD1"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -591,7 +633,10 @@
                 <DataGridTextColumn Header="h36"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="H36" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="H36" />
+                            <Binding Path="PositionH36"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -612,7 +657,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="D2" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="D2" />
+                            <Binding Path="PositionD2" />   
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -633,7 +681,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="D3" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="D3" />
+                            <Binding Path="PositionD3"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -654,7 +705,10 @@
                    IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="D4" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="D4" />
+                            <Binding Path="PositionD4"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -674,7 +728,10 @@
                 <DataGridTextColumn Header="W1"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="W1" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="W1"/>
+                            <Binding Path="PositionW1"/>
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -695,7 +752,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="D8" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="D8" />
+                            <Binding Path="PositionD8"/>    
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
@@ -716,7 +776,10 @@
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
-                        <Binding Path="W2" Converter="{StaticResource BoolToStringConverter}"/>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="W2" />
+                            <Binding Path="PositionW2" />
+                        </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
