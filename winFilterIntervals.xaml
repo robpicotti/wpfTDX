@@ -55,15 +55,15 @@
 
         <!-- Toolbar -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,0" >
-            <Button Content="Reload Positions" Click="ReloadPositionsButton_Click" Padding="12,4"
+            <!--<Button Content="Reload Positions" Click="ReloadPositionsButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
                      Margin="0,0,8,0"
                 ToolTip="Load TAD positions, then rebuild the merged view"/>
             <Button Content="Reload Filters" Click="ReloadFiltersButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
                      Margin="0,0,8,0"
-                ToolTip="Load filter intervals, then rebuild the merged view"/>
-            <Button Content="Reload Both" Click="ReloadBothButton_Click" Padding="12,4"
+                ToolTip="Load filter intervals, then rebuild the merged view"/>-->
+            <Button Content="Reload" Click="ReloadBothButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
                      Margin="0,0,8,0"
                 ToolTip="Load both data sources, then rebuild the merged view"/>
@@ -201,6 +201,10 @@
                                     Binding="{Binding FundGroup}"
                                     IsReadOnly="True" />
 
+                <DataGridTextColumn Header="fund"
+                                    Binding="{Binding FundName}"
+                                    IsReadOnly="True" />
+
                 <!-- Rescale: dropdown True/False, bold when changed -->
                 <DataGridTextColumn Header="rescale"
                                     IsReadOnly="True"
@@ -215,9 +219,15 @@
                                 <DataTrigger Binding="{Binding RescaleHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                 </DataTrigger>
+                                <DataTrigger Binding="{Binding RescaleHasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
+                    
                 </DataGridTextColumn>
 
                 <!-- LongOnly -->
@@ -233,7 +243,10 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding LongOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
+                                
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -252,6 +265,8 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding ShortOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -271,6 +286,8 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding BuyOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -290,6 +307,8 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding SellOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -310,6 +329,8 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding AllIntervalsHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -339,6 +360,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- base_h1 -->
@@ -363,6 +399,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- base_d1 -->
@@ -387,6 +438,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- y1 -->
@@ -412,6 +478,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Y1HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- y2 -->
@@ -436,6 +517,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Y2HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- y3 -->
@@ -459,6 +555,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Y3HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- h2 -->
@@ -483,6 +594,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H2HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- h3 -->
@@ -506,6 +632,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H3HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- h4 -->
@@ -529,6 +670,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H4HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- h6 -->
@@ -553,6 +709,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H6HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- h12 -->
@@ -577,6 +748,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H12HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- h16 -->
@@ -601,6 +787,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H16HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
 
@@ -626,6 +827,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D1HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
 
@@ -650,6 +866,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding H36HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- D2 -->
@@ -674,6 +905,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D2HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- D3 -->
@@ -698,6 +944,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D3HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- D4 -->
@@ -722,6 +983,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D4HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- W1 -->
@@ -745,6 +1021,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding W1HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- D8 -->
@@ -769,6 +1060,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding D8HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <!-- W2 -->
@@ -793,6 +1099,21 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- your normal border -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding W2HasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
 

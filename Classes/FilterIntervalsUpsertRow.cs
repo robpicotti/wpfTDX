@@ -11,6 +11,7 @@ namespace wpfTDX
     {
         [JsonProperty("tickername")] public string Tickername { get; set; }
         [JsonProperty("fundgroups")] public string FundGroup { get; set; }
+        [JsonProperty("fundname")] public string FundName { get; set; }
         [JsonProperty("rescale")] public bool? Rescale { get; set; }
         [JsonProperty("long_only")] public bool? LongOnly { get; set; }
         [JsonProperty("short_only")] public bool? ShortOnly { get; set; }

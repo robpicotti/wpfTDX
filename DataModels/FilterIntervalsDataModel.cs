@@ -59,6 +59,21 @@ namespace wpfTDX
                 }
             }
         }
+
+        private string _fundname;
+        [JsonProperty("fundname")]
+        public string FundName
+        {
+            get { return _fundname; }
+            set
+            {
+                if (_fundname != value)
+                {
+                    _fundname = value;
+                    OnPropertyChanged(nameof(FundName));
+                }
+            }
+        }
         private bool? _rescale;
         [JsonProperty("rescale")]
         public bool? Rescale

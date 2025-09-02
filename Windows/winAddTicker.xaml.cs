@@ -55,9 +55,9 @@ namespace wpfTDX
                     .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                // Insert "ALL" manually at the top
+                // Insert "*" manually at the top
                 FundGroups.Clear();
-                FundGroups.Add("ALL");
+                FundGroups.Add("*");
                 foreach (var g in groups)
                     FundGroups.Add(g);
 

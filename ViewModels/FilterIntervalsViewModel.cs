@@ -535,6 +535,7 @@ namespace wpfTDX
                     // start from server FI values…
                     Runtime = fi?.Runtime ?? default,
                     FundGroup = fi?.FundGroup,
+                    FundName = fi?.FundName,
                     Rescale = fi?.Rescale,
                     LongOnly = fi?.LongOnly,
                     ShortOnly = fi?.ShortOnly,
@@ -682,7 +683,8 @@ namespace wpfTDX
         // inside FilterIntervalsViewModel
         public static FilterIntervalsUpsertRow ToUpsertRow(MergedTickerRow r) => new FilterIntervalsUpsertRow
         {
-            FundGroup = r.FundGroup?.Trim(),    
+            FundGroup = r.FundGroup?.Trim(), 
+            FundName = r.FundName?.Trim(),
             Tickername = r.Tickername?.Trim(),
             Rescale = r.Rescale,
             LongOnly = r.LongOnly,
@@ -865,6 +867,7 @@ namespace wpfTDX
             private bool _isInitialized;
             public string Tickername { get; set; }
             public string FundGroup { get; set; }
+            public string FundName { get; set; }
             public bool? OriginalRescale { get; set; }
             private bool? _rescale;
             public bool? Rescale 
@@ -1281,37 +1284,6 @@ namespace wpfTDX
                 }
             }
 
-            //public bool? OriginalH5 { get; private set; }
-            //private bool? _h5;
-            //public bool? H5
-            //    {
-            //    get => _h5;
-            //    set
-            //    {
-            //        if (_h5 != value)
-            //        {
-            //            _h5 = value;
-            //            OnPropertyChanged(nameof(H5));
-            //            OnPropertyChanged(nameof(H5HasChanged));
-            //            OnPropertyChanged(nameof(H5Brush));       // <—
-            //        }
-            //    }
-            //}
-            //public bool H5HasChanged => _isInitialized && _h5 != OriginalH5;
-            //private float? _positionH5;
-            //public float? PositionH5
-            //{
-            //    get => _positionH5;
-            //    set
-            //    {
-            //        if (_positionH5 != value)
-            //        {
-            //            _positionH5 = value;
-            //            OnPropertyChanged(nameof(PositionH5));
-            //            OnPropertyChanged(nameof(H5Brush));       // <—
-            //        }
-            //    }
-            //}
 
 
             public bool? OriginalH6 { get; private set; }
@@ -1416,9 +1388,6 @@ namespace wpfTDX
                     }
                 }
             }
-
-
-            
 
             public bool? OriginalD1 { get; private set; }    
             private bool? _D1;
@@ -1743,14 +1712,25 @@ namespace wpfTDX
                 get => _newDeployment;
                 private set
                 {
+                    // remember previous (rounded) value for delta
+                    var oldRounded = _newDeployment.HasValue ? Math.Round(_newDeployment.Value, 1) : (double?)null;
+
                     if (_newDeployment != value)
                     {
+                        _prevNewDeploymentForBrush = oldRounded;
                         _newDeployment = value;
+
+                        // after the first assignment, stop treating zeros as "initial grey"
+                        _firstNewDeployment = false;
+
                         OnPropertyChanged(nameof(NewDeployment));
                         OnPropertyChanged(nameof(NewDeploymentBrush));
                     }
                 }
             }
+
+            private double? _prevNewDeploymentForBrush;   // last rounded value for delta coloring
+            private bool _firstNewDeployment = true;      // only for "initial zero shows grey"
 
 
             //for setting colours
@@ -1821,17 +1801,42 @@ namespace wpfTDX
                     return BgTransparent;
                 }
             }
+            //public Brush NewDeploymentBrush
+            //{
+            //    get
+            //    {
+            //        if (NewDeployment == null) return BgGrey;
+
+            //        var a = Math.Round(NewDeployment.Value, 1);
+            //        var b = Math.Round(FilteredDeployment ?? 0f, 1);
+
+            //        // If it's ~zero: grey on initial load (no edits), transparent after any user edits
+            //        if (Math.Abs(a) < 1e-9)
+            //            return HasAnyEdits ? BgTransparent : BgGrey;
+
+            //        if (a < b) return BgMistyRose;
+            //        if (a > b) return BgPaleGreen;
+            //        return BgTransparent;
+            //    }
+            //}
 
             public Brush NewDeploymentBrush
             {
                 get
                 {
                     if (NewDeployment == null) return BgGrey;
+
                     var a = Math.Round(NewDeployment.Value, 1);
-                    var b = Math.Round(PositionDeployment ?? 0f, 1);
-                    if (Math.Abs(a) < 1e-9) return BgGrey;
-                    if (a < b) return BgMistyRose;
-                    if (a > b) return BgPaleGreen;
+                    var b = Math.Round(FilteredDeployment ?? 0f, 1);
+
+                    // Primary: compare to baseline (FilteredDeployment)
+                    if (a < b) return BgMistyRose;   // worse
+                    if (a > b) return BgPaleGreen;   // better
+
+                    if((FilteredDeployment == NewDeployment)&&(FilteredDeployment == 0))
+                        {
+                        return BgGrey;
+                    }
                     return BgTransparent;
                 }
             }
@@ -1904,93 +1909,171 @@ namespace wpfTDX
             }
 
 
-            static void CountIfActive(bool? flag, float? pos, ref int acc, bool excludeZeroPositions)
+            // Count how many intervals are ACTIVE in the *current* row based on flags only
+            // (flag == false means "included/active"). Ignores TadPositions entirely.
+            private int CountFiOnlyCurrent()
             {
-                if (flag == false && pos.HasValue && (!excludeZeroPositions || Math.Abs(pos.Value) > 1e-9))
+                int c = 0;
+                if (BaseY1 == true) c++;
+                if (BaseH1 == true) c++;
+                if (BaseD1 == true) c++;
+
+                if (y1 == true) c++;
+                if (y2 == true) c++;
+                if (y3 == true) c++;
+
+                if (H2 == true) c++;
+                if (H3 == true) c++;
+                if (H4 == true) c++;
+                if (H6 == true) c++;
+                if (H12 == true) c++;
+                if (H16 == true) c++;
+
+                if (D1 == true) c++;
+                if (H36 == true) c++;
+                if (D2 == true) c++;
+                if (D3 == true) c++;
+                if (D4 == true) c++;
+                if (W1 == true) c++;
+                if (D8 == true) c++;
+                if (W2 == true) c++;
+                return c;
+            }
+
+            // Count how many intervals were ACTIVE in the *baseline* (original) flags only
+            // (again, flag == false). Ignores TadPositions entirely.
+            private int CountFiOnlyBaseline()
+            {
+                int c = 0;
+                if (OriginalBaseY1 == false) c++;
+                if (OriginalBaseH1 == false) c++;
+                if (OriginalBaseD1 == false) c++;
+
+                if (OriginalY1 == false) c++;
+                if (OriginalY2 == false) c++;
+                if (OriginalY3 == false) c++;
+
+                if (OriginalH2 == false) c++;
+                if (OriginalH3 == false) c++;
+                if (OriginalH4 == false) c++;
+                if (OriginalH6 == false) c++;
+                if (OriginalH12 == false) c++;
+                if (OriginalH16 == false) c++;
+
+                if (OriginalD1 == false) c++;
+                if (Originalh36 == false) c++; // note: your model uses lowercase h in Originalh36
+                if (OriginalD2 == false) c++;
+                if (OriginalD3 == false) c++;
+                if (OriginalD4 == false) c++;
+                if (OriginalW1 == false) c++;
+                if (OriginalD8 == false) c++;
+                if (OriginalW2 == false) c++;
+                return c;
+            }
+
+            static void CountIfFiltered(bool? flag, float? pos, ref int acc, bool excludeZeroPositions)
+            {
+                if (flag == true && pos.HasValue &&
+                    (!excludeZeroPositions || Math.Abs(pos.Value) > 1e-9))
+                {
                     acc++;
+                }
             }
 
-            int CountCurrentActive(bool excludeZeroPositions)
+            int CountCurrentFiltered(bool excludeZeroPositions)
             {
                 int c = 0;
-                CountIfActive(BaseY1, PositionBaseY1, ref c, excludeZeroPositions);
-                CountIfActive(BaseH1, PositionBaseH1, ref c, excludeZeroPositions);
-                CountIfActive(BaseD1, PositionBaseD1, ref c, excludeZeroPositions);
-                CountIfActive(y1, PositionY1, ref c, excludeZeroPositions);
-                CountIfActive(y2, PositionY2, ref c, excludeZeroPositions);
-                CountIfActive(y3, PositionY3, ref c, excludeZeroPositions);
-                CountIfActive(H2, PositionH2, ref c, excludeZeroPositions);
-                CountIfActive(H3, PositionH3, ref c, excludeZeroPositions);
-                CountIfActive(H4, PositionH4, ref c, excludeZeroPositions);
-                //CountIfActive(H5, PositionH5, ref c, excludeZeroPositions);
-                CountIfActive(H6, PositionH6, ref c, excludeZeroPositions);
-                CountIfActive(H12, PositionH12, ref c, excludeZeroPositions);
-                CountIfActive(H16, PositionH16, ref c, excludeZeroPositions);
-                CountIfActive(H36, PositionH36, ref c, excludeZeroPositions);
-                CountIfActive(D1, PositionD1, ref c, excludeZeroPositions);
-                CountIfActive(D2, PositionD2, ref c, excludeZeroPositions);
-                CountIfActive(D3, PositionD3, ref c, excludeZeroPositions);
-                CountIfActive(D4, PositionD4, ref c, excludeZeroPositions);
-                CountIfActive(D8, PositionD8, ref c, excludeZeroPositions);
-                CountIfActive(W1, PositionW1, ref c, excludeZeroPositions);
-                CountIfActive(W2, PositionW2, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseY1, PositionBaseY1, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseH1, PositionBaseH1, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(y1, PositionY1, ref c, excludeZeroPositions);
+                CountIfFiltered(y2, PositionY2, ref c, excludeZeroPositions);
+                CountIfFiltered(y3, PositionY3, ref c, excludeZeroPositions);
+                CountIfFiltered(H2, PositionH2, ref c, excludeZeroPositions);
+                CountIfFiltered(H3, PositionH3, ref c, excludeZeroPositions);
+                CountIfFiltered(H4, PositionH4, ref c, excludeZeroPositions);
+                // H5 intentionally not used
+                CountIfFiltered(H6, PositionH6, ref c, excludeZeroPositions);
+                CountIfFiltered(H12, PositionH12, ref c, excludeZeroPositions);
+                CountIfFiltered(H16, PositionH16, ref c, excludeZeroPositions);
+                CountIfFiltered(H36, PositionH36, ref c, excludeZeroPositions);
+                CountIfFiltered(D1, PositionD1, ref c, excludeZeroPositions);
+                CountIfFiltered(D2, PositionD2, ref c, excludeZeroPositions);
+                CountIfFiltered(D3, PositionD3, ref c, excludeZeroPositions);
+                CountIfFiltered(D4, PositionD4, ref c, excludeZeroPositions);
+                CountIfFiltered(D8, PositionD8, ref c, excludeZeroPositions);
+                CountIfFiltered(W1, PositionW1, ref c, excludeZeroPositions);
+                CountIfFiltered(W2, PositionW2, ref c, excludeZeroPositions);
                 return c;
             }
 
-            int CountBaselineActive(bool excludeZeroPositions)
+            int CountBaselineFiltered(bool excludeZeroPositions)
             {
                 int c = 0;
-                CountIfActive(OriginalBaseY1, PositionBaseY1, ref c, excludeZeroPositions);
-                CountIfActive(OriginalBaseH1, PositionBaseH1, ref c, excludeZeroPositions);
-                CountIfActive(OriginalBaseD1, PositionBaseD1, ref c, excludeZeroPositions);
-                CountIfActive(OriginalY1, PositionY1, ref c, excludeZeroPositions);
-                CountIfActive(OriginalY2, PositionY2, ref c, excludeZeroPositions);
-                CountIfActive(OriginalY3, PositionY3, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH2, PositionH2, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH3, PositionH3, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH4, PositionH4, ref c, excludeZeroPositions);
-                //CountIfActive(OriginalH5, PositionH5, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH6, PositionH6, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH12, PositionH12, ref c, excludeZeroPositions);
-                CountIfActive(OriginalH16, PositionH16, ref c, excludeZeroPositions);
-                CountIfActive(Originalh36, PositionH36, ref c, excludeZeroPositions);
-                CountIfActive(OriginalD1, PositionD1, ref c, excludeZeroPositions);
-                CountIfActive(OriginalD2, PositionD2, ref c, excludeZeroPositions);
-                CountIfActive(OriginalD3, PositionD3, ref c, excludeZeroPositions);
-                CountIfActive(OriginalD4, PositionD4, ref c, excludeZeroPositions);
-                CountIfActive(OriginalD8, PositionD8, ref c, excludeZeroPositions);
-                CountIfActive(OriginalW1, PositionW1, ref c, excludeZeroPositions);
-                CountIfActive(OriginalW2, PositionW2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseY1, PositionBaseY1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseH1, PositionBaseH1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY1, PositionY1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY2, PositionY2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY3, PositionY3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalH2, PositionH2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalH3, PositionH3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalH4, PositionH4, ref c, excludeZeroPositions);
+                // H5 intentionally not used
+                CountIfFiltered(OriginalH6, PositionH6, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalH12, PositionH12, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalH16, PositionH16, ref c, excludeZeroPositions);
+                CountIfFiltered(Originalh36, PositionH36, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalD1, PositionD1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalD2, PositionD2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalD3, PositionD3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalD4, PositionD4, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalD8, PositionD8, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalW1, PositionW1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalW2, PositionW2, ref c, excludeZeroPositions);
                 return c;
             }
+
+
 
             public void RecalcRescaledIntervals(bool excludeZeroPositions = false)
             {
-                // AH2: cap (use NumPositionIntervals)
+                // AH2: cap (# of position intervals)
                 int ah2 = NumPositionIntervals.HasValue ? (int)Math.Round(NumPositionIntervals.Value) : 0;
                 if (ah2 <= 0) { RescaledIntervals = null; return; }
 
                 int x;
                 if (Rescale == true)
                 {
-                    // AE2: baseline scalar; using NumFiltIntervals by default
-                    int ae2 = NumFiltIntervals.HasValue ? (int)Math.Round(NumFiltIntervals.Value) : 0;
-                    int cur = CountCurrentActive(excludeZeroPositions);
-                    int baseC = CountBaselineActive(excludeZeroPositions);
+                    // Count how many intervals are currently FILTERED (flag == true)
+                    // Active (unfiltered) = total available - filtered
+                    int curFiltered = CountCurrentFiltered(excludeZeroPositions);
+                    int activeNow = ah2 - curFiltered;
 
-                    x = ae2 + (cur - baseC);
+                    // Clamp to [1, AH2]
+                    x = Math.Min(ah2, Math.Max(1, activeNow));
                 }
                 else
                 {
-                    // IF(..., ..., AH2)
+                    // No rescale → use the full positions cap
                     x = ah2;
                 }
 
-                // clamp to [1, AH2]
-                x = Math.Min(ah2, Math.Max(1, x));
                 RescaledIntervals = x;
                 RecalcNewDeployment();
+                OnPropertyChanged(nameof(NewDeploymentBrush));
+
             }
+
+            public bool HasAnyEdits =>
+                RescaleHasChanged
+                || LongOnlyHasChanged || ShortOnlyHasChanged || BuyOnlyHasChanged || SellOnlyHasChanged || AllIntervalsHasChanged
+                || BaseY1HasChanged || BaseH1HasChanged || BaseD1HasChanged
+                || Y1HasChanged || Y2HasChanged || Y3HasChanged
+                || H2HasChanged || H3HasChanged || H4HasChanged /* no H5 on purpose */
+                || H6HasChanged || H12HasChanged || H16HasChanged || H36HasChanged
+                || D1HasChanged || D2HasChanged || D3HasChanged || D4HasChanged
+                || D8HasChanged || W1HasChanged || W2HasChanged;
 
 
             // Helper: include pos when flag == false
@@ -2011,7 +2094,13 @@ namespace wpfTDX
             
             public void RecalcNewTrades()
             {
-                if (AllIntervals != false) { NewTrades = 0; return; }
+                if (AllIntervals != false) { 
+                    NewTrades = 0; 
+                    RecalcNewDeployment();
+                    OnPropertyChanged(nameof(NewDeploymentBrush));
+                    return; 
+                
+                }
 
                 double sum = 0;
                 // include here whichever intervals you want in the total
@@ -2047,6 +2136,8 @@ namespace wpfTDX
                     NewTrades = 0;
                 }
                 RecalcNewDeployment();
+                OnPropertyChanged(nameof(NewDeploymentBrush));
+
             }
 
             public void RecalcNewDeployment()
@@ -2066,6 +2157,8 @@ namespace wpfTDX
 
                 if (NewDeployment != nd)
                     NewDeployment = nd; // make sure setter raises OnPropertyChanged
+                OnPropertyChanged(nameof(NewDeploymentBrush));
+
             }
 
             //public void CoerceFlagsFromPositions()
@@ -2096,7 +2189,7 @@ namespace wpfTDX
             //    if (!PositionW1.HasValue) W1 = null;
             //    if (!PositionW2.HasValue) W2 = null;
             //}
-    
+
             public void SnapshotOriginals()
             {
                 OriginalRescale = _rescale;
@@ -2178,6 +2271,7 @@ namespace wpfTDX
                 {
                     Tickername = this.Tickername,
                     FundGroup = this.FundGroup,
+                    FundName = this.FundName,
 
                     Rescale = PickForSave(this.Rescale, this.OriginalRescale, this.RescaleHasChanged, true),
                     LongOnly = PickForSave(this.LongOnly, this.OriginalLongOnly, this.LongOnlyHasChanged),
@@ -2212,52 +2306,6 @@ namespace wpfTDX
                     W2 = PickForSave(this.W2, this.OriginalW2, this.W2HasChanged),
                 };
             }
-
-
-            //public FilterIntervalsUpsertRow ToUpsertRow()
-            //{
-            //    // coalesce nullable bools so Python doesn’t see NaN
-            //    Func<bool?, bool, bool> Nz = (b, defVal) => b.HasValue ? b.Value : defVal;
-
-            //    return new FilterIntervalsUpsertRow
-            //    {
-            //        Tickername = this.Tickername,
-            //        FundGroup = this.FundGroup,
-
-            //        Rescale = Nz(this.Rescale, true),
-            //        LongOnly = Nz(this.LongOnly, false),
-            //        ShortOnly = Nz(this.ShortOnly, false),
-            //        BuyOnly = Nz(this.BuyOnly, false),
-            //        SellOnly = Nz(this.SellOnly, false),
-            //        AllIntervals = Nz(this.AllIntervals, false),
-
-            //        BaseY1 = Nz(this.BaseY1, false),
-            //        BaseH1 = Nz(this.BaseH1, false),
-            //        BaseD1 = Nz(this.BaseD1, false),
-
-            //        Y1 = Nz(this.y1, false),
-            //        Y2 = Nz(this.y2, false),
-            //        Y3 = Nz(this.y3, false),
-
-            //        H2 = Nz(this.H2, false),
-            //        H3 = Nz(this.H3, false),
-            //        H4 = Nz(this.H4, false),
-            //        //H5 = Nz(this.H5, false),
-            //        H6 = Nz(this.H6, false),
-            //        H12 = Nz(this.H12, false),
-            //        H16 = Nz(this.H16, false),
-            //        H36 = Nz(this.H36, false),
-
-            //        D1 = Nz(this.D1, false),
-            //        D2 = Nz(this.D2, false),
-            //        D3 = Nz(this.D3, false),
-            //        D4 = Nz(this.D4, false),
-            //        D8 = Nz(this.D8, false),
-
-            //        W1 = Nz(this.W1, false),
-            //        W2 = Nz(this.W2, false),
-            //    };
-            //}
 
 
         }
@@ -2322,12 +2370,13 @@ namespace wpfTDX
             finally { IsExecuting = false; }
         }
 
-        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker,string fundgroupname)
+        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker,string fundgroupname,string fundname)
         {
             var row = new FilterIntervalsViewModel.MergedTickerRow
             {
                 Tickername = ticker,
                 FundGroup = fundgroupname,
+                FundName = fundname,    
                 // safe defaults — tweak if you prefer different starting flags
                 Rescale = true,
                 LongOnly = false,

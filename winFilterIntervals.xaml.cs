@@ -256,11 +256,11 @@ namespace wpfTDX
             {
                 foreach (var tr in dlg.SelectedTickers)
                 {
-                    var row = vm.CreateDefaultRow(tr.TickerName,tr.FundGroupName);
+                    var row = vm.CreateDefaultRow(tr.TickerName,tr.FundGroupName,tr.FundName);
 
                     // Apply the fund group chosen per row (user picked it in the grid)
                     // "ALL" can mean no specific group if you prefer null
-                    row.FundGroup = string.Equals(tr.FundGroupName, "ALL", StringComparison.OrdinalIgnoreCase)
+                    row.FundGroup = string.Equals(tr.FundGroupName, "*", StringComparison.OrdinalIgnoreCase)
                                     ? null
                                     : tr.FundGroupName;
 
