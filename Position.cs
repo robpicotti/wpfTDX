@@ -43,27 +43,35 @@ namespace TDX
         /// <summary>
         /// allows you to scale in and out of positions for a particular tickername/subaccount
         /// </summary>
-        public void scale_position(string _account, string tickername, double scale_stepsize, double scaled_target)
+        public void scale_position(string fundname, string tickername, double scale_stepsize, 
+            double scaled_target, string scale_type, double scaled_timestep = 5)
         {
             string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-            string account = _account;
+
             DataTable dt = new DataTable();
             dt.Columns.Add("runtime");
-            dt.Columns.Add("account");
-            dt.Columns.Add("subaccount");
+            dt.Columns.Add("fundgroupname");
+            dt.Columns.Add("fundname");
+            //dt.Columns.Add("account");
+            //dt.Columns.Add("subaccount");
             dt.Columns.Add("tickername");
-            dt.Columns.Add("scale_stepsize");
+            dt.Columns.Add("scaled_stepsize");
             dt.Columns.Add("scaled_percent");
+            dt.Columns.Add("scaled_timestep");
             dt.Columns.Add("scaled_target");
+            dt.Columns.Add("scaled_type");
 
             DataRow drow = dt.NewRow();
             drow["runtime"] = now;
-            drow["account"] = account;
-            drow["subaccount"] = this.subaccount;
+            drow["fundgroupname"] = "*";
+            drow["fundname"] = fundname;
+            //drow["subaccount"] = this.subaccount;
             drow["tickername"] = tickername;
-            drow["scale_stepsize"] = scale_stepsize;
-            drow["scaled_percent"] = get_scaled_percent(tickername);
+            drow["scaled_stepsize"] = scale_stepsize;
+            drow["scaled_percent"] = get_scaled_percent(fundname,tickername);
             drow["scaled_target"] = scaled_target;
+            drow["scaled_timestep"] = scaled_timestep;
+            drow["scaled_type"] = scale_type;
             dt.Rows.Add(drow);
             Table tbl = new Table("scaled_positions", gbl_conn);
             tbl.load_dataTable(dt);
@@ -74,17 +82,16 @@ namespace TDX
         /// </summary>
         /// <param name="tickername"></param>
         /// <returns></returns>
-        public double get_scaled_percent(string tickername)
+        public double? get_scaled_percent(string fundname,string tickername)
         {
-            double dbl_out = -1;
-            string _where_clause = "WHERE tickername='" + tickername + "' AND subaccountname='" + this.subaccount + "'";
-            Table tbl = new Table("target_positions", gbl_conn, _where_clause);
+            string where = "WHERE tickername='" + tickername + "' AND subaccountname='" + this.subaccount + "'" + " AND fundname='" + fundname + "'";
+            Table tbl = new Table("target_positions", gbl_conn, where);
 
-            if (tbl.table_data.Rows.Count > 0)
-            {
-                Double.TryParse(tbl.table_data.Rows[0]["scaled_percent"].ToString(), out dbl_out);
-            }
-            return dbl_out;
+            if (tbl.table_data.Rows.Count == 0) return null;
+
+            var row = tbl.table_data.Rows[0];
+            // If the DataTable column is numeric, this maps DBNull -> null automatically:
+            return row.Field<double?>("scaled_percent");
         }
         public  DataTable get_daily_positions(string fundName, string tad_id,string tickername,DateTime startDate, DateTime endDate)
         {

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data;
 using System.Data.SqlClient;
 using TDX;
+using System.Windows;
 
 namespace wpfTDX
 {
@@ -153,19 +154,47 @@ namespace wpfTDX
             tblTickers = new Table("tickers", this.gbl_conn);
             dtTickers = tblTickers.table_data;
             //populate target_positions
-            tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + this.fundName + "'");
+            try
+            {
+                tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + this.fundName + "'");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Error getting target positions data from target_positions table: " + ex.Message);
+            }
             dtTargetPositions = tblTargetPositions.table_data;
             //portfolio weights
-            tblPortfolioWeights = new Table("portfolio_weights", this.gbl_conn, "WHERE portfolioname='" + this.fund.benchmarkName + "'");
+            try
+            {
+                tblPortfolioWeights = new Table("portfolio_weights", this.gbl_conn, "WHERE portfolioname='" + this.fund.benchmarkName + "'");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Error getting portfolio weights data from portfolio_weights table: " + ex.Message);
+            }
             this.dtPortfolioWeights = tblPortfolioWeights.table_data;
             //notional limits
-            tblNotionalLimits = new Table("notional_limits", this.gbl_conn, "WHERE fundname='" + this.fundName + "'");
+            tblNotionalLimits = new Table("notional_pct_limits", this.gbl_conn, "WHERE fundname='" + this.fundName + "'");
             dtNotionalLimits = tblNotionalLimits.table_data;
             //liquidity limits
-            tblLiquidityLimits = new Table("liquidity_limits", this.gbl_conn, "WHERE fundname= '" + this.fundName + "'");
+            try
+            {
+                tblLiquidityLimits = new Table("liquidity_limits", this.gbl_conn, "WHERE fundname= '" + this.fundName + "'");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Error getting liquidity limits data from liquidity_limits table: " + ex.Message);
+            }
             dtLiquidityLimits = tblLiquidityLimits.table_data;
             //weight limits
-            tblWeighLimits = new Table("weight_limits", this.gbl_conn, "WHERE fundname ='" + this.fundName + "'");
+            try
+            {
+                tblWeighLimits = new Table("weight_limits", this.gbl_conn, "WHERE fundname ='" + this.fundName + "'");
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Error getting weight limits data from weight_limits table: " + ex.Message);
+            }
             dtWeightLimits = tblWeighLimits.table_data;
         }
         private void PopulateTickerNamesList()
@@ -443,15 +472,52 @@ namespace wpfTDX
                 this.weight_limit = new WeightLimit();
 
                 //get the default data from the funds table
-                tblFunds = new Table("funds", this.gbl_conn, "WHERE fundname='" + this.fundname + "'");
-                dtFundData = new DataTable();
-                dtFundData = tblFunds.table_data;
+                try
+                {
+                    tblFunds = new Table("funds", this.gbl_conn, "WHERE fundname='" + this.fundname + "'");
+                    dtFundData = new DataTable();
+                    dtFundData = tblFunds.table_data;
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error getting fund data from funds table: " + ex.Message);
+                }
                 // get the custom data from the funds_limit table
-                tblFundLimits = new Table("fund_limits", this.gbl_conn, "WHERE fundname='" + fundname + "'");
-                dtFundLimits = tblFundLimits.table_data;
-                //get the live limits data from the postions_target table
-                tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "' AND sub_tickername = current_contract and sub_tickername !='NONE'");
-                tblRiskMetrics = new Table("risk_metrics", this.gbl_conn, "WHERE fundname='" + fundname + "'");
+                try
+                {
+                    tblFundLimits = new Table("fund_limits", this.gbl_conn, "WHERE fundname='" + fundname + "'");
+                    dtFundLimits = tblFundLimits.table_data;
+                }
+                catch(Exception ex)
+                {
+                   MessageBox.Show("Error getting fund limits data from fund_limits table: " + ex.Message);
+                }
+                try
+                {
+                    //get the live limits data from the postions_target table
+                    tblTargetPositions = new Table("target_positions", this.gbl_conn, "WHERE fundname='" + fundname + "' AND sub_tickername = current_contract and sub_tickername !='NONE'");
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error getting target positions data from target_positions table: " + ex.Message);
+                }
+                try
+                {
+                    tblTargetPositions.select_latest("WHERE fundname='" + fundname + "' AND sub_tickername = current_contract and sub_tickername !='NONE'");
+                
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error getting latest target positions data from target_positions table: " + ex.Message);
+                }
+                try
+                {
+                    tblRiskMetrics = new Table("risk_metrics", this.gbl_conn, "WHERE fundname='" + fundname + "'");
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error getting risk metrics data from risk_metrics table: " + ex.Message);
+                }
                 dtLive = tblTargetPositions.table_data;
                 dtLiveFund = tblRiskMetrics.table_data;//tblTargetPositions.table_data;
                 ProcessCustomFundLimits(dtFundLimits);

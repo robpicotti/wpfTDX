@@ -236,6 +236,21 @@ namespace wpfTDX
                 }
             }
         }
+        private ObservableCollection<ScaledPositionsDataModel> _scaledPositionsData
+            = new ObservableCollection<ScaledPositionsDataModel>();
+        public ObservableCollection<ScaledPositionsDataModel> ScaledPositionsData
+        {
+            get => _scaledPositionsData;
+            set
+            {
+                if (!ReferenceEquals(_scaledPositionsData, value))
+                {
+                    _scaledPositionsData = value ?? new ObservableCollection<ScaledPositionsDataModel>();
+                    OnPropertyChanged(nameof(ScaledPositionsData));
+                }
+            }
+        }
+
 
         public ObservableCollection<MergedTickerRow> MergedRows { get; } = new ObservableCollection<MergedTickerRow>();
 
@@ -411,6 +426,19 @@ namespace wpfTDX
             }
         }
 
+
+        public async Task LoadScaledPositionsAsync()
+        {
+            var client = new HttpClient();
+
+            var content = new StringContent("{}", Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("http://localhost:5001/get_scaled_positions", content);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            var root = JObject.Parse(json);
+        }
+
+
         public async Task LoadTadPositionsDataAsync()
         {
             var client = new HttpClient();
@@ -425,6 +453,8 @@ namespace wpfTDX
             var positionsJson = (JObject)root["positions"];
             var viewPositionsJson = (JObject)root["viewpositions"];
             var filterPositionsJson = (JObject)root["filterpositions"];
+            // Accept either "scaledpositions" or "scaled_positions"
+            JToken scaledPositionsJson = root["scaledpositions"] ?? root["scaled_positions"];
 
             // Work dict keyed by ticker (change to (ticker,fundgroup) later if needed)
             var merged = new Dictionary<string, TadPositionsDataModel>(StringComparer.OrdinalIgnoreCase);
@@ -505,6 +535,61 @@ namespace wpfTDX
                 }
             }
 
+            if (scaledPositionsJson != null &&
+                scaledPositionsJson.Type != JTokenType.Null &&
+                scaledPositionsJson.Type != JTokenType.Undefined)
+            {
+                var list = new List<ScaledPositionsDataModel>();
+
+                if (scaledPositionsJson.Type == JTokenType.Array)
+                {
+                    foreach (JToken t in (JArray)scaledPositionsJson)
+                    {
+                        var item = t.ToObject<ScaledPositionsDataModel>() ?? new ScaledPositionsDataModel();
+
+                        // Map scale_factor from backend: scaled_position → ScaledPercent
+                        if (item.ScaledPercent == null)
+                            item.ScaledPercent = t.Value<double?>("scaled_position");
+
+                        list.Add(item);
+                    }
+                }
+                else if (scaledPositionsJson.Type == JTokenType.Object)
+                {
+                    foreach (var kv in (JObject)scaledPositionsJson)
+                    {
+                        var t = (JObject)kv.Value;
+                        var item = t.ToObject<ScaledPositionsDataModel>() ?? new ScaledPositionsDataModel();
+
+                        if (string.IsNullOrWhiteSpace(item.TickerName))
+                            item.TickerName = kv.Key;
+
+                        if (item.ScaledPercent == null)
+                            item.ScaledPercent = t.Value<double?>("scaled_position");
+
+                        list.Add(item);
+                    }
+                }
+
+                // Optional trims
+                foreach (var r in list)
+                {
+                    r.FundGroupName = r.FundGroupName?.Trim();
+                    r.FundName = r.FundName?.Trim();
+                    r.TickerName = r.TickerName?.Trim();
+                }
+
+                ScaledPositionsData = new ObservableCollection<ScaledPositionsDataModel>(
+                    list.OrderBy(x => x.TickerName, StringComparer.OrdinalIgnoreCase)
+                );
+            }
+            else
+            {
+                // empty/missing → just clear
+                ScaledPositionsData = new ObservableCollection<ScaledPositionsDataModel>();
+            }
+
+
             // Push into your ObservableCollection
             TadPositionsData.Clear();
             foreach (var m in merged.Values.OrderBy(x => x.Tickername))
@@ -513,6 +598,17 @@ namespace wpfTDX
 
         public async Task RebuildMerged(bool preserveUserFiFlags = false)
         {
+
+            string MakeKey(string t, string fg, string fn)
+            {
+                return $"{(t ?? "").Trim().ToUpperInvariant()}|{(fg ?? "").Trim().ToUpperInvariant()}|{(fn ?? "").Trim().ToUpperInvariant()}";
+            }
+
+            var scaledByComposite = (ScaledPositionsData ?? new ObservableCollection<ScaledPositionsDataModel>())
+                .GroupBy(s => MakeKey(s.TickerName, s.FundGroupName, s.FundName))
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+
             // capture current rows (for preserving user edits/baselines)
             Dictionary<string, MergedTickerRow> previous = null;
             if (preserveUserFiFlags)
@@ -597,6 +693,15 @@ namespace wpfTDX
                     PositionDeployment = tp.PositionDeployment,
                 };
 
+                ScaledPositionsDataModel sp = null;
+                scaledByComposite.TryGetValue(
+                    MakeKey(tp.Tickername, fi?.FundGroup, fi?.FundName), out sp);
+
+                // scale_factor ← scaled_position (loaded into ScaledPercent above)
+                row.ScaleFactor = sp?.ScaledPercent;
+
+
+
                 // If we're reloading ONLY positions, keep the user's current flags and old baselines
                 if (preserveUserFiFlags && previous != null && previous.TryGetValue(tp.Tickername, out var old))
                 {
@@ -658,9 +763,16 @@ namespace wpfTDX
                 {
                     Tickername = fiOnly.TickerName,
                     Runtime = fiOnly.Runtime,
+                    FundGroup = fiOnly.FundGroup,   // >>> add this
+                    FundName = fiOnly.FundName,    // >>> and this
                     Rescale = fiOnly.Rescale,
                     LongOnly = fiOnly.LongOnly,
                 };
+                // >>> scale_factor (scaled_position) join using (ticker, fundgroup, fund)
+                ScaledPositionsDataModel sp2 = null;
+                scaledByComposite.TryGetValue(
+                    MakeKey(row.Tickername, row.FundGroup, row.FundName), out sp2);
+                row.ScaleFactor = sp2?.ScaledPercent;   // your scale_factor
                 // if preserving edits and we had a previous row, restore it
                 if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var old))
                 {
@@ -674,6 +786,9 @@ namespace wpfTDX
                 }
                 MergedRows.Add(row);
             }
+
+    
+
 
             if (MergedRowsView != null) MergedRowsView.Refresh();
 
@@ -868,6 +983,19 @@ namespace wpfTDX
             public string Tickername { get; set; }
             public string FundGroup { get; set; }
             public string FundName { get; set; }
+            private double? _scaleFactor;
+            public double? ScaleFactor
+            {
+                get => _scaleFactor;
+                set
+                {
+                    if (_scaleFactor != value)
+                    {
+                        _scaleFactor = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
             public bool? OriginalRescale { get; set; }
             private bool? _rescale;
             public bool? Rescale 

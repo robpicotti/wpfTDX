@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -25,11 +26,12 @@ namespace wpfTDX
     {
 
         private FilterIntervalsViewModel _viewModel;
+        private SqlConnection gbl_conn;
 
-        public winFilterIntervals()
+        public winFilterIntervals(SqlConnection conn)
         {
             InitializeComponent();
-
+            this.gbl_conn = conn;
             _viewModel = new FilterIntervalsViewModel();
             DataContext = _viewModel;
         }
@@ -260,10 +262,12 @@ namespace wpfTDX
 
                     // Apply the fund group chosen per row (user picked it in the grid)
                     // "ALL" can mean no specific group if you prefer null
-                    row.FundGroup = string.Equals(tr.FundGroupName, "*", StringComparison.OrdinalIgnoreCase)
-                                    ? null
-                                    : tr.FundGroupName;
+                    row.FundGroup = string.IsNullOrWhiteSpace(tr.FundGroupName)
+                        ? null
+                        : tr.FundGroupName.Trim();
 
+                    //need to change this
+                    row.FundName = "*";
                     vm.MergedRows.Add(row);
                 }
             }
@@ -375,5 +379,18 @@ namespace wpfTDX
             }
         }
 
+        private void ScalePosition_Click(object sender, RoutedEventArgs e)
+        {
+            var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
+
+            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",this.gbl_conn);
+            bool? result = windowScale.ShowDialog();
+        }
+
+        private void ViewScaledPositions_Click(object sender, RoutedEventArgs e)
+        {
+            new winScaledPositions().Show(); // or ShowDialog()
+
+        }
     }
 }

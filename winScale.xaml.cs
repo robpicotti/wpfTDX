@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,15 +23,20 @@ namespace wpfTDX
         string FUNDNAME;
         string SUBACCOUNT;
         string TICKERNAME;
+        string SCALE_TYPE;
+        SqlConnection GBL_CONN;
+
         double step_size { get; set; }
         double scaled_target { get; set; }
         private Position position { get; set; }
-        public winScale(object position, string fundname,string subaccount,string tickername)
+        public winScale(object position, string fundname,string subaccount,string tickername, string scale_type, SqlConnection conn)
         {
             InitializeComponent();
             FUNDNAME = fundname;
             SUBACCOUNT = subaccount;
             TICKERNAME = tickername;
+            SCALE_TYPE = scale_type;
+            this.GBL_CONN = conn;
             this.position = (Position)position;
             LoadForm();
         }
@@ -38,7 +44,18 @@ namespace wpfTDX
         {
             txtSubaccount.Text = SUBACCOUNT;
             txtTickername.Text = TICKERNAME;
-            txtScaledPosition.Text = this.position.get_scaled_percent(TICKERNAME).ToString();
+            if (this.position != null)
+            {
+                txtScaledPosition.Text = this.position.get_scaled_percent(FUNDNAME, TICKERNAME).ToString();
+            }
+            else
+            {
+                lblScaledPosition.IsEnabled = false;
+                txtScaledPosition.IsEnabled = false;
+                lblSubaccount.IsEnabled = false;
+                txtSubaccount.IsEnabled = false;
+
+            }
         }
         private void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -60,7 +77,14 @@ namespace wpfTDX
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        this.position.scale_position(FUNDNAME, TICKERNAME, double.Parse(txtStepSize.Text),double.Parse(txtScaledTarget.Text));
+                        if (this.position == null)
+                        {
+                           this.position = new Position(SUBACCOUNT, GBL_CONN);
+                        }
+                        //else
+                        //{
+                        this.position.scale_position(FUNDNAME, TICKERNAME, double.Parse(txtStepSize.Text), double.Parse(txtScaledTarget.Text), SCALE_TYPE);
+                        //}
                         string title = "Scaled positions";
                         string mes = "position has been entered for scaling for subaccount: " + SUBACCOUNT + " and tickername: " + TICKERNAME;
                         MessageBox.Show(mes, title, MessageBoxButton.OK, MessageBoxImage.Information);

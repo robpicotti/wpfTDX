@@ -73,21 +73,35 @@ namespace wpfTDX
         
         private void cboFundName_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            try
-            {
+
                 Cursor = Cursors.Wait;
                 this.FundsList.Clear();
-                RefreshFundLimits();
-                RefreshTickerLimits();
-            }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Refresh funds", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                Cursor = Cursors.Arrow;
-            }
+                try
+                {
+                    RefreshFundLimits();
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Refresh fund limits", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    Cursor = Cursors.Arrow;
+                }
+                try
+                {
+                    RefreshTickerLimits();
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Refresh ticker limits", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    Cursor = Cursors.Arrow;
+                }
+
+
         }
         
         private void RefreshFundLimits()
@@ -271,11 +285,46 @@ namespace wpfTDX
             {
                 //set up the ticker limits based on the fund
                 string _fundName = this.FundsList[i].ToString();
-                this.limits = new Limits(_fundName, this.gbl_conn);
-                this.tickerLimits = new TickerLimits(_fundName, this.limits.fundLimits, this.gbl_conn);
-                dtNotional.Merge(populateNotionalTickerLimits());
-                dtLiquidity.Merge(populateTickerLiquidityLimits());
-                dtWeights.Merge(populateTickerWeightLimits());
+                try
+                {
+                    this.limits = new Limits(_fundName, this.gbl_conn);
+                }
+                catch(Exception ex)
+                {
+                   MessageBox.Show("Error setting up fund limits for fund: " + _fundName + "\r\n" + ex.Message);
+                }
+                try
+                {
+                    this.tickerLimits = new TickerLimits(_fundName, this.limits.fundLimits, this.gbl_conn);
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error setting up ticker limits for fund: " + _fundName + "\r\n" + ex.Message);
+                }
+                try
+                {
+                    dtNotional.Merge(populateNotionalTickerLimits());
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error populating notional ticker limits for fund: " + _fundName + "\r\n" + ex.Message);
+                }
+                try
+                {
+                    dtLiquidity.Merge(populateTickerLiquidityLimits());
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error populating liquidity ticker limits for fund: " + _fundName + "\r\n" + ex.Message);
+                }
+                try
+                {
+                    dtWeights.Merge(populateTickerWeightLimits());
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error populating weight ticker limits for fund: " + _fundName + "\r\n" + ex.Message);
+                }
                 // Hide the "color" & flagged column
                 var columnsToHide = new List<string> { "Color", "Flagged" };
                 // Hide specified columns
@@ -1035,7 +1084,7 @@ namespace wpfTDX
             switch(limitType)
             {
                 case "Notional":
-                    insertSQL += "notional_limits ";
+                    insertSQL += "notional_pct_limits ";
                     break;
                 case "Weight":
                     insertSQL += "weight_limits ";

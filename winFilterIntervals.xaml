@@ -166,6 +166,8 @@
                 <ContextMenu x:Key="RowContextMenu" x:Shared="False">
                     <MenuItem Header="Delete ticker" Click="DeleteTickerMenuItem_Click"/>
                     <MenuItem Header="Add ticker..." Click="AddTickerMenuItem_Click"/>
+                    <MenuItem Header="Scale Position" Click="ScalePosition_Click" />
+                    <MenuItem Header="View All Scaled Positions" Click="ViewScaledPositions_Click" />
                 </ContextMenu>
 
                 <!-- Grid empty-area context menu -->
@@ -204,6 +206,9 @@
                 <DataGridTextColumn Header="fund"
                                     Binding="{Binding FundName}"
                                     IsReadOnly="True" />
+
+                <DataGridTextColumn Header="scale factor"
+                    Binding="{Binding ScaleFactor, StringFormat={}{0:P1}}"/>
 
                 <!-- Rescale: dropdown True/False, bold when changed -->
                 <DataGridTextColumn Header="rescale"

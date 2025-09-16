@@ -305,7 +305,8 @@ namespace TDX
         }
         public DataTable get_funds(SqlConnection conn)
         {
-            string sql_text = "SELECT DISTINCT fundname from funds WHERE fundgroupname NOT in ('benchmarks', 'market_neutral') AND closed = 0 ";
+           
+            string sql_text = "SELECT DISTINCT fundname from funds WHERE  closed = 0 ";
             sql_text += " ORDER BY fundname ";
             DataTable dt = execSQL(sql_text, conn);
 

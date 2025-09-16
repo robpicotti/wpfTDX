@@ -1,0 +1,72 @@
+﻿<Window x:Class="wpfTDX.winScaledPositions"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Scaled Positions" Height="600" Width="1000"
+        Loaded="Window_Loaded">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Filters -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Fund Group:" VerticalAlignment="Center"/>
+            <TextBox Width="160" Margin="6,0,12,0"
+                     Text="{Binding FundGroupFilter, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="Fund:" VerticalAlignment="Center"/>
+            <TextBox Width="160" Margin="6,0,12,0"
+                     Text="{Binding FundNameFilter, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="Ticker:" VerticalAlignment="Center"/>
+            <TextBox Width="140" Margin="6,0,12,0"
+                     Text="{Binding TickerFilter, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+
+        <!-- Commands / status -->
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,8">
+            <Button Content="Reload" Width="100" Height="28" Click="Reload_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="{Binding StatusText}"/>
+            <ProgressBar Width="140" Height="14" Margin="10,0,0,0" IsIndeterminate="True">
+                <ProgressBar.Style>
+                    <Style TargetType="ProgressBar">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ProgressBar.Style>
+            </ProgressBar>
+        </StackPanel>
+
+        <!-- Grid -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding RowsView}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True"
+                  EnableRowVirtualization="True"
+                  EnableColumnVirtualization="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Fund Group" Binding="{Binding FundGroupName}" Width="*" />
+                <DataGridTextColumn Header="Fund"       Binding="{Binding FundName}"      Width="*" />
+                <DataGridTextColumn Header="Tickername"     Binding="{Binding TickerName}"    Width="120" />
+                <DataGridTextColumn Header="Scale Type" Binding="{Binding ScaleType}"     Width="120" />
+                <DataGridTextColumn Header="Scale Factor" Binding="{Binding ScaledPercent, StringFormat=F4}" Width="120" />
+                <DataGridTextColumn Header="Target"       Binding="{Binding ScaledTarget,  StringFormat=F4}" Width="120" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

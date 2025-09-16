@@ -84,7 +84,7 @@ namespace wpfTDX
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            winScale scalePositions = new winScale(this.ViewModel.TdxPosition,this.ViewModel.SelectedFund.FundName,SUBACCOUNT,TICKERNAME);
+            winScale scalePositions = new winScale(this.ViewModel.TdxPosition,this.ViewModel.SelectedFund.FundName,SUBACCOUNT,TICKERNAME,"out", this.gbl_conn);
 
             // Show the edit window as a dialog (blocks user interaction with the parent window)
             bool? result = scalePositions.ShowDialog();

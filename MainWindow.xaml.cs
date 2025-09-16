@@ -1400,7 +1400,7 @@ namespace wpfTDX
 
         private void TextBlock_MouseLeftButtonDown_13(object sender, MouseButtonEventArgs e)
         {
-            winFilterIntervals winFilterIntervals = new winFilterIntervals();
+            winFilterIntervals winFilterIntervals = new winFilterIntervals(this.sql_conn);
             winFilterIntervals.ShowDialog();
         }
     }

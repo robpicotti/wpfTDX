@@ -120,6 +120,7 @@
     <Compile Include="DataModels\JobParameterValueDataModel.cs" />
     <Compile Include="DataModels\OrderDataModel.cs" />
     <Compile Include="DataModels\PositionsDataModel.cs" />
+    <Compile Include="DataModels\ScaledPositionsDataModel.cs" />
     <Compile Include="DataModels\ScheduleDaysDataModel.cs" />
     <Compile Include="DataModels\ScheduledJobDataModel.cs" />
     <Compile Include="DataModels\ScheduleFrequenciesDataModel.cs" />
@@ -191,12 +192,16 @@
     </Compile>
     <Compile Include="Util.cs" />
     <Compile Include="ViewModels\PositionViewModel.cs" />
+    <Compile Include="ViewModels\ScaledPositionsViewModel.cs" />
     <Compile Include="ViewModels\ScheduleJobViewModel.cs" />
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="ViewModels\TickerFreezerViewModel.cs" />
     <Compile Include="WebServiceData\WebServiceData.cs" />
     <Compile Include="Windows\winAddTicker.xaml.cs">
       <DependentUpon>winAddTicker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\winScaledPositions.xaml.cs">
+      <DependentUpon>winScaledPositions.xaml</DependentUpon>
     </Compile>
     <Compile Include="winFilterIntervals.xaml.cs">
       <DependentUpon>winFilterIntervals.xaml</DependentUpon>
@@ -299,6 +304,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\winAddTicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\winScaledPositions.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
