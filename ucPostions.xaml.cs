@@ -84,7 +84,7 @@ namespace wpfTDX
 
         private void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            winScale scalePositions = new winScale(this.ViewModel.TdxPosition,this.ViewModel.SelectedFund.FundName,SUBACCOUNT,TICKERNAME,"out", this.gbl_conn);
+            winScale scalePositions = new winScale(this.ViewModel.TdxPosition,this.ViewModel.SelectedFund.FundName,SUBACCOUNT,TICKERNAME,"out", null,this.gbl_conn);
 
             // Show the edit window as a dialog (blocks user interaction with the parent window)
             bool? result = scalePositions.ShowDialog();
@@ -304,6 +304,11 @@ namespace wpfTDX
             {
                 MessageBox.Show(ex.Message, "closeout expired position error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void MenuItem_Click_8(object sender, RoutedEventArgs e)
+        {
+            new winScaledPositions().Show();
         }
     }
 }

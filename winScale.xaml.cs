@@ -24,12 +24,14 @@ namespace wpfTDX
         string SUBACCOUNT;
         string TICKERNAME;
         string SCALE_TYPE;
+        double? SCALE_FACTOR;
         SqlConnection GBL_CONN;
 
         double step_size { get; set; }
         double scaled_target { get; set; }
         private Position position { get; set; }
-        public winScale(object position, string fundname,string subaccount,string tickername, string scale_type, SqlConnection conn)
+        public winScale(object position, string fundname,string subaccount,string tickername, string scale_type,
+            double? ScaleFactor,SqlConnection conn)
         {
             InitializeComponent();
             FUNDNAME = fundname;
@@ -37,19 +39,26 @@ namespace wpfTDX
             TICKERNAME = tickername;
             SCALE_TYPE = scale_type;
             this.GBL_CONN = conn;
+            this.SCALE_FACTOR = ScaleFactor;
             this.position = (Position)position;
             LoadForm();
         }
         private void LoadForm()
         {
-            txtSubaccount.Text = SUBACCOUNT;
+            txtSubaccount.Text = FUNDNAME;
             txtTickername.Text = TICKERNAME;
+            
             if (this.position != null)
             {
                 txtScaledPosition.Text = this.position.get_scaled_percent(FUNDNAME, TICKERNAME).ToString();
             }
             else
             {
+                if(SCALE_TYPE.ToUpper()=="FILTERED")
+                {
+                    txtScaledPosition.Text = (SCALE_FACTOR * 100).ToString();
+                }
+                
                 lblScaledPosition.IsEnabled = false;
                 txtScaledPosition.IsEnabled = false;
                 lblSubaccount.IsEnabled = false;

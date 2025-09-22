@@ -13,7 +13,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="5">
-                <TextBlock x:Name="lblSubaccount"  Text="subaccount:" FontWeight="Bold" Margin="5 0 0 0"/>
+                <TextBlock x:Name="lblSubaccount"  Text="fundname:" FontWeight="Bold" Margin="5 0 0 0"/>
                 <TextBox x:Name="txtSubaccount" IsReadOnly="True" Margin="5"/>
                 <TextBlock Text="tickername:" Margin="5 10" FontWeight="Bold"/>
                 <TextBox x:Name="txtTickername" IsReadOnly="True" Margin="5 -5 5 0"/>

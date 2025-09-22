@@ -18,7 +18,7 @@
             <TextBlock Text="Fund:" VerticalAlignment="Center"/>
             <TextBox Width="160" Margin="6,0,12,0"
                      Text="{Binding FundNameFilter, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock Text="Ticker:" VerticalAlignment="Center"/>
+            <TextBlock Text="Tickername:" VerticalAlignment="Center"/>
             <TextBox Width="140" Margin="6,0,12,0"
                      Text="{Binding TickerFilter, UpdateSourceTrigger=PropertyChanged}"/>
         </StackPanel>

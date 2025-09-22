@@ -68,8 +68,19 @@ namespace TDX
             //drow["subaccount"] = this.subaccount;
             drow["tickername"] = tickername;
             drow["scaled_stepsize"] = scale_stepsize;
-            drow["scaled_percent"] = get_scaled_percent(fundname,tickername);
-            drow["scaled_target"] = scaled_target;
+            if (scale_type.ToUpper() != "FILTERED")
+            {
+                drow["scaled_percent"] = get_scaled_percent(fundname, tickername);
+            }
+            else
+            {
+                Table tbl_scaled = new Table("scaled_positions", gbl_conn);
+                string _where  = "WHERE fundname='" + fundname + "' AND tickername='" + tickername + "'";
+                DataTable dtScaled = tbl_scaled.select_latest(_where).table_data;
+                double? _scaledPercent_filtered = dtScaled.Rows.Count > 0 ? dtScaled.Rows[0].Field<double?>("scaled_percent") : 1;
+                drow["scaled_percent"] = _scaledPercent_filtered;
+            }
+                drow["scaled_target"] = scaled_target;
             drow["scaled_timestep"] = scaled_timestep;
             drow["scaled_type"] = scale_type;
             dt.Rows.Add(drow);
@@ -84,11 +95,20 @@ namespace TDX
         /// <returns></returns>
         public double? get_scaled_percent(string fundname,string tickername)
         {
-            string where = "WHERE tickername='" + tickername + "' AND subaccountname='" + this.subaccount + "'" + " AND fundname='" + fundname + "'";
+            string where = "WHERE tickername='" + tickername +  "' AND fundname='" + fundname + "'";
             Table tbl = new Table("target_positions", gbl_conn, where);
 
             if (tbl.table_data.Rows.Count == 0) return null;
 
+            var row = tbl.table_data.Rows[0];
+            // If the DataTable column is numeric, this maps DBNull -> null automatically:
+            return row.Field<double?>("scaled_percent");
+        }
+        public static double? get_scaled_percent(string fundname,  string tickername, SqlConnection conn)
+        {
+            string where = "WHERE tickername='" + tickername +  "' AND fundname='" + fundname + "'";
+            Table tbl = new Table("target_positions", conn, where);
+            if (tbl.table_data.Rows.Count == 0) return null;
             var row = tbl.table_data.Rows[0];
             // If the DataTable column is numeric, this maps DBNull -> null automatically:
             return row.Field<double?>("scaled_percent");

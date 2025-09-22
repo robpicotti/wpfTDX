@@ -102,6 +102,7 @@
                                 <MenuItem Header="freeze fund-tickername" Click="MenuItem_Click_5"/>
                                 <MenuItem Header="View trading history" Click="MenuItem_Click_6"/>
                                 <MenuItem Header="closeout expired position" Click="MenuItem_Click_7" />
+                                <MenuItem Header="View all scaled positions" Click="MenuItem_Click_8" />    
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                     </DataGrid>

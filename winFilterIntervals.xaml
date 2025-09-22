@@ -167,7 +167,7 @@
                     <MenuItem Header="Delete ticker" Click="DeleteTickerMenuItem_Click"/>
                     <MenuItem Header="Add ticker..." Click="AddTickerMenuItem_Click"/>
                     <MenuItem Header="Scale Position" Click="ScalePosition_Click" />
-                    <MenuItem Header="View All Scaled Positions" Click="ViewScaledPositions_Click" />
+                    <MenuItem Header="View all scaled positions" Click="ViewScaledPositions_Click" />
                 </ContextMenu>
 
                 <!-- Grid empty-area context menu -->

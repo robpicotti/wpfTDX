@@ -383,7 +383,7 @@ namespace wpfTDX
         {
             var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
 
-            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",this.gbl_conn);
+            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",row.ScaleFactor,this.gbl_conn);
             bool? result = windowScale.ShowDialog();
         }
 
