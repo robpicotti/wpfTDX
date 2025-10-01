@@ -218,7 +218,7 @@ namespace wpfTDX
                 it.ScaledPercent = sp;
             }
 
-            if (!it.ScaledTarget.HasValue)
+             if (!it.ScaledTarget.HasValue)
                 it.ScaledTarget = src.Value<double?>("scaled_target");
 
             it.FundGroupName = it.FundGroupName != null ? it.FundGroupName.Trim() : null;

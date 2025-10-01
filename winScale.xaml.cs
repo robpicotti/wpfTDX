@@ -25,19 +25,22 @@ namespace wpfTDX
         string TICKERNAME;
         string SCALE_TYPE;
         double? SCALE_FACTOR;
+        double? SCALED_PERCENT;
         SqlConnection GBL_CONN;
 
         double step_size { get; set; }
         double scaled_target { get; set; }
+
         private Position position { get; set; }
         public winScale(object position, string fundname,string subaccount,string tickername, string scale_type,
-            double? ScaleFactor,SqlConnection conn)
+            double? ScaleFactor,double? ScaledPercent,SqlConnection conn)
         {
             InitializeComponent();
             FUNDNAME = fundname;
             SUBACCOUNT = subaccount;
             TICKERNAME = tickername;
             SCALE_TYPE = scale_type;
+            this.SCALED_PERCENT = ScaledPercent;
             this.GBL_CONN = conn;
             this.SCALE_FACTOR = ScaleFactor;
             this.position = (Position)position;
@@ -56,7 +59,7 @@ namespace wpfTDX
             {
                 if(SCALE_TYPE.ToUpper()=="FILTERED")
                 {
-                    txtScaledPosition.Text = (SCALE_FACTOR * 100).ToString();
+                    txtScaledPosition.Text = this.SCALED_PERCENT.ToString();
                 }
                 
                 lblScaledPosition.IsEnabled = false;

@@ -114,6 +114,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\FilterIntervalsUpsertRow.cs" />
+    <Compile Include="Classes\ScaledPositionsInsertRow.cs" />
     <Compile Include="DataModels\ExecutionsDataModel.cs" />
     <Compile Include="DataModels\FilterIntervalsDataModel.cs" />
     <Compile Include="DataModels\JobParametersDataModel.cs" />

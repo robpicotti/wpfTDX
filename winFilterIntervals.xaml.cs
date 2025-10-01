@@ -287,6 +287,8 @@ namespace wpfTDX
         private DispatcherTimer _pollTimer;
         private DispatcherTimer _boostTimer;
 
+
+
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as FilterIntervalsViewModel;
@@ -295,54 +297,83 @@ namespace wpfTDX
             try
             {
                 // Stop any previous poll/boost
-                if (_pollTimer != null) { _pollTimer.Stop(); _pollTimer = null; }
-                if (_boostTimer != null) { _boostTimer.Stop(); _boostTimer = null; }
+                _pollTimer?.Stop(); _pollTimer = null;
+                _boostTimer?.Stop(); _boostTimer = null;
 
                 vm.IsExecuting = true;
-                vm.ResetBoost(); // <— start boost from 0
+                vm.ResetBoost();
                 StatusTextBlock.Text = "Save started…";
 
-                var rows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
-                string jobId = await vm.UpsertFilterIntervalsStartAsync(rows);
+                // --- payloads ---
+                var intervalRows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
 
-                // Start the +10%/minute visual boost (capped at 90 while running)
+                bool Changed(double? oldV, double? newV)
+                    => newV.HasValue && (!oldV.HasValue || Math.Abs(newV.Value - oldV.Value) > 1e-9);
+
+                var scaledRows = vm.MergedRows
+                    .Where(r => Changed(r.ScaleFactor, r.NewScaleFactor))
+                    .Select(r => r.ToScaledPositionInsertRow())
+                    .ToList();
+
+                // --- Phase 1: intervals job ---
+                string jobId = await vm.UpsertFilterIntervalsStartAsync(intervalRows);
+
+
+
+                // AFTER (wrap in lambda to satisfy the delegate)
+                Func<string, Task<FilterIntervalsViewModel.UpsertJobStatus>> pollFunc =
+                    id => vm.GetUpsertFilterIntervalsStatusAsync(id);
+
+
+                bool inScaledPhase = false;
+
+                // client-side boost every minute (unchanged)
                 _boostTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-                _boostTimer.Tick += (s2, e2) =>
-                {
-                    if (vm.IsUpsertRunning) vm.IncreaseBoost(10);
-                };
+                _boostTimer.Tick += (s2, e2) => { if (vm.IsUpsertRunning) vm.IncreaseBoost(10); };
                 _boostTimer.Start();
 
-                // Poll every 3 seconds (unchanged cadence)
+                // poll every 3 seconds
                 _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
                 _pollTimer.Tick += async (s, args) =>
                 {
                     try
                     {
-                        var st = await vm.GetUpsertFilterIntervalsStatusAsync(jobId);
-
-                        // Keep VM in sync so ProgressPercent (and bar) blend server+boost
-                        vm.ApplyJobStatus(st); // <— IMPORTANT
+                        var st = await pollFunc(jobId);
+                        vm.ApplyJobStatus(st); // keeps ProgressPercent blended with boost
 
                         var status = st?.Status ?? "running";
                         var msg = st?.Message ?? "";
+                        var pct = vm.ProgressPercent;
+                        StatusTextBlock.Text = $"{status} {pct}% – {msg}";
 
-                        // Show the displayed (blended) percent, not raw server pct
-                        var displayPct = vm.ProgressPercent;
-                        StatusTextBlock.Text = $"{status} {displayPct}% – {msg}";
+                        bool isDone = status.Equals("done", StringComparison.OrdinalIgnoreCase);
+                        bool isFailed = status.Equals("failed", StringComparison.OrdinalIgnoreCase);
 
-                        if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+                        if (isDone || isFailed)
                         {
+                            // If phase 1 succeeded and we have changes, start phase 2
+                            if (!inScaledPhase && isDone && scaledRows.Count > 0)
+                            {
+                                inScaledPhase = true;
+                                vm.ResetBoost();
+                                StatusTextBlock.Text = "Saving scaled positions…";
+
+                                jobId = await vm.InsertScaledPositionsStartAsync(scaledRows);
+                                pollFunc = vm.GetInsertScaledPositionsStatusAsync; // swap to scaled-status endpoint
+                                return; // keep polling with the same timer
+                            }
+
+                            // Otherwise we are finished (either no scaled rows, or phase 2 finished)
                             _pollTimer.Stop(); _pollTimer = null;
                             _boostTimer.Stop(); _boostTimer = null;
-
                             vm.IsExecuting = false;
 
-                            if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase))
+                            if (isDone)
                             {
-                                // vm.ProgressPercent will now be 100 via EffectivePercent
-                                MessageBox.Show(this, "Saved filter intervals.", "Save",
+                                var okMsg = inScaledPhase
+                                    ? "Saved filter intervals and scaled positions."
+                                    : "Saved filter intervals.";
+                                MessageBox.Show(this, okMsg, "Save",
                                     MessageBoxButton.OK, MessageBoxImage.Information);
                             }
                             else
@@ -379,11 +410,113 @@ namespace wpfTDX
             }
         }
 
+
+        //private async void Button_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var vm = DataContext as FilterIntervalsViewModel;
+        //    if (vm == null) return;
+
+        //    try
+        //    {
+        //        // Stop any previous poll/boost
+        //        if (_pollTimer != null) { _pollTimer.Stop(); _pollTimer = null; }
+        //        if (_boostTimer != null) { _boostTimer.Stop(); _boostTimer = null; }
+
+        //        vm.IsExecuting = true;
+        //        vm.ResetBoost(); // <— start boost from 0
+        //        StatusTextBlock.Text = "Save started…";
+
+        //        var rows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
+        //        // Changed-scale rows (treat nulls carefully; only send when NewScaleFactor has a value and differs)
+        //        bool Changed(double? a, double? b)
+        //            => b.HasValue && (!a.HasValue || Math.Abs(b.Value - a.Value) > 1e-9);
+
+        //        var scaledRows = vm.MergedRows
+        //            .Where(r => Changed(r.ScaleFactor, r.NewScaleFactor))
+        //            .Select(r => r.ToScaledPositionInsertRow())  // implement this similar to ToUpsertRow()
+        //            .ToList();
+
+        //        string jobId = await vm.UpsertFilterIntervalsStartAsync(rows);
+
+        //        // Start the +10%/minute visual boost (capped at 90 while running)
+        //        _boostTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        //        _boostTimer.Tick += (s2, e2) =>
+        //        {
+        //            if (vm.IsUpsertRunning) vm.IncreaseBoost(10);
+        //        };
+        //        _boostTimer.Start();
+
+        //        // Poll every 3 seconds (unchanged cadence)
+        //        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        //        _pollTimer.Tick += async (s, args) =>
+        //        {
+        //            try
+        //            {
+        //                var st = await vm.GetUpsertFilterIntervalsStatusAsync(jobId);
+
+        //                // Keep VM in sync so ProgressPercent (and bar) blend server+boost
+        //                vm.ApplyJobStatus(st); // <— IMPORTANT
+
+        //                var status = st?.Status ?? "running";
+        //                var msg = st?.Message ?? "";
+
+        //                // Show the displayed (blended) percent, not raw server pct
+        //                var displayPct = vm.ProgressPercent;
+        //                StatusTextBlock.Text = $"{status} {displayPct}% – {msg}";
+
+        //                if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase) ||
+        //                    string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    _pollTimer.Stop(); _pollTimer = null;
+        //                    _boostTimer.Stop(); _boostTimer = null;
+
+        //                    vm.IsExecuting = false;
+
+        //                    if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase))
+        //                    {
+        //                        // vm.ProgressPercent will now be 100 via EffectivePercent
+        //                        MessageBox.Show(this, "Saved filter intervals.", "Save",
+        //                            MessageBoxButton.OK, MessageBoxImage.Information);
+        //                    }
+        //                    else
+        //                    {
+        //                        MessageBox.Show(this, "Save failed:\n" + (msg ?? "unknown error"), "Error",
+        //                            MessageBoxButton.OK, MessageBoxImage.Error);
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception pollEx)
+        //            {
+        //                _pollTimer?.Stop(); _pollTimer = null;
+        //                _boostTimer?.Stop(); _boostTimer = null;
+
+        //                vm.IsExecuting = false;
+        //                StatusTextBlock.Text = "failed – " + pollEx.Message;
+
+        //                MessageBox.Show(this, "Save status check failed:\n" + pollEx.Message, "Error",
+        //                    MessageBoxButton.OK, MessageBoxImage.Error);
+        //            }
+        //        };
+        //        _pollTimer.Start();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _pollTimer?.Stop(); _pollTimer = null;
+        //        _boostTimer?.Stop(); _boostTimer = null;
+
+        //        vm.IsExecuting = false;
+        //        StatusTextBlock.Text = "failed – " + ex.Message;
+
+        //        MessageBox.Show(this, "Save failed:\n" + ex.Message, "Error",
+        //            MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //}
+
         private void ScalePosition_Click(object sender, RoutedEventArgs e)
         {
             var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
 
-            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",row.ScaleFactor,this.gbl_conn);
+            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",row.ScaleFactor,row.ScaledPercent, this.gbl_conn);
             bool? result = windowScale.ShowDialog();
         }
 

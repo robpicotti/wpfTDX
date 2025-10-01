@@ -59,6 +59,86 @@ namespace wpfTDX
             => Binding.DoNothing;
     }
 
+    public class NullableDoubleConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value is double d ? d.ToString(culture) : string.Empty;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var s = value as string;
+            if (string.IsNullOrWhiteSpace(s)) return null;              // <<< key line
+            if (double.TryParse(s, NumberStyles.Any, culture, out var d)) return d;
+            return Binding.DoNothing;                                   // keep old value if invalid
+        }
+    }
+    public class NullablePercentInputConverter : IValueConverter
+    {
+        // Model -> UI (edit box). Show raw fraction, e.g. 0.75
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null) return string.Empty;
+
+            if (value is double)                      // no pattern variable
+                return ((double)value).ToString(culture);
+
+            // be generous for other numeric types
+            var formattable = value as IFormattable;
+            return formattable != null
+                ? formattable.ToString(null, culture)
+                : value.ToString();
+        }
+
+        // UI -> Model. Accept "75", "75%", "0.75", "".
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var s = value as string;
+            if (string.IsNullOrWhiteSpace(s)) return null;
+
+            s = s.Trim();
+            var pct = culture.NumberFormat.PercentSymbol;
+            var hadPercent = s.EndsWith(pct, StringComparison.Ordinal);
+            if (hadPercent) s = s.Substring(0, s.Length - pct.Length).Trim();
+
+            double x;
+            if (!double.TryParse(s, NumberStyles.Float | NumberStyles.AllowThousands, culture, out x))
+                return Binding.DoNothing;
+
+            if (hadPercent || x >= 1.0) x /= 100.0;   // "75" or "75%" => 0.75
+            return x;
+        }
+    }
+
+    public class NullablePercentDoubleConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            // Pass the numeric value through; StringFormat on the binding will handle "{0:P1}"
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var s = value as string;
+            if (string.IsNullOrWhiteSpace(s)) return null; // treat empty as null
+
+            s = s.Trim();
+            bool hadPercent = s.EndsWith(culture.NumberFormat.PercentSymbol);
+            if (hadPercent)
+                s = s.Substring(0, s.Length - culture.NumberFormat.PercentSymbol.Length).Trim();
+
+            if (double.TryParse(s,
+                    NumberStyles.Float | NumberStyles.AllowThousands,
+                    culture, out var d))
+            {
+                if (hadPercent) d /= 100.0;  // "25%" -> 0.25
+                return d;
+            }
+
+            // Invalid input: keep the old value (don’t push error to source)
+            return Binding.DoNothing;
+        }
+    }
 
     public sealed class CompareRoundedConverter : IMultiValueConverter
     {
@@ -550,6 +630,8 @@ namespace wpfTDX
                         // Map scale_factor from backend: scaled_position → ScaledPercent
                         if (item.ScaledPercent == null)
                             item.ScaledPercent = t.Value<double?>("scaled_position");
+                        if (item.ScaledTarget == null)
+                            item.ScaledTarget = t.Value<double?>("scaled_position");
 
                         list.Add(item);
                     }
@@ -566,7 +648,8 @@ namespace wpfTDX
 
                         if (item.ScaledPercent == null)
                             item.ScaledPercent = t.Value<double?>("scaled_position");
-
+                        if (item.ScaledTarget == null)
+                            item.ScaledTarget = t.Value<double?>("scaled_position");
                         list.Add(item);
                     }
                 }
@@ -698,7 +781,8 @@ namespace wpfTDX
                     MakeKey(tp.Tickername, fi?.FundGroup, fi?.FundName), out sp);
 
                 // scale_factor ← scaled_position (loaded into ScaledPercent above)
-                row.ScaleFactor = sp?.ScaledPercent;
+                row.ScaleFactor = sp?.ScaledTarget;
+                row.ScaledPercent = sp?.ScaledPercent;
 
 
 
@@ -750,6 +834,7 @@ namespace wpfTDX
                 row.RecalcNewTrades();
                 row.RecalcRescaledIntervals();
                 row.RecalcNewDeployment();
+                row.ReCalcScaledDeployment();
 
                 MergedRows.Add(row);
             }
@@ -773,6 +858,7 @@ namespace wpfTDX
                 scaledByComposite.TryGetValue(
                     MakeKey(row.Tickername, row.FundGroup, row.FundName), out sp2);
                 row.ScaleFactor = sp2?.ScaledPercent;   // your scale_factor
+                row.NewScaleFactor = 1;
                 // if preserving edits and we had a previous row, restore it
                 if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var old))
                 {
@@ -892,6 +978,32 @@ namespace wpfTDX
             }
         }
 
+        // in FilterIntervalsViewModel
+        public async Task<string> InsertScaledPositionsStartAsync(IEnumerable<ScaledPositionsInsertRow> rows)
+        {
+            var payload = new { rows = rows };
+            var json = JsonConvert.SerializeObject(payload);
+
+            using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+            using (var resp = await _http.PostAsync("/insert_scaled_positions/start", content)) // << was intervals endpoint
+            {
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+                var jo = JObject.Parse(body);
+                return (string)jo["job_id"];
+            }
+        }
+
+        public async Task<UpsertJobStatus> GetInsertScaledPositionsStatusAsync(string jobId)
+        {
+            using (var resp = await _http.GetAsync($"/scaled_positions/status/{jobId}"))
+            {
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<UpsertJobStatus>(body);
+            }
+        }
+
         // Poll status
         public async Task<UpsertJobStatus> GetUpsertFilterIntervalsStatusAsync(string jobId, System.Threading.CancellationToken ct = default)
         {
@@ -983,6 +1095,48 @@ namespace wpfTDX
             public string Tickername { get; set; }
             public string FundGroup { get; set; }
             public string FundName { get; set; }
+            private float? _scaledDeployment { get; set; }
+            public float? ScaledDeployment
+            {
+                get => _scaledDeployment;
+                set
+                {
+                    if (_scaledDeployment != value)
+                    {
+                        _scaledDeployment = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+            private double? _newScaleFactor;
+            public double? NewScaleFactor
+            {
+                get => _newScaleFactor;
+                set
+                {
+                    if (_newScaleFactor != value)
+                    {
+                        _newScaleFactor = value;
+                        ReCalcScaledDeployment();
+                        OnPropertyChanged();
+                    }
+                }
+            }
+            private double? _scaledPercent;
+            public double? ScaledPercent
+            {
+                get => _scaledPercent;
+                set
+                {
+                    if (_scaledPercent != value)
+                    {
+                        _scaledPercent = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+
             private double? _scaleFactor;
             public double? ScaleFactor
             {
@@ -1929,24 +2083,6 @@ namespace wpfTDX
                     return BgTransparent;
                 }
             }
-            //public Brush NewDeploymentBrush
-            //{
-            //    get
-            //    {
-            //        if (NewDeployment == null) return BgGrey;
-
-            //        var a = Math.Round(NewDeployment.Value, 1);
-            //        var b = Math.Round(FilteredDeployment ?? 0f, 1);
-
-            //        // If it's ~zero: grey on initial load (no edits), transparent after any user edits
-            //        if (Math.Abs(a) < 1e-9)
-            //            return HasAnyEdits ? BgTransparent : BgGrey;
-
-            //        if (a < b) return BgMistyRose;
-            //        if (a > b) return BgPaleGreen;
-            //        return BgTransparent;
-            //    }
-            //}
 
             public Brush NewDeploymentBrush
             {
@@ -2289,6 +2425,32 @@ namespace wpfTDX
 
             }
 
+            public void ReCalcScaledDeployment()
+            {
+                float? sd = null;
+                float sf = 1;
+                if (NewScaleFactor.HasValue)
+                {
+                    sf = (float)(NewScaleFactor.Value);
+                }
+
+                if ( NewDeployment.HasValue)
+                {
+                    float r = (float)(NewDeployment.Value) * sf;
+
+                    if (!float.IsNaN(r) && !float.IsInfinity(r))   // works on all TFMs
+                        sd = r;
+                }
+
+                if (ScaledDeployment != sd)
+                    ScaledDeployment = sd;  // assume setter raises PropertyChanged
+            }
+
+
+
+
+
+
             //public void CoerceFlagsFromPositions()
             //{
             //    if (!PositionBaseY1.HasValue) BaseY1 = null;
@@ -2392,6 +2554,20 @@ namespace wpfTDX
                 return chosen ?? defaultValue;                  // coalesce to a deterministic bool for Python
             }
 
+            public ScaledPositionsInsertRow ToScaledPositionInsertRow()
+            {
+                return new ScaledPositionsInsertRow
+                {
+                    TickerName = this.Tickername,
+                    FundGroupName = this.FundGroup,
+                    FundName = this.FundName,
+                    ScaledPercent = this.ScaledPercent ,
+                    ScaledStepSize = this.ScaleFactor - this.NewScaleFactor, // default to 0.0 if null
+                    ScaledTarget = this.NewScaleFactor,
+                    ScaledTimeStep = 5,
+                    ScaledType = "filtered"
+                };
+            }
 
             public FilterIntervalsUpsertRow ToUpsertRow()
             {

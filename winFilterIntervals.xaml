@@ -20,6 +20,8 @@
         <local:CompareDoubleConverter x:Key="CompareDoubleConverter"/>
         <local:CompareRoundedConverter x:Key="CompareRoundedConverter"/>
         <local:IsZeroRoundedConverter  x:Key="IsZeroRoundedConverter"/>
+        <local:NullableDoubleConverter x:Key="NullableDoubleConverter"/>
+        <local:NullablePercentDoubleConverter x:Key="NullablePercentDoubleConverter"/>
         <local:BoolToStringConverter x:Key="BoolToStringConverter"
                                  TrueText="True"
                                  FalseText="False"
@@ -39,9 +41,6 @@
         </Style>
     </Window.Resources>
 
-
-
-
     <Grid>
 
         <Grid.RowDefinitions>
@@ -52,17 +51,11 @@
             <RowDefinition Height="Auto"/>
             <!-- Status bar -->
         </Grid.RowDefinitions>
+        
+        
 
         <!-- Toolbar -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,0" >
-            <!--<Button Content="Reload Positions" Click="ReloadPositionsButton_Click" Padding="12,4"
-                    Style="{StaticResource BusyButtonStyle}"
-                     Margin="0,0,8,0"
-                ToolTip="Load TAD positions, then rebuild the merged view"/>
-            <Button Content="Reload Filters" Click="ReloadFiltersButton_Click" Padding="12,4"
-                    Style="{StaticResource BusyButtonStyle}"
-                     Margin="0,0,8,0"
-                ToolTip="Load filter intervals, then rebuild the merged view"/>-->
             <Button Content="Reload" Click="ReloadBothButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
                      Margin="0,0,8,0"
@@ -174,6 +167,17 @@
                 <ContextMenu x:Key="GridContextMenu" x:Shared="False">
                     <MenuItem Header="Add ticker..." Click="AddTickerMenuItem_Click"/>
                 </ContextMenu>
+
+                <Style x:Key="PercentDisplayStyle" TargetType="TextBlock">
+                    <Setter Property="Text"
+                Value="{Binding ScaleFactor, StringFormat={}{0:P1}}"/>
+                    </Style>
+                    <Style x:Key="PercentEditStyle" TargetType="TextBox">
+                        <Setter Property="Text"
+                Value="{Binding ScaleFactor,
+                                Converter={StaticResource NullablePercentDoubleConverter},
+                                UpdateSourceTrigger=PropertyChanged}"/>
+                </Style>
             </DataGrid.Resources>
 
             <!-- Select the row under cursor on right-click -->
@@ -207,8 +211,29 @@
                                     Binding="{Binding FundName}"
                                     IsReadOnly="True" />
 
-                <DataGridTextColumn Header="scale factor"
-                    Binding="{Binding ScaleFactor, StringFormat={}{0:P1}}"/>
+                <DataGridTextColumn Header="scale_f" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="ScaleFactor"
+                 Converter="{StaticResource NullablePercentDoubleConverter}"
+                 StringFormat="{}{0:P1}"
+                 UpdateSourceTrigger="PropertyChanged" 
+                                
+                                 />
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="new_scale_f">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="NewScaleFactor"
+                         Converter="{StaticResource NullablePercentDoubleConverter}"
+                         StringFormat="{}{0:P1}"
+                         UpdateSourceTrigger="LostFocus"
+                         ValidatesOnExceptions="True"
+                         ValidatesOnDataErrors="True"/>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+
+
 
                 <!-- Rescale: dropdown True/False, bold when changed -->
                 <DataGridTextColumn Header="rescale"
@@ -343,7 +368,7 @@
                 </DataGridTextColumn>
 
                 <!-- base_y1 -->
-                <DataGridTextColumn Header="base_y1"
+                <DataGridTextColumn Header="b_y1"
                 IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -383,7 +408,7 @@
                 </DataGridTextColumn>
 
                 <!-- base_h1 -->
-                <DataGridTextColumn Header="base_h1"
+                <DataGridTextColumn Header="b_h1"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -422,7 +447,7 @@
                 </DataGridTextColumn>
 
                 <!-- base_d1 -->
-                <DataGridTextColumn Header="base_d1"
+                <DataGridTextColumn Header="b_d1"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -1126,11 +1151,11 @@
                                     Binding="{Binding NumTrades}"
                                     IsReadOnly="True" />
 
-                <DataGridTextColumn Header="pos_intvls"
+                <DataGridTextColumn Header="n"
                                     Binding="{Binding NumPositionIntervals}"
                                     IsReadOnly="True" />
 
-                <DataGridTextColumn Header="deploy" IsReadOnly="True">
+                <DataGridTextColumn Header="dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="PositionDeployment"
                      StringFormat="{}{0:P1}"
@@ -1150,22 +1175,22 @@
                                     Binding="{Binding NumFilteredTrades}"
                                     IsReadOnly="True" />
 
-                <DataGridTextColumn Header="num_filt_intvls"
+                <DataGridTextColumn Header="n_filt"
                                     Binding="{Binding NumFiltIntervals}"
                                     IsReadOnly="True" />
 
-                <DataGridTextColumn Header="filt_deploy" IsReadOnly="True">
+                <DataGridTextColumn Header="filt_dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="FilteredDeployment"
                      StringFormat="{}{0:P1}"
                      TargetNullValue=""/>
-                            </DataGridTextColumn.Binding>
-                            <!-- (optional) right-align the text -->
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="TextAlignment" Value="Right"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn.Binding>
+                    <!-- (optional) right-align the text -->
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
 
@@ -1184,7 +1209,7 @@
                 </DataGridTextColumn>
 
                 <!-- new_intvls -->
-                <DataGridTextColumn Header="new_intvls" IsReadOnly="True">
+                <DataGridTextColumn Header="new_n" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="RescaledIntervals" TargetNullValue="" StringFormat="N0"/>
                     </DataGridTextColumn.Binding>
@@ -1198,7 +1223,7 @@
                 </DataGridTextColumn>
 
                 <!-- new_deploy -->
-                <DataGridTextColumn Header="new_deploy" IsReadOnly="True">
+                <DataGridTextColumn Header="new_dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewDeployment" StringFormat="{}{0:P1}" TargetNullValue="0" FallbackValue="0"/>
                     </DataGridTextColumn.Binding>
@@ -1207,6 +1232,21 @@
                             <Setter Property="TextAlignment" Value="Right"/>
                             <Setter Property="FontWeight"    Value="SemiBold"/>
                             <Setter Property="Background"    Value="{Binding NewDeploymentBrush}"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <!-- scaled deployment -->
+                <DataGridTextColumn Header="scaled_dep" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="ScaledDeployment"
+                     StringFormat="{}{0:P1}"
+                     TargetNullValue=""/>
+                    </DataGridTextColumn.Binding>
+                    <!-- (optional) right-align the text -->
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Right"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
