@@ -220,6 +220,22 @@
                                 
                                  />
                     </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding NewScaleFactorHasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding NewScaleFactorHasChanged}" Value="True">
+                                    <!-- highlight when changed -->
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="2"/>
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
                 <DataGridTextColumn Header="new_scale_f">
@@ -231,6 +247,7 @@
                          ValidatesOnExceptions="True"
                          ValidatesOnDataErrors="True"/>
                     </DataGridTextColumn.Binding>
+
                 </DataGridTextColumn>
 
 

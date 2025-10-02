@@ -1108,6 +1108,8 @@ namespace wpfTDX
                     }
                 }
             }
+            
+            public double? OriginalNewRescaleFactor { get; set; }
             private double? _newScaleFactor;
             public double? NewScaleFactor
             {
@@ -1119,9 +1121,12 @@ namespace wpfTDX
                         _newScaleFactor = value;
                         ReCalcScaledDeployment();
                         OnPropertyChanged();
+                        OnPropertyChanged(nameof(NewScaleFactorHasChanged));
                     }
                 }
             }
+            public bool NewScaleFactorHasChanged => _isInitialized && _newScaleFactor != OriginalNewRescaleFactor;
+
             private double? _scaledPercent;
             public double? ScaledPercent
             {
@@ -1136,7 +1141,7 @@ namespace wpfTDX
                 }
             }
 
-
+            
             private double? _scaleFactor;
             public double? ScaleFactor
             {
@@ -2114,6 +2119,7 @@ namespace wpfTDX
                 OriginalBuyOnly = src.OriginalBuyOnly;
                 OriginalSellOnly = src.OriginalSellOnly;
                 OriginalAllIntervals = src.OriginalAllIntervals;
+                OriginalNewRescaleFactor = src.OriginalNewRescaleFactor;
 
                 OriginalBaseY1 = src.OriginalBaseY1;
                 OriginalBaseH1 = src.OriginalBaseH1;
@@ -2483,6 +2489,7 @@ namespace wpfTDX
             public void SnapshotOriginals()
             {
                 OriginalRescale = _rescale;
+                OriginalNewRescaleFactor = _newScaleFactor;
                 OriginalLongOnly = _longOnly;
                 OriginalShortOnly = _shortOnly;
                 OriginalBuyOnly = _buyOnly;
@@ -2518,6 +2525,7 @@ namespace wpfTDX
 
                 // Notify HasChanged props so the UI refreshes to "not bold on load"
                 OnPropertyChanged(nameof(RescaleHasChanged));
+                OnPropertyChanged(nameof(NewScaleFactor));
                 OnPropertyChanged(nameof(LongOnlyHasChanged));
                 OnPropertyChanged(nameof(ShortOnlyHasChanged));
                 OnPropertyChanged(nameof(BuyOnlyHasChanged));
