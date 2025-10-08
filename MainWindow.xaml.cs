@@ -1403,5 +1403,11 @@ namespace wpfTDX
             winFilterIntervals winFilterIntervals = new winFilterIntervals(this.sql_conn);
             winFilterIntervals.Show();
         }
+
+        private void TextBlock_MouseLeftButtonDown_14(object sender, MouseButtonEventArgs e)
+        {
+            winScaledPositions winScaledPositions = new winScaledPositions();
+            winScaledPositions.Show();
+        }
     }
 }

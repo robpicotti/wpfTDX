@@ -259,6 +259,7 @@ namespace wpfTDX
                 .CopyToDataTable();
                 dtAll = sortedRows_weight.Copy();
             }
+            dtAll.AcceptChanges(); //addded
             dgFundLimits.ItemsSource = dtAll.DefaultView;
 
         }
@@ -378,6 +379,9 @@ namespace wpfTDX
                 dtWeights = sortedRows_weight.Copy();
             }
             Util.DataTableToCSV(dtNotional, "dtLiquidity.csv");
+            dtNotional.AcceptChanges();   // <<< add
+            dtLiquidity.AcceptChanges();  // <<< add
+            dtWeights.AcceptChanges();    // <<< add
             dgTickerLimits.ItemsSource = dtNotional.DefaultView;
             dgLiquidityLimits.ItemsSource = dtLiquidity.DefaultView;
             dgWeightLimits.ItemsSource = dtWeights.DefaultView;
@@ -1048,6 +1052,9 @@ namespace wpfTDX
             }
         }
         
+
+
+
         private void UpdateTickerLimits(string fundname,string limitType,string tickername,string columnName,DataRowView rowView, string afterEditValue)
         {
             //if you are at this point you arent updating the action field.
@@ -1237,6 +1244,224 @@ namespace wpfTDX
         {
 
         }
+
+        private static T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            while (child != null)
+            {
+                var parent = VisualTreeHelper.GetParent(child);
+                if (parent is T t) return t;
+                child = parent;
+            }
+            return null;
+        }
+
+        private static bool ColumnChanged(DataRow row, string col)
+        {
+            // if we never called AcceptChanges(), nothing to compare to
+            if (!row.HasVersion(DataRowVersion.Original)) return true;
+
+            object cur = row[col];
+            object orig = row[col, DataRowVersion.Original];
+
+            if (cur == DBNull.Value) cur = null;
+            if (orig == DBNull.Value) orig = null;
+            return !Equals(cur, orig);
+        }
+
+        private static double? ToNullableDouble(object v)
+        {
+            if (v == null || v == DBNull.Value) return null;
+            if (double.TryParse(Convert.ToString(v, CultureInfo.InvariantCulture),
+                                NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+                return d;
+            return null;
+        }
+
+        // ---------- one click handler for all 4 grids ----------
+        private void RowSave_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Cursor = Cursors.Wait;
+
+                var btn = (Button)sender;
+                var grid = FindParent<DataGrid>(btn);
+                // make sure current edit is committed
+                grid.CommitEdit(DataGridEditingUnit.Cell, true);
+                grid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                var drv = btn.DataContext as DataRowView;
+                if (drv == null) return;
+                var row = drv.Row;
+
+                var tag = (btn.Tag as string) ?? "";
+
+                if (string.Equals(tag, "Fund", StringComparison.OrdinalIgnoreCase))
+                {
+                    SaveFundLimitsRow(row);
+                }
+                else if (string.Equals(tag, "Notional", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(tag, "Liquidity", StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(tag, "Weight", StringComparison.OrdinalIgnoreCase))
+                {
+                    SaveTickerLimitRow(tag, row);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Save", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
+        }
+
+        // ---------- save logic per table ----------
+        private void SaveFundLimitsRow(DataRow row)
+        {
+            // run only if something relevant changed
+            bool customChanged = ColumnChanged(row, "custom");
+            bool actionChanged = ColumnChanged(row, "action");
+            if (!customChanged && !actionChanged)
+            {
+                // optional: tell user nothing changed
+                // MessageBox.Show("No changes on this row.");
+                return;
+            }
+
+            string fund = Convert.ToString(row["fundname"]);
+            string metric = Convert.ToString(row["metric"]);
+            string action = Convert.ToString(row["action"]) ?? "Default";
+            double? custom = ToNullableDouble(row["custom"]);
+
+            // If user typed a custom but left action at Default → treat as Hard (matches your old behavior)
+            if (custom.HasValue && string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
+                action = "Hard";
+
+            // Refresh the FundLimits instance used for writing:
+            this.limits.fundLimits = new FundLimits(fund, this.gbl_conn);
+
+            ActionType at = this.limits.fundLimits.GetActionType(action);
+
+            // Map to your single metric property (mirrors your old switch)
+            switch (metric)
+            {
+                case "weight_limit":
+                    this.limits.fundLimits.weight_limit.customValue = custom;
+                    this.limits.fundLimits.weight_limit.action = at;
+                    this.limits.fundLimits.weight_limit.updated = true;
+                    break;
+
+                case "stk_notional_pct_limit":
+                    this.limits.fundLimits.stk_notional_pct_limit.customValue = custom;
+                    this.limits.fundLimits.stk_notional_pct_limit.action = at;
+                    this.limits.fundLimits.stk_notional_pct_limit.updated = true;
+                    break;
+
+                case "fut_notional_pct_limit":
+                    this.limits.fundLimits.fut_notional_pct_limit.customValue = custom;
+                    this.limits.fundLimits.fut_notional_pct_limit.action = at;
+                    this.limits.fundLimits.fut_notional_pct_limit.updated = true;
+                    break;
+
+                case "liquidity_limit":
+                    this.limits.fundLimits.liquidity_limit.customValue = custom;
+                    this.limits.fundLimits.liquidity_limit.action = at;
+                    this.limits.fundLimits.liquidity_limit.updated = true;
+                    break;
+
+                case "stk_leverage_limit":
+                    this.limits.fundLimits.stk_leverage_limit.customValue = custom;
+                    this.limits.fundLimits.stk_leverage_limit.action = at;
+                    this.limits.fundLimits.stk_leverage_limit.updated = true;
+                    break;
+
+                case "fut_leverage_limit":
+                    this.limits.fundLimits.fut_leverage_limit.customValue = custom;
+                    this.limits.fundLimits.fut_leverage_limit.action = at;
+                    this.limits.fundLimits.fut_leverage_limit.updated = true;
+                    break;
+
+                case "leverage_limit":
+                    this.limits.fundLimits.leverage_limit.customValue = custom;
+                    this.limits.fundLimits.leverage_limit.action = at;
+                    this.limits.fundLimits.leverage_limit.updated = true;
+                    break;
+
+                case "var_limit_factor":
+                    this.limits.fundLimits.var_limit_factor.customValue = custom;
+                    this.limits.fundLimits.var_limit_factor.action = at;
+                    this.limits.fundLimits.var_limit_factor.updated = true;
+                    break;
+
+                case "stress_limit_factor":
+                    this.limits.fundLimits.stress_limit_factor.customValue = custom;
+                    this.limits.fundLimits.stress_limit_factor.action = at;
+                    this.limits.fundLimits.stress_limit_factor.updated = true;
+                    break;
+
+                case "drawdown_limit":
+                    this.limits.fundLimits.drawdown_limit.customValue = custom;
+                    this.limits.fundLimits.drawdown_limit.action = at;
+                    this.limits.fundLimits.drawdown_limit.updated = true;
+                    break;
+
+                default:
+                    MessageBox.Show("Unknown metric: " + metric, "Save", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+            }
+
+            // write & refresh
+            UpdateFundLimits();                 // reuses your existing method
+                                                // row.AcceptChanges();             // optional; RefreshFundLimits() reloads anyway
+        }
+
+        private void SaveTickerLimitRow(string limitType, DataRow row)
+        {
+            // run only if relevant changed
+            bool customChanged = ColumnChanged(row, "Custom");
+            bool actionChanged = ColumnChanged(row, "Action");
+            if (!customChanged && !actionChanged) return;
+
+            string fund = Convert.ToString(row["fundname"]);
+            string ticker = Convert.ToString(row["tickername"]);
+            string action = Convert.ToString(row["Action"]) ?? "Default";
+            double? custom = ToNullableDouble(row["Custom"]);
+
+            // If Action is Default, we must null the Custom (your Insert method handles this convention)
+            if (string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
+                custom = null;
+            else if (!custom.HasValue && !actionChanged)
+                // If user didn’t touch action but typed a number earlier → default to Hard
+                action = "Hard";
+
+            InsertTickerLimitRow(fund, limitType, ticker, custom, action);
+            RefreshTickerLimits();
+        }
+
+        private void InsertTickerLimitRow(string fundname, string limitType, string tickername, double? custom, string action)
+        {
+            string table;
+            if (string.Equals(limitType, "Notional", StringComparison.OrdinalIgnoreCase))
+                table = "notional_pct_limits";
+            else if (string.Equals(limitType, "Liquidity", StringComparison.OrdinalIgnoreCase))
+                table = "liquidity_limits";
+            else if (string.Equals(limitType, "Weight", StringComparison.OrdinalIgnoreCase))
+                table = "weight_limits";
+            else
+                throw new InvalidOperationException("Unknown limit type: " + limitType);
+
+            string runtime = DateTime.UtcNow.ToString("dd-MMM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+            string customSql = custom.HasValue
+                ? custom.Value.ToString(CultureInfo.InvariantCulture)
+                : "NULL";
+
+            string sql = "INSERT " + table + " VALUES('" + runtime + "','" + fundname + "','" + tickername + "'," + customSql + ",'" + action + "')";
+            this._db.execSQL_noresults(sql, this.gbl_conn);
+        }
+
     }
     /// <summary>
     /// this class allows you to create the static 
@@ -1265,4 +1490,7 @@ namespace wpfTDX
             return this;
         }
     }
+
+
+
 }

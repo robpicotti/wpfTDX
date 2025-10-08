@@ -44,10 +44,10 @@ namespace TDX
         /// allows you to scale in and out of positions for a particular tickername/subaccount
         /// </summary>
         public void scale_position(string fundname, string tickername, double scale_stepsize, 
-            double scaled_target, string scale_type, double scaled_timestep = 5)
+            double scaled_target, string scale_type,string fundgroupname, double scaled_timestep = 5)
         {
             string now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
+            string _scaledFundname = null;
             DataTable dt = new DataTable();
             dt.Columns.Add("runtime");
             dt.Columns.Add("fundgroupname");
@@ -60,10 +60,16 @@ namespace TDX
             dt.Columns.Add("scaled_timestep");
             dt.Columns.Add("scaled_target");
             dt.Columns.Add("scaled_type");
+            dt.Columns.Add("scaled_fundname");
+
+            if (fundname != "*")
+            {
+                _scaledFundname = fundname;
+            }
 
             DataRow drow = dt.NewRow();
             drow["runtime"] = now;
-            drow["fundgroupname"] = "*";
+            drow["fundgroupname"] = fundgroupname;
             drow["fundname"] = fundname;
             //drow["subaccount"] = this.subaccount;
             drow["tickername"] = tickername;
@@ -83,6 +89,7 @@ namespace TDX
                 drow["scaled_target"] = scaled_target;
             drow["scaled_timestep"] = scaled_timestep;
             drow["scaled_type"] = scale_type;
+            drow["scaled_fundname"] = _scaledFundname;
             dt.Rows.Add(drow);
             Table tbl = new Table("scaled_positions", gbl_conn);
             tbl.load_dataTable(dt);

@@ -7,26 +7,86 @@
         mc:Ignorable="d"
         Title="position scaling" Height="200" Width="800" ResizeMode="NoResize">
     <StackPanel>
-        <Grid>
+        <!-- SharedSizeScope ensures both label columns have the same width -->
+        <Grid Grid.IsSharedSizeScope="True">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Margin="5">
-                <TextBlock x:Name="lblSubaccount"  Text="fundname:" FontWeight="Bold" Margin="5 0 0 0"/>
-                <TextBox x:Name="txtSubaccount" IsReadOnly="True" Margin="5"/>
-                <TextBlock Text="tickername:" Margin="5 10" FontWeight="Bold"/>
-                <TextBox x:Name="txtTickername" IsReadOnly="True" Margin="5 -5 5 0"/>
-                <TextBlock x:Name ="lblScaledPosition" Text="scaled position:" Margin="5 10" FontWeight="Bold"/>
-                <TextBox x:Name="txtScaledPosition" IsReadOnly="True" Margin="5 -5 5 0"/>
-            </StackPanel>
-            <StackPanel Grid.Column="1" Margin="5">
-                <TextBlock Text="step size:" FontWeight="Bold" Margin="5 0 0 0"/>
-                <TextBox x:Name="txtStepSize" Text="0.1" Margin="5"/>
-                <TextBlock Text="scaled target:" Margin="5 10" FontWeight="Bold"/>
-                <TextBox x:Name="txtScaledTarget" Margin="5 -5 5 0"/>
-                <Button Content="update" Margin="5 29" FontWeight="Bold" Click="Button_Click"/>
-            </StackPanel>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <!-- fields -->
+                <RowDefinition Height="Auto"/>
+                <!-- spanning button -->
+            </Grid.RowDefinitions>
+
+            <!-- LEFT column (names preserved) -->
+            <Grid Grid.Column="0" Grid.Row="0" Margin="10 8 10 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="LabelCol"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock x:Name="lblFundGroupName" Grid.Row="0" Grid.Column="0"
+                           Text="fundgroupname:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 8 6"/>
+                <TextBox x:Name="txtFundGroupName" Grid.Row="0" Grid.Column="1"
+                         IsReadOnly="True" Margin="0 0 0 6"/>
+
+                <TextBlock x:Name="lblSubaccount" Grid.Row="1" Grid.Column="0"
+                           Text="fundname:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 8 6"/>
+                <TextBox x:Name="txtSubaccount" Grid.Row="1" Grid.Column="1"
+                         IsReadOnly="True" Margin="0 0 0 6"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="tickername:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 8 0"/>
+                <TextBox x:Name="txtTickername" Grid.Row="2" Grid.Column="1"
+                         IsReadOnly="True"/>
+            </Grid>
+
+            <!-- RIGHT column (names preserved) -->
+            <Grid Grid.Column="1" Grid.Row="0" Margin="10 8 10 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="LabelCol"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="step size:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 8 6"/>
+                <TextBox x:Name="txtStepSize" Grid.Row="0" Grid.Column="1"
+                         Text="0.1" Margin="0 0 0 6"/>
+
+                <TextBlock x:Name="lblScaledPosition" Grid.Row="1" Grid.Column="0"
+                           Text="scaled position:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 8 6"/>
+                <TextBox x:Name="txtScaledPosition" Grid.Row="1" Grid.Column="1"
+                         IsReadOnly="True" Margin="0 0 0 6"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="scaled target:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0 0 8 0"/>
+                <TextBox x:Name="txtScaledTarget" Grid.Row="2" Grid.Column="1"/>
+            </Grid>
+
+            <!-- Spanning button -->
+            <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                    Content="update" FontWeight="Bold"
+                    Margin="10" Height="32"
+                    HorizontalAlignment="Stretch"
+                    Click="Button_Click"/>
         </Grid>
     </StackPanel>
 </Window>

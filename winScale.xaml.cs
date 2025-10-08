@@ -21,6 +21,7 @@ namespace wpfTDX
     public partial class winScale : Window
     {
         string FUNDNAME;
+        string FUNDGROUPNAME;
         string SUBACCOUNT;
         string TICKERNAME;
         string SCALE_TYPE;
@@ -33,10 +34,11 @@ namespace wpfTDX
 
         private Position position { get; set; }
         public winScale(object position, string fundname,string subaccount,string tickername, string scale_type,
-            double? ScaleFactor,double? ScaledPercent,SqlConnection conn)
+            double? ScaleFactor,double? ScaledPercent,SqlConnection conn,string fundgroupname)
         {
             InitializeComponent();
             FUNDNAME = fundname;
+            FUNDGROUPNAME = fundgroupname;
             SUBACCOUNT = subaccount;
             TICKERNAME = tickername;
             SCALE_TYPE = scale_type;
@@ -49,6 +51,7 @@ namespace wpfTDX
         private void LoadForm()
         {
             txtSubaccount.Text = FUNDNAME;
+            txtFundGroupName.Text = FUNDGROUPNAME;
             txtTickername.Text = TICKERNAME;
             
             if (this.position != null)
@@ -95,7 +98,7 @@ namespace wpfTDX
                         }
                         //else
                         //{
-                        this.position.scale_position(FUNDNAME, TICKERNAME, double.Parse(txtStepSize.Text), double.Parse(txtScaledTarget.Text), SCALE_TYPE);
+                        this.position.scale_position(FUNDNAME, TICKERNAME, double.Parse(txtStepSize.Text), double.Parse(txtScaledTarget.Text), SCALE_TYPE,FUNDGROUPNAME);
                         //}
                         string title = "Scaled positions";
                         string mes = "position has been entered for scaling for subaccount: " + SUBACCOUNT + " and tickername: " + TICKERNAME;

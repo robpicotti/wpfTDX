@@ -54,7 +54,8 @@
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                    Margin="5" CellEditEnding="dgFundLimits_CellEditEnding">
+                                    CanUserAddRows="False"
+                                    Margin="5" >
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="FundName" Binding="{Binding fundname}"/>
                                         <DataGridTextColumn Header="Metric" Binding="{Binding metric}"/>
@@ -88,6 +89,14 @@
                                         <DataGridTextColumn Header="Live" Binding="{Binding live}"/>
                                         <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
                                         <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
+                                        <DataGridTemplateColumn Header="Save">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Save" Padding="4"
+                                                        Tag="Fund" Click="RowSave_Click"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                     <DataGrid.RowStyle>
                                         <Style TargetType="DataGridRow">
@@ -121,7 +130,8 @@
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                      CellEditEnding="dgTickerLimits_CellEditEnding">
+                                          CanUserAddRows="False"
+                                      >
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="fundname" Binding="{Binding fundname}"/>
                                         <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
@@ -158,6 +168,14 @@
                                         <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
                                         <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
                                         <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
+                                        <DataGridTemplateColumn Header="Save">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Save" Padding="4"
+                                                        Tag="Notional" Click="RowSave_Click"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                     <DataGrid.RowStyle>
                                         <Style TargetType="DataGridRow">
@@ -185,7 +203,8 @@
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                      CellEditEnding="dgLiquidityLimits_CellEditEnding">
+                                  CanUserAddRows="False"
+                                      >
                             <DataGrid.Columns>
                                     <DataGridTextColumn Header="fundname" Binding="{Binding fundname}"/>
                                     <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
@@ -222,6 +241,14 @@
                                 <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
                                 <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
                                 <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
+                                    <DataGridTemplateColumn Header="Save">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="Save" Padding="4"
+                                                    Tag="Liquidity" Click="RowSave_Click"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
@@ -246,7 +273,8 @@
                                       ScrollViewer.CanContentScroll="True" 
                                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                      CellEditEnding="dgWeightLimits_CellEditEnding">
+                                  CanUserAddRows="False"
+                                      >
                             <DataGrid.Columns>
                                     <DataGridTextColumn Header="fundname" Binding="{Binding fundname}"/>
                                     <DataGridTextColumn Header="benchmarkname" Binding="{Binding benchmarkname}"/>
@@ -283,6 +311,14 @@
                                 <DataGridTextColumn Header="Frozen" Binding="{Binding Frozen}"/>
                                 <DataGridTextColumn Header="Flagged" Binding="{Binding Flagged}" Visibility="Hidden"/>
                                 <DataGridTextColumn Header="Color" Binding="{Binding Color}" Visibility="Hidden"/>
+                                    <DataGridTemplateColumn Header="Save">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="Save" Padding="4"
+                                                        Tag="Weight" Click="RowSave_Click"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">

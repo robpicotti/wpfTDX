@@ -49,7 +49,7 @@ namespace wpfTDX
             this.ViewModel.SQLConn = gbl_conn;
             this.ViewModel?.GetFunds();
             cboFundname.SelectedValue = DEFAULT_FUND;
-            this.ViewModel.FromDate = DateTime.Today.AddDays(-1);
+            this.ViewModel.FromDate = DateTime.Today;
             this.ViewModel.ToDate = DateTime.Today;
         }
         

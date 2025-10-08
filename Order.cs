@@ -109,7 +109,7 @@ namespace wpfTDX
             execSQL += "INNER JOIN #max_orders_key m ";
             execSQL += "ON m.max_orders_key = a.orders_key ";
             execSQL += "AND m.tad_order_id = a.tad_order_id ";
-            execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED') ";
+            execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED','VAPORIZED') ";
             execSQL += "ORDER BY a.tad_order_id ";
             dtOut = DB.execSQL(execSQL, this.gbl_conn);
             

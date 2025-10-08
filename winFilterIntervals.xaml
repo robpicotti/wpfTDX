@@ -39,6 +39,9 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        <local:NotEqualConverter x:Key="NotEqualConverter"/>
+
     </Window.Resources>
 
     <Grid>
@@ -137,6 +140,8 @@
                     EnableColumnVirtualization="True"
                   FrozenColumnCount="0"
                   PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
+                      SelectionMode="Single"
+                        SelectionUnit="FullRow"
                   >
 
             <!-- Bold headers + show underscores literally -->
@@ -271,6 +276,19 @@
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                            <!-- This comes from the row item (MergedTickerRow) -->
+                                            <Binding Path="Rescale"/>
+
+                                            <!-- This comes from the view model on the DataGrid.DataContext -->
+                                            <Binding Path="DataContext.DefaultRescale"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -293,7 +311,19 @@
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
-                                
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                            <!-- This comes from the row item (MergedTickerRow) -->
+                                            <Binding Path="LongOnly"/>
+
+                                            <!-- This comes from the view model on the DataGrid.DataContext -->
+                                            <Binding Path="DataContext.DefaultLongOnly"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -314,6 +344,19 @@
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                            <!-- This comes from the row item (MergedTickerRow) -->
+                                            <Binding Path="ShortOnly"/>
+
+                                            <!-- This comes from the view model on the DataGrid.DataContext -->
+                                            <Binding Path="DataContext.DefaultShortOnly"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -336,6 +379,19 @@
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
                                 </DataTrigger>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                            <!-- This comes from the row item (MergedTickerRow) -->
+                                            <Binding Path="BuyOnly"/>
+
+                                            <!-- This comes from the view model on the DataGrid.DataContext -->
+                                            <Binding Path="DataContext.DefaultBuyOnly"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -356,6 +412,19 @@
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                            <!-- This comes from the row item (MergedTickerRow) -->
+                                            <Binding Path="SellOnly"/>
+
+                                            <!-- This comes from the view model on the DataGrid.DataContext -->
+                                            <Binding Path="DataContext.DefaultSellOnly"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -378,6 +447,19 @@
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
+                                </DataTrigger>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                            <!-- This comes from the row item (MergedTickerRow) -->
+                                            <Binding Path="AllIntervals"/>
+
+                                            <!-- This comes from the view model on the DataGrid.DataContext -->
+                                            <Binding Path="DataContext.DefaultAllIntervals"
+                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

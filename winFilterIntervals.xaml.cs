@@ -38,10 +38,18 @@ namespace wpfTDX
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            await _viewModel.LoadTickerUniverseAsync();
-            await _viewModel.LoadFilterIntervalsDataAsync();
-            await _viewModel.LoadTadPositionsDataAsync();
-            await _viewModel.RebuildMerged();
+            try
+            {
+                await _viewModel.LoadTickerUniverseAsync();
+                await _viewModel.LoadFilterIntervalsDataAsync();
+                await _viewModel.LoadTadPositionsDataAsync();
+                await _viewModel.RebuildMerged();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Load failed:\n" + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task RunWithBusy(Func<Task> work)
@@ -203,32 +211,57 @@ namespace wpfTDX
 
         private async void ReloadPositionsButton_Click(object sender, RoutedEventArgs e)
         {
-            await RunWithBusy(async () =>
+            try
             {
-                await _viewModel.LoadTadPositionsDataAsync();
-                await _viewModel.RebuildMerged(preserveUserFiFlags: true);
-            });
+                await RunWithBusy(async () =>
+                {
+                    await _viewModel.LoadTadPositionsDataAsync();
+                    await _viewModel.RebuildMerged(preserveUserFiFlags: true);
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Load positions failed:\n" + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async void ReloadFiltersButton_Click(object sender, RoutedEventArgs e)
         {
-            await RunWithBusy(async () =>
+            try
             {
-                await _viewModel.LoadFilterIntervalsDataAsync();
-                await _viewModel.RebuildMerged(preserveUserFiFlags: false);
-            });
+                await RunWithBusy(async () =>
+                {
+                    await _viewModel.LoadFilterIntervalsDataAsync();
+                    await _viewModel.RebuildMerged(preserveUserFiFlags: false);
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Load filters failed:\n" + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async void ReloadBothButton_Click(object sender, RoutedEventArgs e)
         {
-            await RunWithBusy(async () =>
+            try
             {
-                await Task.WhenAll(
-                    _viewModel.LoadFilterIntervalsDataAsync(),
-                    _viewModel.LoadTadPositionsDataAsync()
-                );
-                await _viewModel.RebuildMerged();
-            });
+
+                await RunWithBusy(async () =>
+                {
+                    await Task.WhenAll(
+                        _viewModel.LoadFilterIntervalsDataAsync(),
+                        _viewModel.LoadTadPositionsDataAsync()
+                    );
+                    await _viewModel.RebuildMerged();
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Load failed:\n" + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void DataGridRow_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -516,7 +549,8 @@ namespace wpfTDX
         {
             var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
 
-            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",row.ScaleFactor,row.ScaledPercent, this.gbl_conn);
+            winScale windowScale = new winScale(null, row.FundName, "", row.Tickername, "filtered",row.ScaleFactor,row.ScaledPercent, this.gbl_conn,
+                row.FundGroup);
             bool? result = windowScale.ShowDialog();
         }
 

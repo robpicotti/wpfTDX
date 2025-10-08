@@ -267,6 +267,22 @@ namespace wpfTDX
             => null;
     }
 
+    public sealed class NotEqualConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values == null || values.Length < 2) return false;
+            var a = values[0];
+            var b = values[1];
+            if (a == DependencyProperty.UnsetValue || b == DependencyProperty.UnsetValue) return false;
+            // treat null vs null as equal
+            if (a == null && b == null) return false;
+            return !Equals(a, b);
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+            => throw new NotSupportedException();
+    }
 
 
     // Returns -1 if a<b, 0 if equal/unknown, 1 if a>b
@@ -399,6 +415,84 @@ namespace wpfTDX
                     _fundGroupFilter = value;
                     OnPropertyChanged(nameof(FundGroupFilter));
                     RestartTimer();
+                }
+            }
+        }
+        private bool _defaultRescale = true;
+        public bool DefaultRescale
+        {
+            get { return _defaultRescale; }
+            set
+            {
+                if (_defaultRescale != value)
+                {
+                    _defaultRescale = value;
+                    OnPropertyChanged(nameof(DefaultRescale));
+                }
+            }
+        }
+        private bool _defaultLongOnly = false;
+        public bool DefaultLongOnly
+        {
+            get { return _defaultLongOnly; }
+            set
+            {
+                if (_defaultLongOnly != value)
+                {
+                    _defaultLongOnly = value;
+                    OnPropertyChanged(nameof(DefaultLongOnly));
+                }
+            }
+        }
+        private bool _defaultShortOnly = false;
+        public bool DefaultShortOnly
+        {
+            get { return _defaultShortOnly; }
+            set
+            {
+                if (_defaultShortOnly != value)
+                {
+                    _defaultShortOnly = value;
+                    OnPropertyChanged(nameof(DefaultShortOnly));
+                }
+            }
+        }
+        private bool _defaultBuyOnly = false;
+        public bool DefaultBuyOnly
+        {
+            get { return _defaultBuyOnly; }
+            set
+            {
+                if (_defaultBuyOnly != value)
+                {
+                    _defaultBuyOnly = value;
+                    OnPropertyChanged(nameof(DefaultBuyOnly));
+                }
+            }
+        }
+        private bool _defaultSellOnly = false;
+        public bool DefaultSellOnly
+        {
+            get { return _defaultSellOnly; }
+            set
+            {
+                if (_defaultSellOnly != value)
+                {
+                    _defaultSellOnly = value;
+                    OnPropertyChanged(nameof(DefaultSellOnly));
+                }
+            }
+        }
+        private bool _defaultAllIntervals = false;
+        public bool DefaultAllIntervals
+        {
+            get { return _defaultAllIntervals; }
+            set
+            {
+                if (_defaultAllIntervals != value)
+                {
+                    _defaultAllIntervals = value;
+                    OnPropertyChanged(nameof(DefaultAllIntervals));
                 }
             }
         }
@@ -985,10 +1079,11 @@ namespace wpfTDX
             var json = JsonConvert.SerializeObject(payload);
 
             using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-            using (var resp = await _http.PostAsync("/insert_scaled_positions/start", content)) // << was intervals endpoint
+            using (var resp = await _http.PostAsync("/insert_scaled_positions/start", content).ConfigureAwait(false))
             {
                 resp.EnsureSuccessStatusCode();
-                var body = await resp.Content.ReadAsStringAsync();
+
+                var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var jo = JObject.Parse(body);
                 return (string)jo["job_id"];
             }
@@ -996,13 +1091,28 @@ namespace wpfTDX
 
         public async Task<UpsertJobStatus> GetInsertScaledPositionsStatusAsync(string jobId)
         {
-            using (var resp = await _http.GetAsync($"/scaled_positions/status/{jobId}"))
+            var url = "/insert_scaled_positions/status/" + Uri.EscapeDataString(jobId ?? string.Empty);
+
+            using (var resp = await _http.GetAsync(url).ConfigureAwait(false))
             {
+                // Optional back-compat shim only if you may still have the old route live somewhere:
+                if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    using (var fallback = await _http.GetAsync("/scaled_positions/status/" + Uri.EscapeDataString(jobId ?? string.Empty)).ConfigureAwait(false))
+                    {
+                        fallback.EnsureSuccessStatusCode();
+                        var fb = await fallback.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        return JsonConvert.DeserializeObject<UpsertJobStatus>(fb);
+                    }
+                }
+
                 resp.EnsureSuccessStatusCode();
-                var body = await resp.Content.ReadAsStringAsync();
+
+                var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
                 return JsonConvert.DeserializeObject<UpsertJobStatus>(body);
             }
         }
+
 
         // Poll status
         public async Task<UpsertJobStatus> GetUpsertFilterIntervalsStatusAsync(string jobId, System.Threading.CancellationToken ct = default)
@@ -2011,6 +2121,7 @@ namespace wpfTDX
                         _firstNewDeployment = false;
 
                         OnPropertyChanged(nameof(NewDeployment));
+                        ReCalcScaledDeployment();
                         OnPropertyChanged(nameof(NewDeploymentBrush));
                     }
                 }
@@ -2439,8 +2550,14 @@ namespace wpfTDX
                 {
                     sf = (float)(NewScaleFactor.Value);
                 }
-
-                if ( NewDeployment.HasValue)
+                else
+                {
+                    if(ScaleFactor.HasValue)
+                        sf = (float)(ScaleFactor.Value);
+                    else
+                        sf = 1;
+                }
+                if (NewDeployment.HasValue)
                 {
                     float r = (float)(NewDeployment.Value) * sf;
 
@@ -2456,35 +2573,6 @@ namespace wpfTDX
 
 
 
-
-            //public void CoerceFlagsFromPositions()
-            //{
-            //    if (!PositionBaseY1.HasValue) BaseY1 = null;
-            //    if (!PositionBaseH1.HasValue) BaseH1 = null;
-            //    if (!PositionBaseD1.HasValue) BaseD1 = null;
-
-            //    if (!PositionY1.HasValue) y1 = null;
-            //    if (!PositionY2.HasValue) y2 = null;
-            //    if (!PositionY3.HasValue) y3 = null;
-
-            //    if (!PositionH2.HasValue) H2 = null;
-            //    if (!PositionH3.HasValue) H3 = null;
-            //    if (!PositionH4.HasValue) H4 = null;
-            //    //if (!PositionH5.HasValue) H5 = null;
-            //    if (!PositionH6.HasValue) H6 = null;
-            //    if (!PositionH12.HasValue) H12 = null;
-            //    if (!PositionH16.HasValue) H16 = null;
-            //    if (!PositionH36.HasValue) H36 = null;
-
-            //    if (!PositionD1.HasValue) D1 = null;
-            //    if (!PositionD2.HasValue) D2 = null;
-            //    if (!PositionD3.HasValue) D3 = null;
-            //    if (!PositionD4.HasValue) D4 = null;
-            //    if (!PositionD8.HasValue) D8 = null;
-
-            //    if (!PositionW1.HasValue) W1 = null;
-            //    if (!PositionW2.HasValue) W2 = null;
-            //}
 
             public void SnapshotOriginals()
             {
@@ -2570,7 +2658,7 @@ namespace wpfTDX
                     FundGroupName = this.FundGroup,
                     FundName = this.FundName,
                     ScaledPercent = this.ScaledPercent ,
-                    ScaledStepSize = this.ScaleFactor - this.NewScaleFactor, // default to 0.0 if null
+                    ScaledStepSize = Math.Abs((this.ScaleFactor ?? 1) - (this.NewScaleFactor ?? 1)), // default to 0.0 if null
                     ScaledTarget = this.NewScaleFactor,
                     ScaledTimeStep = 5,
                     ScaledType = "filtered"
@@ -2682,6 +2770,9 @@ namespace wpfTDX
             finally { IsExecuting = false; }
         }
 
+
+
+
         public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker,string fundgroupname,string fundname)
         {
             var row = new FilterIntervalsViewModel.MergedTickerRow
@@ -2690,12 +2781,12 @@ namespace wpfTDX
                 FundGroup = fundgroupname,
                 FundName = fundname,    
                 // safe defaults — tweak if you prefer different starting flags
-                Rescale = true,
-                LongOnly = false,
-                ShortOnly = false,
-                BuyOnly = false,
-                SellOnly = false,
-                AllIntervals = false,
+                Rescale = DefaultRescale,
+                LongOnly = DefaultLongOnly,
+                ShortOnly = DefaultShortOnly,
+                BuyOnly = DefaultBuyOnly,
+                SellOnly = DefaultSellOnly,
+                AllIntervals = DefaultAllIntervals,
                 y1 = false,
                 y2 = false,
                 y3 = false,
