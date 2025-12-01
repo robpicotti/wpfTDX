@@ -2008,7 +2008,7 @@ namespace wpfTDX
         public async Task<string> UpsertFilterIntervalsStartAsync(
             IEnumerable<FilterIntervalsUpsertRow> rows,
             IList<string> tickersToProcess = null,
-            IList<object> strategyOverrideRows = null)   // <—
+            IList<object> strategyOverrideRows = null)   //fixes for  <—
         {
             // Clean up tickers if any
             List<string> cleanTickers = null;
