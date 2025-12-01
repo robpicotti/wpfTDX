@@ -86,6 +86,7 @@
                                 <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" />
                                 <DataGridTextColumn Header="EMSName" Binding="{Binding Emsname}" />
                                 <DataGridTextColumn Header="BrokerCodeExec" Binding="{Binding BrokerCodeExec}" />
+                                <DataGridTextColumn Header="FundGroupName" Binding="{Binding FundGroupName}" />
                                 <DataGridTextColumn Header="FundName" Binding="{Binding Fundname}" />
                                 <DataGridTextColumn Header="SubaccountName" Binding="{Binding Subaccountname}" />
                                 <DataGridTextColumn Header="ExecAccountName" Binding="{Binding Execaccountname}" />

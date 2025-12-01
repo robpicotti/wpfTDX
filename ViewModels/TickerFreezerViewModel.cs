@@ -250,7 +250,8 @@ namespace wpfTDX
                 if (!originalFreezeState)
                 {
                     tsql = GenerateFreezeSQL(
-                        "*", "*", SelectedFund.FundName, "*", "*", "*", "*", 2001, "Manual Freeze on Fund", 0, "", 0, "", "*", "*", DBNull.Value.ToString());
+                        "*", "*", SelectedFund.FundName, "*", "*", "*", "*", 2001, "Manual Freeze on Fund", 0, "", 0, "", "*", "*", DBNull.Value.ToString(),
+                        SelectedFund.FundGroupName);
    
                 }
                 else
@@ -266,14 +267,6 @@ namespace wpfTDX
                 // Reset the Freeze state to its original value
                 SelectedFund.Freeze = originalFreezeState;
                 OnPropertyChanged(nameof(FundsData));
-                //if (SelectedFund.Freeze)
-                //{
-                //    SelectedFund.Freeze = false;
-                //}
-                //else
-                //{
-                //    SelectedFund.Freeze = true;
-                //}
             }
         
 
@@ -292,6 +285,7 @@ namespace wpfTDX
                         SelectedTicker.Runtime.ToString("yyyy-MM-dd HH:mm:ss.fff"),
                         SelectedTicker.Emsname,
                         SelectedTicker.BrokerCodeExec,
+                        SelectedTicker.FundGroupName,
                         SelectedTicker.Fundname,
                         SelectedTicker.Execaccountname,
                         SelectedTicker.Subaccountname,
@@ -356,7 +350,7 @@ namespace wpfTDX
             try
             {
                 string tsql = generate_override_freezer_sql(SelectedTicker.Runtime.ToString("yyyy-MM-dd HH:mm:ss.fff"),
-                    SelectedTicker.Emsname, SelectedTicker.BrokerCodeExec, SelectedTicker.Fundname, SelectedTicker.Execaccountname,
+                    SelectedTicker.Emsname, SelectedTicker.BrokerCodeExec, SelectedTicker.FundGroupName, SelectedTicker.Fundname, SelectedTicker.Execaccountname,
                     SelectedTicker.Subaccountname, SelectedTicker.Tadid, SelectedTicker.Errorcode.ToString(), true, expiration
                     );
                 execute_sql(tsql);
@@ -374,7 +368,7 @@ namespace wpfTDX
         private string GenerateFreezeSQL(string emsname,string broker_code_exec,string fundname,
             string subaccountname,string execaccountname,string tad_id,string tickername,int error_code,
             string error_string,int resolved,string expiration,int _override, string override_expire,
-            string benchmarkname,string notes,string runtime_resolved)
+            string benchmarkname,string notes,string runtime_resolved,string fundgroupname)
         {
             string _runtime_resolved = runtime_resolved;
             if (_runtime_resolved == "") { _runtime_resolved = "NULL"; } else { _runtime_resolved = "'" + _runtime_resolved + "'"; }
@@ -382,7 +376,7 @@ namespace wpfTDX
             if (override_expire == "") { override_expire = "NULL"; } else { override_expire = "'" + override_expire + "'"; }
  
             string tsql = "INSERT ticker_freezer VALUES('" + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff") + "','";
-            tsql += emsname + "','" + broker_code_exec + "','" + fundname + "','";
+            tsql += emsname + "','" + broker_code_exec + "','" + fundgroupname + "','" + fundname + "','";
             tsql += subaccountname + "','" + execaccountname + "','" + tad_id + "','";
             tsql += tickername + "'," + error_code.ToString() + ",'" + error_string + "',";
             tsql += resolved.ToString() + "," + expiration + "," + _override.ToString() + "," + override_expire;
@@ -397,7 +391,8 @@ namespace wpfTDX
             try
             {
                 string tsql = generate_override_freezer_sql(SelectedTicker.Runtime.ToString("yyyy-MM-dd HH:mm:ss.fff"), SelectedTicker.Emsname,
-                    SelectedTicker.BrokerCodeExec, SelectedTicker.Fundname, SelectedTicker.Execaccountname, SelectedTicker.Subaccountname,
+                    SelectedTicker.BrokerCodeExec, SelectedTicker.FundGroupName,
+                    SelectedTicker.Fundname, SelectedTicker.Execaccountname, SelectedTicker.Subaccountname,
                     SelectedTicker.Tadid, SelectedTicker.Errorcode.ToString(), false, null);
                 execute_sql(tsql);
             }
@@ -410,7 +405,8 @@ namespace wpfTDX
                 await Refresh();
             }
         }
-        private string generate_override_freezer_sql(string runtime, string ems, string brokercode_exec, string fundname, string execaccountname, string subaccountname,
+        private string generate_override_freezer_sql(string runtime, string ems, string brokercode_exec, string fundgroupname,
+            string fundname, string execaccountname, string subaccountname,
              string tad_id, string error_code, bool add_override, string expiration)
         {
             string _override = "1";
@@ -426,6 +422,7 @@ namespace wpfTDX
             t_sql += " WHERE runtime='" + runtime + "' AND broker_code_exec ='" + brokercode_exec + "' AND fundname='" + fundname + "' AND subaccountname='" + subaccountname + "'";
             t_sql += " AND execaccountname = '" + execaccountname + "'";
             t_sql += " AND tad_id='" + tad_id + "' AND error_code=" + error_code;
+            t_sql += " AND fundgroupname='" + fundgroupname + "'";
 
 
             return t_sql;
@@ -439,6 +436,7 @@ namespace wpfTDX
                 var thawEventArgs = new ThawFreezerEventArgs
                 {
                     RunTime = SelectedTicker.Runtime.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                    FundGroupName = SelectedTicker.FundGroupName,
                     FundName = SelectedTicker.Fundname,
                     ExecAccountName = SelectedTicker.Execaccountname,
                     SubAccountName = SelectedTicker.Subaccountname,
@@ -473,6 +471,7 @@ namespace wpfTDX
             sql_text += SelectedTicker.Fundname + "' and subaccountname='" + SelectedTicker.Subaccountname + "' and tad_id = '" + SelectedTicker.Tadid + "'" +
                 " AND tickername='" + SelectedTicker.Tickername + "' AND error_code=" + SelectedTicker.Errorcode.ToString();
             sql_text += " AND benchmarkname='" + SelectedTicker.Benchmarkname + "'";
+            sql_text += " AND fundgroupname='" + SelectedTicker.FundGroupName + "'";
             return sql_text;
         }
 
@@ -601,24 +600,28 @@ namespace wpfTDX
             _canExecute = canExecute;
         }
 
-        public event EventHandler CanExecuteChanged;
+       
 
         public bool CanExecute(object parameter)
         {
             return _canExecute == null || _canExecute();
         }
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
+
 
         public async void Execute(object parameter)
         {
             if (_executeAsync != null)
-            {
                 await _executeAsync();
-            }
         }
 
         public void RaiseCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
@@ -637,55 +640,33 @@ namespace wpfTDX
             _canExecute = canExecute;
         }
 
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         public bool CanExecute(object parameter)
         {
-            return _canExecute == null || _canExecute((T)parameter);
+            // Safely handle null/non-T parameters
+            if (_canExecute == null) return true;
+            if (parameter == null && default(T) == null) return _canExecute(default(T));
+            if (!(parameter is T)) return _canExecute(default(T));
+            return _canExecute((T)parameter);
         }
 
         public void Execute(object parameter)
         {
-            _execute((T)parameter);
+            if (parameter == null && default(T) == null) { _execute(default(T)); return; }
+            _execute(parameter is T t ? t : default(T));
         }
 
         public void RaiseCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
-    //public class TickerFreezerRelayCommand : ICommand
-    //{
-    //    private readonly Func<Task> _executeAsync;
-    //    private readonly Func<bool> _canExecute;
-
-    //    public TickerFreezerRelayCommand(Func<Task> executeAsync, Func<bool> canExecute = null)
-    //    {
-    //        _executeAsync = executeAsync;
-    //        _canExecute = canExecute;
-    //    }
-
-    //    public event EventHandler CanExecuteChanged;
-
-    //    public bool CanExecute(object parameter)
-    //    {
-    //        return _canExecute == null || _canExecute();
-    //    }
-
-    //    public async void Execute(object parameter)
-    //    {
-    //        if (_executeAsync != null)
-    //        {
-    //            await _executeAsync();
-    //        }
-    //    }
-
-    //    public void RaiseCanExecuteChanged()
-    //    {
-    //        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    //    }
-    //}
 
 
 
@@ -698,6 +679,7 @@ namespace wpfTDX
     public class ThawFreezerEventArgs : EventArgs
     {
         public string RunTime { get; set; }
+        public string FundGroupName { get; set; }
         public string FundName { get; set; }
         public string ExecAccountName { get; set; }
         public string SubAccountName { get; set; }

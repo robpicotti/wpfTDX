@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -12,10 +13,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using TDX;
 using static System.Net.WebRequestMethods;
 
 namespace wpfTDX
@@ -116,28 +119,32 @@ namespace wpfTDX
             // Pass the numeric value through; StringFormat on the binding will handle "{0:P1}"
             return value;
         }
-
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var s = value as string;
-            if (string.IsNullOrWhiteSpace(s)) return null; // treat empty as null
+            var s = value?.ToString()?.Trim();
+            if (string.IsNullOrWhiteSpace(s))
+                return null;
 
-            s = s.Trim();
-            bool hadPercent = s.EndsWith(culture.NumberFormat.PercentSymbol);
+            // strip percent sign
+            bool hadPercent = s.EndsWith("%", StringComparison.Ordinal);
+            if (hadPercent) s = s.Substring(0, s.Length - 1).Trim();
+
+            // accept leading or trailing dot
+            if (s.StartsWith(".")) s = "0" + s;   // ".25" -> "0.25"
+            if (s.EndsWith(".")) s = s + "0";    // "1."  -> "1.0"
+
+            // parse with invariant (or your desired) culture
+            if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
+                return Binding.DoNothing; // or throw to trigger validation
+
+            // If user typed "25%" treat as 0.25; if they typed 0.25 or .25, keep as 0.25
             if (hadPercent)
-                s = s.Substring(0, s.Length - culture.NumberFormat.PercentSymbol.Length).Trim();
+                v = v / 100.0;
 
-            if (double.TryParse(s,
-                    NumberStyles.Float | NumberStyles.AllowThousands,
-                    culture, out var d))
-            {
-                if (hadPercent) d /= 100.0;  // "25%" -> 0.25
-                return d;
-            }
-
-            // Invalid input: keep the old value (don’t push error to source)
-            return Binding.DoNothing;
+            // your scale is 0..3; converter returns the underlying fraction (e.g., 0.25)
+            return v;
         }
+
     }
 
     public sealed class CompareRoundedConverter : IMultiValueConverter
@@ -366,6 +373,62 @@ namespace wpfTDX
             }
         }
 
+        private ObservableCollection<StrategiesOverrideDataModel> _StrategiesOverrideData;
+        public ObservableCollection<StrategiesOverrideDataModel> StrategiesOverrideData
+        {
+            get { return _StrategiesOverrideData; }
+            set { 
+                if(_StrategiesOverrideData != value)
+                {
+                    _StrategiesOverrideData = value; ;
+                    OnPropertyChanged(nameof(StrategiesOverrideData));
+                }
+            }
+        }
+
+        // strategies list for the ComboBox
+        public ObservableCollection<string> StrategyNames { get; } = new ObservableCollection<string>();
+
+        // manual-freeze definition rows (error_code + freeze_level) pulled from "errors" (manual=1)
+        private sealed class ManualFreezeDef
+        {
+            public int ErrorCode;
+            public string FreezeLevel;
+            public string Reason;
+        }
+        private List<ManualFreezeDef> _manualDefs = new List<ManualFreezeDef>();
+
+        // unresolved manual freezes we’ll match against rows
+        private sealed class ActiveFreezeRow
+        {
+            public DateTime? RunTime;
+            public string Tickername;
+            public string Fundname;       // "*" or concrete fund
+            public string Fundgroupname;  // "*" or concrete group
+            public int ErrorCode;
+            public string FreezeLevel;    // e.g. "tickername,fundname"
+        }
+        private List<ActiveFreezeRow> _activeManualFreezes = new List<ActiveFreezeRow>();
+
+        // latest override by ticker (store the full model, not just the name)
+        private Dictionary<string, StrategiesOverrideDataModel> _overrideByTicker
+            = new Dictionary<string, StrategiesOverrideDataModel>(StringComparer.OrdinalIgnoreCase);
+
+        // host environment (for strategies_override inserts)
+        private string _hostEnv = "dev";
+        public string HostEnv
+        {
+            get => _hostEnv;
+            set
+            {
+                if (_hostEnv != value)
+                {
+                    _hostEnv = value;
+                    OnPropertyChanged(nameof(HostEnv));
+                }
+            }
+        }
+
 
         // cached universe for the Add-Ticker dialog
         public List<TickerRow> TickerUniverse { get; private set; } = new List<TickerRow>();
@@ -511,15 +574,18 @@ namespace wpfTDX
             Timeout = TimeSpan.FromSeconds(60)
         };
 
+        SqlConnection SqlConn;
 
-        public FilterIntervalsViewModel()
+
+        public FilterIntervalsViewModel(SqlConnection sqlconn)
         {
-
+            SqlConn = sqlconn;
             FilterIntervalsData = new ObservableCollection<FilterIntervalsDataModel>();
             TadPositionsData = new ObservableCollection<TadPositionsDataModel>();
             MergedRowsView = CollectionViewSource.GetDefaultView(MergedRows);
             if (MergedRowsView != null)
                 MergedRowsView.Filter = RowFilter;
+
 
             _filterTimer.Tick += delegate (object sender, EventArgs e)
             {
@@ -531,6 +597,472 @@ namespace wpfTDX
 
         }
 
+
+        private static string JStr(JToken t, string name)
+        {
+            if (t == null) return null;
+            var o = t as JObject;
+            return o != null ? (o.Value<string>(name) ?? "").Trim() : null;
+        }
+
+        private sealed class ManualChangeDto
+        {
+            public string action;       // "insert" | "resolve"
+            public string tickername;
+            public string fundname;     // "*" allowed
+            public string fundgroupname;// "*" allowed
+            public int error_code;      // taken from _manualDefs
+            public string freeze_level; // "tickername", "tickername,fundname", etc.
+            public int resolved;        // 0 (insert), 1 (resolve)
+            public string hostenv;      // _hostEnv (you already load this)
+        }
+
+        private static string DetermineFreezeLevel(MergedTickerRow r)
+        {
+            bool hasFund = !string.IsNullOrWhiteSpace(r.FundName) && r.FundName != "*";
+            bool hasGroup = !string.IsNullOrWhiteSpace(r.FundGroup) && r.FundGroup != "*";
+
+            if (hasFund && hasGroup) return "tickername,fundname,fundgroupname";
+            if (hasFund) return "tickername,fundname";
+            if (hasGroup) return "tickername,fundgroupname";
+            return "tickername";
+        }
+        private ManualFreezeDef GetManualErrorDefForLevel(string freezeLevel)
+        {
+            // exact match preferred
+            var def = _manualDefs.FirstOrDefault(d =>
+                string.Equals(d.FreezeLevel, freezeLevel, StringComparison.OrdinalIgnoreCase));
+
+            // fallback: any available
+            return def ?? _manualDefs.FirstOrDefault();
+        }
+
+
+
+        public async Task ApplyManualChangesAsync_UsingTickerFreezer()
+        {
+            if (SqlConn == null) throw new InvalidOperationException("SqlConn is null on FilterIntervalsViewModel.");
+
+            await Task.Run(() =>
+            {
+                var freezer = new TickerFreezer(SqlConn);
+                string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"); // your DB likes string runtimes
+
+                foreach (var r in MergedRows)
+                {
+                    if (!r.ManualHasChanged) continue;
+
+                    string level = DetermineFreezeLevel(r);
+                    var def = GetManualErrorDefForLevel(level);
+                    int errorCode = def?.ErrorCode ?? 9999;
+                    string errorReason = string.IsNullOrWhiteSpace(def?.Reason)
+                        ? $"Manual trading freeze ({level})"
+                        : def.Reason;
+
+                    // Normalise wildcards to "*"
+                    string fund = string.IsNullOrWhiteSpace(r.FundName) ? "*" : r.FundName.Trim();
+                    string group = string.IsNullOrWhiteSpace(r.FundGroup) ? "*" : r.FundGroup.Trim();
+                    string tkr = r.Tickername?.Trim() ?? "*";
+
+                    if (r.Manual == true && r.OriginalManual != true)
+                    {
+
+                        // INSERT unresolved manual freeze (resolved=0 inside Freeze())
+                        freezer.Freeze(
+                            runtime: now,
+                            error_code: errorCode,
+                            error_string: errorReason,
+                            freeze_expiration: null,
+                            _override: 0,
+                            override_expiration: null,
+                            notes: "FilterIntervals UI",
+                            runtime_resolved: null,
+                            ems: "*",
+                            broker_code_exec: "*",
+                            fundname: fund,
+                            subaccountname: "*",
+                            execaccountname: "*",
+                            tad_id: "*",
+                            tickername: tkr,
+                            benchmarkname: "*",
+                            fundgroupname: group
+                        );
+                    }
+                    else if (r.Manual == false && r.OriginalManual == true)
+                    {
+                        // Find the active manual freeze that matches this row
+                        var match = _activeManualFreezes.FirstOrDefault(f => FreezeMatchesRow(f, r));
+
+                        // Fallback to "now" only if we couldn't find a matching unresolved freeze
+                        string thawRuntime = (match?.RunTime?.ToString("yyyy-MM-dd HH:mm:ss"))
+                                             ?? now;
+                        // Resolve existing manual freeze entry
+                        freezer.Thaw(
+                            runtime: thawRuntime,
+                            ems: "*",
+                            broker_code_exec: "*",
+                            fundgroupname: group,
+                            fundname: fund,
+                            subaccountname: "*",
+                            execaccountname: "*",
+                            tad_id: "*",
+                            tickername: tkr,
+                            error_code: errorCode.ToString(),
+                            benchmarkname: "*",
+                            notes: "FilterIntervals UI",
+                            gbl_conn: SqlConn
+                        );
+                    }
+
+                    // Accept just the Manual change locally (do not disturb other dirty flags)
+                    r.AcceptManualAsOriginal();
+                }
+            });
+
+            // Optional: if your UI relies on _activeManualFreezes for highlighting, refresh it:
+            // await LoadActiveManualFreezesAsync();
+        }
+
+        //private async Task SubmitManualChangesBatchAsync(List<ManualChangeDto> items)
+        //{
+        //    // shape: { items: [...] }
+        //    var payload = new { items = items };
+        //    var json = JsonConvert.SerializeObject(payload);
+        //    using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+        //    {
+        //        // swap this route to your actual endpoint if different
+        //        using (var resp = await _http.PostAsync("/manual_freezes/batch", content))
+        //        {
+        //            resp.EnsureSuccessStatusCode();
+        //            // no body required; if your API returns something, parse here
+        //        }
+        //    }
+        //}
+
+
+        private static bool WildEq(string a, string b)
+        {
+            // treat "*" as wildcard; otherwise case-insensitive equals
+            if (string.Equals(a, "*", StringComparison.Ordinal)) return true;
+            return string.Equals(a ?? "", b ?? "", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static DateTime? JDate(JObject o, string name)
+        {
+            if (o == null) return null;
+            DateTime dt;
+            var s = o.Value<string>(name);
+            if (DateTime.TryParse(s, out dt)) return dt;
+            var tn = o[name];
+            if (tn != null && tn.Type == JTokenType.Date) return tn.Value<DateTime>();
+            return null;
+        }
+
+        //private List<StrategiesOverrideDataModel> BuildStrategyOverrideRows()
+        //{
+        //    // Safety: if the backing collection wasn't loaded, just treat as empty
+        //    var prevByTicker = (StrategiesOverrideData ?? new ObservableCollection<StrategiesOverrideDataModel>())
+        //        .GroupBy(s => s.TickerName, StringComparer.OrdinalIgnoreCase)
+        //        // pick the latest by runtime if multiples exist
+        //        .ToDictionary(
+        //            g => g.Key,
+        //            g => g.OrderByDescending(x => x.RunTime).First(),
+        //            StringComparer.OrdinalIgnoreCase
+        //        );
+
+        //    var rows = new List<StrategiesOverrideDataModel>();
+
+        //    foreach (var r in MergedRows)
+        //    {
+        //        if (!r.StrategyNameHasChanged) continue;
+
+        //        // Try to get a previous override for this ticker to copy optional flags
+        //        prevByTicker.TryGetValue(r.Tickername ?? string.Empty, out var prev);
+
+        //        var item = new StrategiesOverrideDataModel
+        //        {
+        //            // required identifiers / meta
+        //            RunTime = DateTime.UtcNow,     // stamp now; DB can also handle server-side if you prefer
+        //            TickerName = r.Tickername?.Trim(),
+        //            Env = _hostEnv,            // you already load this via LoadHostEnvAsync()
+
+        //            // carry forward what we can from previous override (if present)
+        //            SortKey = prev?.SortKey ?? 0,
+        //            Enable = prev?.Enable ?? true,
+        //            StrategyName = r.StrategyName,     // <-- the newly selected strategy
+
+        //            // keep any existing base names if you use them; otherwise null is fine
+        //            StrategyNameBase = prev?.StrategyNameBase,
+        //            StrategyNameBaseDaily = prev?.StrategyNameBaseDaily,
+
+        //            Watchlist = prev?.Watchlist,
+        //            KeepUpdated = prev?.KeepUpdated,
+        //            CalcTrades = prev?.CalcTrades,
+        //            TakePosition = prev?.TakePosition
+        //        };
+
+        //        // Apply the min_* rule based on the selected strategy
+        //        bool isDefault = string.Equals(r.StrategyName, "default", StringComparison.OrdinalIgnoreCase);
+        //        item.MinUpdateFreq = isDefault ? "default" : "y1";
+        //        item.MinChartFreq = isDefault ? "default" : "y1";
+        //        item.MinPosFreq = isDefault ? "default" : "y1";
+
+        //        rows.Add(item);
+        //    }
+
+        //    return rows;
+        //}
+
+
+        public async Task LoadStrategyNamesAsync()
+        {
+            StrategyNames.Clear();
+
+            using (var client = new HttpClient())
+            {
+                var resp = await client.PostAsync("http://localhost:5001/get_strategynames",
+                                                  new StringContent("{}", Encoding.UTF8, "application/json"));
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+
+                var tok = JToken.Parse(body);
+                if (tok.Type == JTokenType.Array)
+                {
+                    foreach (var item in (JArray)tok)
+                    {
+                        string name = null;
+                        if (item.Type == JTokenType.String)
+                            name = (string)item;
+                        else if (item.Type == JTokenType.Object)
+                            name = ((JObject)item).Value<string>("strategyname");
+
+                        if (!string.IsNullOrWhiteSpace(name))
+                            StrategyNames.Add(name.Trim());
+                    }
+                }
+            }
+        }
+
+        public async Task LoadStrategiesOverrideAsync()
+        {
+            _overrideByTicker.Clear();
+
+            // If you already loaded env in LoadHostEnvAsync(), prefer it here
+            // (leave null to accept all envs)
+            string envFilter = _hostEnv; // e.g., "prod", "dev", etc.
+
+            using (var client = new HttpClient())
+            {
+                var resp = await client.PostAsync(
+                    "http://localhost:5001/get_strategies_override",
+                    new StringContent("{}", Encoding.UTF8, "application/json"));
+                resp.EnsureSuccessStatusCode();
+
+                var body = await resp.Content.ReadAsStringAsync();
+                var arr = JArray.Parse(body);
+
+                // Keep latest row by (ticker, env) → latest runtime wins
+                // If envFilter != null, we only consider that env
+                var latestByTicker = new Dictionary<string, StrategiesOverrideDataModel>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var token in arr)
+                {
+                    var o = token as JObject; if (o == null) continue;
+
+                    var ticker = (o.Value<string>("tickername") ?? "").Trim();
+                    if (ticker.Length == 0) continue;
+
+                    var env = (o.Value<string>("env") ?? "").Trim();
+                    if (!string.IsNullOrEmpty(envFilter) &&
+                        !string.Equals(env, envFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue; // skip mismatched env
+                    }
+
+                    // you used JDate(...) previously; keep it if you have it available:
+                    DateTime? rt = JDate(o, "runtime"); // falls back to null if parsing fails
+                    if (!rt.HasValue) continue;
+
+                    // Map into your StrategiesOverrideDataModel
+                    var so = new StrategiesOverrideDataModel
+                    {
+                        RunTime = rt.Value,
+                        TickerName = ticker,
+                        Env = env,
+                        SortKey = o.Value<int?>("sort_key") ?? 0,
+                        Enable = o["enable"]?.ToObject<bool?>(),
+
+                        StrategyName = (o.Value<string>("strategyname") ?? "").Trim(),
+                        StrategyNameBase = (o.Value<string>("strategyname_base") ?? "").Trim(),
+                        StrategyNameBaseDaily = (o.Value<string>("strategyname_base_daily") ?? "").Trim(),
+
+                        Watchlist = o["watchlist"]?.ToObject<bool?>(),
+                        KeepUpdated = o["keep_updated"]?.ToObject<bool?>(),
+                        CalcTrades = o["calc_trades"]?.ToObject<bool?>(),
+                        TakePosition = o["take_position"]?.ToObject<bool?>(),
+
+                        MinUpdateFreq = (o.Value<string>("min_update_freq") ?? "").Trim(),
+                        MinChartFreq = (o.Value<string>("min_chart_freq") ?? "").Trim(),
+                        MinPosFreq = (o.Value<string>("min_pos_freq") ?? "").Trim(),
+                    };
+
+                    if (!latestByTicker.TryGetValue(ticker, out var existing)
+                        || so.RunTime > existing.RunTime)
+                    {
+                        latestByTicker[ticker] = so;
+                    }
+                }
+
+                // Commit to the backing dictionary
+                foreach (var kv in latestByTicker)
+                    _overrideByTicker[kv.Key] = kv.Value;
+            }
+        }
+
+        public async Task LoadManualFreezeDefsAsync()
+        {
+            _manualDefs = new List<ManualFreezeDef>();
+
+            var req = new
+            {
+                //table_name = "errors",
+                //where_dict = new Dictionary<string, object> { { "manual", 1 } }
+            };
+
+            using (var client = new HttpClient())
+            {
+                var content = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
+                var resp = await client.PostAsync("http://localhost:5001/get_manual_trading_errors", content);
+                resp.EnsureSuccessStatusCode();
+                var json = await resp.Content.ReadAsStringAsync();
+
+                var rows = JArray.Parse(json);
+                foreach (var t in rows)
+                {
+                    var o = t as JObject;
+                    if (o == null) continue;
+
+                    var fl = (o.Value<string>("freeze_level") ?? "").Trim().ToLowerInvariant();
+                    var ec = o.Value<int?>("error_code") ?? 0;
+                    var rs = (o.Value<string>("reason") ?? "").Trim();
+                    if (ec != 0 && fl.Length > 0)
+                    {
+                        var def = new ManualFreezeDef { ErrorCode = ec, FreezeLevel = fl,Reason =rs };
+                        _manualDefs.Add(def);
+                    }
+                }
+            }
+        }
+
+        public async Task LoadActiveManualFreezesAsync()
+        {
+            _activeManualFreezes = new List<ActiveFreezeRow>();
+            var manualSet = new HashSet<int>(_manualDefs.Select(m => m.ErrorCode));
+
+            using (var client = new HttpClient())
+            {
+                var resp = await client.PostAsync("http://localhost:5001/get_unresolved_tickerfreezer",
+                                                  new StringContent("{}", Encoding.UTF8, "application/json"));
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+                var arr = JArray.Parse(body);
+
+                foreach (var t in arr)
+                {
+                    var o = t as JObject;
+                    if (o == null) continue;
+
+                    var ec = o.Value<int?>("error_code") ?? 0;
+                    if (!manualSet.Contains(ec)) continue;
+
+                    var r = new ActiveFreezeRow();
+                    r.RunTime = JDate(o, "runtime"); // you already have JDate()
+                    r.Tickername = (o.Value<string>("tickername") ?? "").Trim();
+                    r.Fundname = (o.Value<string>("fundname") ?? "").Trim();
+                    r.Fundgroupname = (o.Value<string>("fundgroupname") ?? "").Trim();
+                    r.ErrorCode = ec;
+                    r.FreezeLevel = (o.Value<string>("freeze_level") ?? "").Trim().ToLowerInvariant();
+
+                    if (r.Tickername.Length > 0)
+                        _activeManualFreezes.Add(r);
+                }
+            }
+        }
+
+
+        public async Task LoadHostEnvAsync()
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    var resp = await client.PostAsync(
+                        "http://localhost:5001/get_hostenv",
+                        new StringContent("{}", Encoding.UTF8, "application/json")
+                    );
+
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        var json = await resp.Content.ReadAsStringAsync();
+                        if (!string.IsNullOrWhiteSpace(json))
+                        {
+                            try
+                            {
+                                var jo = JObject.Parse(json);
+                                var value = (string)jo["hostenv"];
+                                if (!string.IsNullOrWhiteSpace(value))
+                                    _hostEnv = value.Trim();
+                            }
+                            catch
+                            {
+                                // fallback: if not valid JSON, keep current
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // keep default "prod" if endpoint is missing or fails
+            }
+        }
+
+        private bool FreezeMatchesRow(ActiveFreezeRow f, FilterIntervalsViewModel.MergedTickerRow r)
+        {
+            if (f == null || r == null) return false;
+
+            var level = (f.FreezeLevel ?? "").Replace(" ", "").ToLowerInvariant();
+
+            if (level == "tickername")
+            {
+                return string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase);
+            }
+            else if (level == "tickername,fundname")
+            {
+                return string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase)
+                    && WildEq(f.Fundname, r.FundName);
+            }
+            else if (level == "tickername,fundgroupname")
+            {
+                return string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase)
+                    && WildEq(f.Fundgroupname, r.FundGroup);
+            }
+            else if (level == "tickername,fundname,fundgroupname")
+            {
+                return string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase)
+                    && WildEq(f.Fundname, r.FundName)
+                    && WildEq(f.Fundgroupname, r.FundGroup);
+            }
+            else
+            {
+                // unknown schema → fall back to ticker-only
+                return string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+
+
+        //END NEW
 
         private void RebuildPredicates()
         {
@@ -772,9 +1304,310 @@ namespace wpfTDX
             foreach (var m in merged.Values.OrderBy(x => x.Tickername))
                 TadPositionsData.Add(m);
         }
+        private static string NormalizeLevel(string s)
+        {
+            return (s ?? "").Replace(" ", "").ToLowerInvariant();
+        }
+
+        private bool ManualAppliesToRowByRowLevel(MergedTickerRow r)
+        {
+            if (r == null || _activeManualFreezes == null || _activeManualFreezes.Count == 0)
+                return false;
+
+            // Use the row’s current level
+            var level = DetermineFreezeLevel(r);                 // e.g. "tickername,fundname"
+            var nlevel = NormalizeLevel(level);
+
+            // Treat null/blank as "*" for comparison with WildEq
+            string rowFund = string.IsNullOrWhiteSpace(r.FundName) ? "*" : r.FundName.Trim();
+            string rowGroup = string.IsNullOrWhiteSpace(r.FundGroup) ? "*" : r.FundGroup.Trim();
+
+            foreach (var f in _activeManualFreezes)
+            {
+                if (!string.Equals(NormalizeLevel(f.FreezeLevel), nlevel, StringComparison.Ordinal))
+                    continue;
+
+                if (!string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // The row-level dictates which fields must match (with "*" allowed on either side)
+                if (nlevel == "tickername")
+                    return true;
+
+                if (nlevel == "tickername,fundname")
+                    return WildEq(f.Fundname, rowFund);
+
+                if (nlevel == "tickername,fundgroupname")
+                    return WildEq(f.Fundgroupname, rowGroup);
+
+                if (nlevel == "tickername,fundname,fundgroupname")
+                    return WildEq(f.Fundname, rowFund) && WildEq(f.Fundgroupname, rowGroup);
+            }
+
+            // Also allow a broader freeze ("tickername") to apply to more specific row levels.
+            foreach (var f in _activeManualFreezes)
+            {
+                if (NormalizeLevel(f.FreezeLevel) == "tickername" &&
+                    string.Equals(f.Tickername, r.Tickername, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        //public async Task RebuildMerged(bool preserveUserFiFlags = false)
+        //{
+
+        //    // 1) Ensure defs and active freezes are loaded (and in the right order).
+        //    if (_manualDefs == null || _manualDefs.Count == 0)
+        //        await LoadManualFreezeDefsAsync();
+
+        //    if (_activeManualFreezes == null || _activeManualFreezes.Count == 0)
+        //        await LoadActiveManualFreezesAsync();
+
+        //    string MakeKey(string t, string fg, string fn)
+        //    {
+        //        return $"{(t ?? "").Trim().ToUpperInvariant()}|{(fg ?? "").Trim().ToUpperInvariant()}|{(fn ?? "").Trim().ToUpperInvariant()}";
+        //    }
+
+        //    var scaledByComposite = (ScaledPositionsData ?? new ObservableCollection<ScaledPositionsDataModel>())
+        //        .GroupBy(s => MakeKey(s.TickerName, s.FundGroupName, s.FundName))
+        //        .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+
+        //    // capture current rows (for preserving user edits/baselines)
+        //    Dictionary<string, MergedTickerRow> previous = null;
+        //    if (preserveUserFiFlags)
+        //        previous = MergedRows.ToDictionary(r => r.Tickername, r => r, StringComparer.OrdinalIgnoreCase);
+
+        //    MergedRows.Clear();
+
+        //    var fiByTicker = (FilterIntervalsData ?? new ObservableCollection<FilterIntervalsDataModel>())
+        //        .GroupBy(x => x.TickerName, StringComparer.OrdinalIgnoreCase)
+        //        .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        //    foreach (var tp in TadPositionsData) // left-join: every tad row shows up
+        //    {
+        //        fiByTicker.TryGetValue(tp.Tickername, out var fi);
+
+        //        var row = new MergedTickerRow
+        //        {
+        //            Tickername = tp.Tickername,
+
+        //            // start from server FI values…
+        //            Runtime = fi?.Runtime ?? default,
+        //            FundGroup = fi?.FundGroup,
+        //            FundName = fi?.FundName,
+        //            Rescale = fi?.Rescale,
+        //            LongOnly = fi?.LongOnly,
+        //            ShortOnly = fi?.ShortOnly,
+        //            BuyOnly = fi?.BuyOnly,
+        //            SellOnly = fi?.SellOnly,
+        //            AllIntervals = fi?.AllIntervals,
+
+        //            BaseY1 = fi?.BaseY1,
+        //            BaseH1 = fi?.BaseH1,
+        //            BaseD1 = fi?.BaseD1,
+        //            y1 = fi?.Y1,
+        //            y2 = fi?.Y2,
+        //            y3 = fi?.Y3,
+        //            H2 = fi?.H2,
+        //            H3 = fi?.H3,
+        //            H4 = fi?.H4,
+        //            //H5 = fi?.H5,
+        //            H6 = fi?.H6,
+        //            H12 = fi?.H12,
+        //            H16 = fi?.H16,
+        //            D1 = fi?.D1,
+        //            H36 = fi?.H36,
+        //            D2 = fi?.D2,
+        //            D3 = fi?.D3,
+        //            D4 = fi?.D4,
+        //            W1 = fi?.W1,
+        //            D8 = fi?.D8,
+        //            W2 = fi?.W2,
+
+        //            // positions side
+        //            PositionBaseY1 = tp.PositionBaseY1,
+        //            PositionBaseH1 = tp.PositionBaseH1,
+        //            PositionBaseD1 = tp.PositionBaseD1,
+        //            PositionY1 = tp.PositionY1,
+        //            PositionY2 = tp.PositionY2,
+        //            PositionY3 = tp.PositionY3,
+        //            PositionH2 = tp.PositionH2,
+        //            PositionH3 = tp.PositionH3,
+        //            PositionH4 = tp.PositionH4,
+        //            //PositionH5 = tp.PositionH5,
+        //            PositionH6 = tp.PositionH6,
+        //            PositionH12 = tp.PositionH12,
+        //            PositionH16 = tp.PositionH16,
+        //            PositionD1 = tp.PositionD1,
+        //            PositionH36 = tp.PositionH36,
+        //            PositionD2 = tp.PositionD2,
+        //            PositionD3 = tp.PositionD3,
+        //            PositionD4 = tp.PositionD4,
+        //            PositionW1 = tp.PositionW1,
+        //            PositionD8 = tp.PositionD8,
+        //            PositionW2 = tp.PositionW2,
+
+        //            NumFilteredTrades = tp.NumFilteredTrades,
+        //            NumFiltIntervals = tp.NumFiltIntervals,
+        //            FilteredDeployment = tp.FilteredDeployment,
+        //            NumTrades = tp.PositionNumTrades,
+        //            NumPositionIntervals = tp.PositionNumIntervals,
+        //            ViewDeployment = tp.ViewDeployment,
+        //            PositionDeployment = tp.PositionDeployment,
+        //        };
+
+        //        ScaledPositionsDataModel sp = null;
+        //        scaledByComposite.TryGetValue(
+        //            MakeKey(tp.Tickername, fi?.FundGroup, fi?.FundName), out sp);
+
+        //        // scale_factor ← scaled_position (loaded into ScaledPercent above)
+        //        row.ScaleFactor = sp?.ScaledTarget;
+        //        row.ScaledPercent = sp?.ScaledPercent;
+
+        //        // ---- Step 5: populate Manual and StrategyName for this row ----
+        //        //bool manual = false;
+        //        //for (int i = 0; i < _activeManualFreezes.Count; i++)
+        //        //{
+        //        //    if (FreezeMatchesRow(_activeManualFreezes[i], row)) { manual = true; break; }
+        //        //}
+        //        //row.Manual = manual;
+        //        row.Manual = ManualAppliesToRowByRowLevel(row);
+
+        //        string sname;
+        //        if (_overrideByTicker.TryGetValue(row.Tickername, out sname))
+        //            row.StrategyName = sname;
+        //        else
+        //            row.StrategyName = null;
+        //        // ---------------------------------------------------------------
+
+
+        //        // If we're reloading ONLY positions, keep the user's current flags and old baselines
+        //        if (preserveUserFiFlags && previous != null && previous.TryGetValue(tp.Tickername, out var old))
+        //        {
+        //            // overwrite with user's CURRENT flags
+        //            row.Rescale = old.Rescale;
+        //            row.LongOnly = old.LongOnly;
+        //            row.ShortOnly = old.ShortOnly;
+        //            row.BuyOnly = old.BuyOnly;
+        //            row.SellOnly = old.SellOnly;
+        //            row.AllIntervals = old.AllIntervals;
+
+        //            row.BaseY1 = old.BaseY1;
+        //            row.BaseH1 = old.BaseH1;
+        //            row.BaseD1 = old.BaseD1;
+        //            row.y1 = old.y1;
+        //            row.y2 = old.y2;
+        //            row.y3 = old.y3;
+        //            row.H2 = old.H2;
+        //            row.H3 = old.H3;
+        //            row.H4 = old.H4;
+        //            //row.H5 = old.H5;
+        //            row.H6 = old.H6;
+        //            row.H12 = old.H12;
+        //            row.H16 = old.H16;
+        //            row.D1 = old.D1;
+        //            row.H36 = old.H36;
+        //            row.D2 = old.D2;
+        //            row.D3 = old.D3;
+        //            row.D4 = old.D4;
+        //            row.W1 = old.W1;
+        //            row.D8 = old.D8;
+        //            row.W2 = old.W2;
+
+        //            // keep ORIGINALS so HasChanged continues to compare to the same baseline
+        //            row.RestoreOriginalsFrom(old);
+        //        }
+        //        else
+        //        {
+        //            // fresh baseline from server FI
+        //            row.SnapshotOriginals();
+        //        }
+
+        //        // enforce your “coerce flag to null when Position* is null” rule
+        //        //row.CoerceFlagsFromPositions();
+
+        //        row.RecalcNewTrades();
+        //        row.RecalcRescaledIntervals();
+        //        row.RecalcNewDeployment();
+        //        row.ReCalcScaledDeployment();
+
+        //        MergedRows.Add(row);
+        //    }
+
+        //    // (optional) FI-only rows remain the same logic…
+        //    foreach (var fiOnly in fiByTicker.Values
+        //                 .Where(fi => !TadPositionsData.Any(tp =>
+        //                        string.Equals(tp.Tickername, fi.TickerName, StringComparison.OrdinalIgnoreCase))))
+        //    {
+        //        var row = new MergedTickerRow
+        //        {
+        //            Tickername = fiOnly.TickerName,
+        //            Runtime = fiOnly.Runtime,
+        //            FundGroup = fiOnly.FundGroup,   // >>> add this
+        //            FundName = fiOnly.FundName,    // >>> and this
+        //            Rescale = fiOnly.Rescale,
+        //            LongOnly = fiOnly.LongOnly,
+        //        };
+        //        // >>> scale_factor (scaled_position) join using (ticker, fundgroup, fund)
+        //        ScaledPositionsDataModel sp2 = null;
+        //        scaledByComposite.TryGetValue(
+        //            MakeKey(row.Tickername, row.FundGroup, row.FundName), out sp2);
+        //        row.ScaleFactor = sp2?.ScaledPercent;   // your scale_factor
+        //        row.NewScaleFactor = 1;
+        //        // if preserving edits and we had a previous row, restore it
+        //        if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var old))
+        //        {
+        //            row.Rescale = old.Rescale;
+        //            row.LongOnly = old.LongOnly;
+        //            row.Manual = old.Manual;
+        //            row.StrategyName = old.StrategyName;
+
+        //            row.RestoreOriginalsFrom(old);
+        //        }
+        //        else
+        //        {
+        //            // strategies/scaling you already set above...
+
+        //            // ---- Step 5: populate Manual and StrategyName for this row ----
+        //            //bool manual2 = false;
+        //            //for (int i = 0; i < _activeManualFreezes.Count; i++)
+        //            //{
+        //            //    if (FreezeMatchesRow(_activeManualFreezes[i], row)) { manual2 = true; break; }
+        //            //}
+        //            //row.Manual = manual2;
+        //            row.Manual = ManualAppliesToRowByRowLevel(row);
+
+        //            string sname2;
+        //            if (_overrideByTicker.TryGetValue(row.Tickername, out sname2))
+        //                row.StrategyName = sname2;
+        //            else
+        //                row.StrategyName = null;
+        //            // ---------------------------------------------------------------
+
+
+        //            row.SnapshotOriginals();
+        //        }
+        //        MergedRows.Add(row);
+        //    }
+
+
+
+
+        //    if (MergedRowsView != null) MergedRowsView.Refresh();
+
+        //}
 
         public async Task RebuildMerged(bool preserveUserFiFlags = false)
         {
+            // 1) Ensure defs and active freezes are loaded (and in the right order).
+            if (_manualDefs == null || _manualDefs.Count == 0)
+                await LoadManualFreezeDefsAsync();
+
+            if (_activeManualFreezes == null || _activeManualFreezes.Count == 0)
+                await LoadActiveManualFreezesAsync();
 
             string MakeKey(string t, string fg, string fn)
             {
@@ -784,7 +1617,6 @@ namespace wpfTDX
             var scaledByComposite = (ScaledPositionsData ?? new ObservableCollection<ScaledPositionsDataModel>())
                 .GroupBy(s => MakeKey(s.TickerName, s.FundGroupName, s.FundName))
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-
 
             // capture current rows (for preserving user edits/baselines)
             Dictionary<string, MergedTickerRow> previous = null;
@@ -797,7 +1629,8 @@ namespace wpfTDX
                 .GroupBy(x => x.TickerName, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-            foreach (var tp in TadPositionsData) // left-join: every tad row shows up
+            // ---- MAIN LOOP: TAD positions as left side ----
+            foreach (var tp in TadPositionsData)
             {
                 fiByTicker.TryGetValue(tp.Tickername, out var fi);
 
@@ -825,7 +1658,7 @@ namespace wpfTDX
                     H2 = fi?.H2,
                     H3 = fi?.H3,
                     H4 = fi?.H4,
-                    //H5 = fi?.H5,
+                    //H5   = fi?.H5,
                     H6 = fi?.H6,
                     H12 = fi?.H12,
                     H16 = fi?.H16,
@@ -870,17 +1703,23 @@ namespace wpfTDX
                     PositionDeployment = tp.PositionDeployment,
                 };
 
-                ScaledPositionsDataModel sp = null;
-                scaledByComposite.TryGetValue(
-                    MakeKey(tp.Tickername, fi?.FundGroup, fi?.FundName), out sp);
+                // scaled positions join by composite key
+                if (scaledByComposite.TryGetValue(MakeKey(tp.Tickername, fi?.FundGroup, fi?.FundName), out var sp))
+                {
+                    row.ScaleFactor = sp?.ScaledTarget;
+                    row.ScaledPercent = sp?.ScaledPercent;
+                }
 
-                // scale_factor ← scaled_position (loaded into ScaledPercent above)
-                row.ScaleFactor = sp?.ScaledTarget;
-                row.ScaledPercent = sp?.ScaledPercent;
+                // Manual flag via your row-level matcher
+                row.Manual = ManualAppliesToRowByRowLevel(row);
 
+                // Strategy override: attach the full model if available
+                if (_overrideByTicker.TryGetValue(row.Tickername, out var soModel))
+                    row.AttachStrategyOverride(soModel);
+                else
+                    row.AttachStrategyOverride(null); // will set StrategyName to null/"default" per your method
 
-
-                // If we're reloading ONLY positions, keep the user's current flags and old baselines
+                // Preserve current user edits (and original baselines) if requested
                 if (preserveUserFiFlags && previous != null && previous.TryGetValue(tp.Tickername, out var old))
                 {
                     // overwrite with user's CURRENT flags
@@ -913,17 +1752,20 @@ namespace wpfTDX
                     row.D8 = old.D8;
                     row.W2 = old.W2;
 
+                    // preserve manual & strategy state from the previous snapshot
+                    row.Manual = old.Manual;
+                    // if your Attach method also sets OriginalStrategyName, keep that consistent:
+                    if (old.StrategyOverride != null) row.AttachStrategyOverride(old.StrategyOverride);
+                    else row.StrategyName = old.StrategyName;
+
                     // keep ORIGINALS so HasChanged continues to compare to the same baseline
                     row.RestoreOriginalsFrom(old);
                 }
                 else
                 {
-                    // fresh baseline from server FI
+                    // fresh baseline from server values (and attached strategy)
                     row.SnapshotOriginals();
                 }
-
-                // enforce your “coerce flag to null when Position* is null” rule
-                //row.CoerceFlagsFromPositions();
 
                 row.RecalcNewTrades();
                 row.RecalcRescaledIntervals();
@@ -933,7 +1775,7 @@ namespace wpfTDX
                 MergedRows.Add(row);
             }
 
-            // (optional) FI-only rows remain the same logic…
+            // ---- SECOND LOOP: FI-only rows (no TAD position) ----
             foreach (var fiOnly in fiByTicker.Values
                          .Where(fi => !TadPositionsData.Any(tp =>
                                 string.Equals(tp.Tickername, fi.TickerName, StringComparison.OrdinalIgnoreCase))))
@@ -942,38 +1784,97 @@ namespace wpfTDX
                 {
                     Tickername = fiOnly.TickerName,
                     Runtime = fiOnly.Runtime,
-                    FundGroup = fiOnly.FundGroup,   // >>> add this
-                    FundName = fiOnly.FundName,    // >>> and this
+                    FundGroup = fiOnly.FundGroup,
+                    FundName = fiOnly.FundName,
                     Rescale = fiOnly.Rescale,
                     LongOnly = fiOnly.LongOnly,
+                    ShortOnly = fiOnly.ShortOnly,
+                    BuyOnly = fiOnly.BuyOnly,
+                    SellOnly = fiOnly.SellOnly,
+                    AllIntervals = fiOnly.AllIntervals,
+
+                    BaseY1 = fiOnly.BaseY1,
+                    BaseH1 = fiOnly.BaseH1,
+                    BaseD1 = fiOnly.BaseD1,
+                    y1 = fiOnly.Y1,
+                    y2 = fiOnly.Y2,
+                    y3 = fiOnly.Y3,
+                    H2 = fiOnly.H2,
+                    H3 = fiOnly.H3,
+                    H4 = fiOnly.H4,
+                    H6 = fiOnly.H6,
+                    H12 = fiOnly.H12,
+                    H16 = fiOnly.H16,
+                    D1 = fiOnly.D1,
+                    H36 = fiOnly.H36,
+                    D2 = fiOnly.D2,
+                    D3 = fiOnly.D3,
+                    D4 = fiOnly.D4,
+                    W1 = fiOnly.W1,
+                    D8 = fiOnly.D8,
+                    W2 = fiOnly.W2,
                 };
-                // >>> scale_factor (scaled_position) join using (ticker, fundgroup, fund)
-                ScaledPositionsDataModel sp2 = null;
-                scaledByComposite.TryGetValue(
-                    MakeKey(row.Tickername, row.FundGroup, row.FundName), out sp2);
-                row.ScaleFactor = sp2?.ScaledPercent;   // your scale_factor
-                row.NewScaleFactor = 1;
-                // if preserving edits and we had a previous row, restore it
-                if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var old))
+
+                // join scaled positions for FI-only row as well
+                if (scaledByComposite.TryGetValue(MakeKey(row.Tickername, row.FundGroup, row.FundName), out var sp2))
                 {
-                    row.Rescale = old.Rescale;
-                    row.LongOnly = old.LongOnly;
-                    row.RestoreOriginalsFrom(old);
+                    row.ScaleFactor = sp2?.ScaledTarget;
+                    row.ScaledPercent = sp2?.ScaledPercent;
+                }
+
+                if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var oldFi))
+                {
+                    row.Rescale = oldFi.Rescale;
+                    row.LongOnly = oldFi.LongOnly;
+                    row.ShortOnly = oldFi.ShortOnly;
+                    row.BuyOnly = oldFi.BuyOnly;
+                    row.SellOnly = oldFi.SellOnly;
+                    row.AllIntervals = oldFi.AllIntervals;
+
+                    // also preserve manual & strategy from previous row
+                    row.Manual = oldFi.Manual;
+                    if (oldFi.StrategyOverride != null) row.AttachStrategyOverride(oldFi.StrategyOverride);
+                    else row.StrategyName = oldFi.StrategyName;
+
+                    row.RestoreOriginalsFrom(oldFi);
                 }
                 else
                 {
+                    // compute manual for FI-only row
+                    row.Manual = ManualAppliesToRowByRowLevel(row);
+
+                    // attach latest strategy override if present
+                    if (_overrideByTicker.TryGetValue(row.Tickername, out var so2))
+                        row.AttachStrategyOverride(so2);
+                    else
+                        row.AttachStrategyOverride(null);
+
                     row.SnapshotOriginals();
                 }
+
+                row.RecalcNewTrades();
+                row.RecalcRescaledIntervals();
+                row.RecalcNewDeployment();
+                row.ReCalcScaledDeployment();
+
                 MergedRows.Add(row);
             }
 
-    
+            if (MergedRowsView != null)
+            {
+                // 🔹 Sort by FundGroup, then FundName, then Tickername
+                MergedRowsView.SortDescriptions.Clear();
+                MergedRowsView.SortDescriptions.Add(
+                    new SortDescription(nameof(MergedTickerRow.FundGroup), ListSortDirection.Ascending));
+                MergedRowsView.SortDescriptions.Add(
+                    new SortDescription(nameof(MergedTickerRow.FundName), ListSortDirection.Ascending));
+                MergedRowsView.SortDescriptions.Add(
+                    new SortDescription(nameof(MergedTickerRow.Tickername), ListSortDirection.Ascending));
 
-
-            if (MergedRowsView != null) MergedRowsView.Refresh();
+                MergedRowsView.Refresh();
+            }
 
         }
-
 
         // inside FilterIntervalsViewModel
         public static FilterIntervalsUpsertRow ToUpsertRow(MergedTickerRow r) => new FilterIntervalsUpsertRow
@@ -1056,19 +1957,96 @@ namespace wpfTDX
         }
 
 
-        // Start the background job
-        public async Task<string> UpsertFilterIntervalsStartAsync(IEnumerable<FilterIntervalsUpsertRow> rows)
+
+        //   public async Task<string> UpsertFilterIntervalsStartAsync(
+        //IEnumerable<FilterIntervalsUpsertRow> rows,
+        //IList<string> tickersToProcess = null)
+        //   {
+        //       // Build payload, include tickers only if provided
+        //       object payload;
+        //       if (tickersToProcess != null && tickersToProcess.Count > 0)
+        //       {
+        //           // Clean and dedupe tickers
+        //           var cleanTickers = tickersToProcess
+        //               .Where(t => !string.IsNullOrWhiteSpace(t))
+        //               .Select(t => t.Trim())
+        //               .Distinct(StringComparer.OrdinalIgnoreCase)
+        //               .ToList();
+
+        //           payload = new { rows = rows, tickernames = cleanTickers };
+        //       }
+        //       else
+        //       {
+        //           payload = new { rows = rows };
+        //       }
+
+        //       var json = JsonConvert.SerializeObject(payload);
+
+        //       using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
+        //       using (var resp = await _http.PostAsync("/upsert_filter_intervals/start", content))
+        //       {
+        //           resp.EnsureSuccessStatusCode();
+        //           var body = await resp.Content.ReadAsStringAsync();
+
+        //           try
+        //           {
+        //               // If the server returns {"job_id": "xyz"}
+        //               var jo = JObject.Parse(body);
+        //               if (jo["job_id"] != null)
+        //                   return (string)jo["job_id"];
+        //           }
+        //           catch
+        //           {
+        //               // Otherwise it might be a plain string
+        //               return body.Trim('"', ' ', '\n', '\r');
+        //           }
+
+        //           return null;
+        //       }
+        //   }
+
+        public async Task<string> UpsertFilterIntervalsStartAsync(
+            IEnumerable<FilterIntervalsUpsertRow> rows,
+            IList<string> tickersToProcess = null,
+            IList<object> strategyOverrideRows = null)   // <—
         {
-            var payload = new { rows = rows };
-            var json = JsonConvert.SerializeObject(payload);
+            // Clean up tickers if any
+            List<string> cleanTickers = null;
+            if (tickersToProcess != null && tickersToProcess.Count > 0)
+            {
+                cleanTickers = tickersToProcess
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .Select(t => t.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            // Build payload
+            var payloadDict = new Dictionary<string, object>
+            {
+                ["rows"] = rows.ToList()
+            };
+
+            if (cleanTickers != null && cleanTickers.Count > 0)
+                payloadDict["tickernames"] = cleanTickers;
+
+            if (strategyOverrideRows != null && strategyOverrideRows.Count > 0)
+                payloadDict["strategy_override_rows"] = strategyOverrideRows; // Json.NET will use your [JsonProperty]s
+
+            var json = JsonConvert.SerializeObject(payloadDict);
 
             using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
             using (var resp = await _http.PostAsync("/upsert_filter_intervals/start", content))
             {
                 resp.EnsureSuccessStatusCode();
                 var body = await resp.Content.ReadAsStringAsync();
-                var jo = JObject.Parse(body);
-                return (string)jo["job_id"];
+                try
+                {
+                    var jo = JObject.Parse(body);
+                    if (jo["job_id"] != null) return (string)jo["job_id"];
+                }
+                catch { /* fall-through */ }
+                return body.Trim('"', ' ', '\n', '\r');
             }
         }
 
@@ -1205,6 +2183,42 @@ namespace wpfTDX
             public string Tickername { get; set; }
             public string FundGroup { get; set; }
             public string FundName { get; set; }
+
+            public bool? OriginalManual { get; private set; }
+            private bool? _manual;
+            public bool? Manual
+            {
+                get => _manual;
+                set
+                {
+                    if (_manual != value)
+                    {
+                        _manual = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(ManualHasChanged));
+                    }
+                }
+            }
+            public bool ManualHasChanged => _isInitialized && _manual != OriginalManual;
+
+            // --- NEW: StrategyName (join from strategies_override) ---
+            public string OriginalStrategyName { get; private set; }
+            private string _strategyName;
+            public string StrategyName
+            {
+                get => _strategyName;
+                set
+                {
+                    if (_strategyName != value)
+                    {
+                        _strategyName = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(StrategyNameHasChanged));
+                    }
+                }
+            }
+            public bool StrategyNameHasChanged => _isInitialized && !string.Equals(_strategyName, OriginalStrategyName, StringComparison.Ordinal);
+
             private float? _scaledDeployment { get; set; }
             public float? ScaledDeployment
             {
@@ -1682,7 +2696,6 @@ namespace wpfTDX
             }
 
 
-
             public bool? OriginalH6 { get; private set; }
             private bool? _h6;
             public bool? H6
@@ -2130,6 +3143,17 @@ namespace wpfTDX
             private double? _prevNewDeploymentForBrush;   // last rounded value for delta coloring
             private bool _firstNewDeployment = true;      // only for "initial zero shows grey"
 
+            //setting to detect changes for tickerprocessing further downstream
+            // convenience aliases (optional)
+            public bool HasIntervalEdits => HasAnyEdits; // your existing property
+
+            public bool HasStrategyEdit => _isInitialized && StrategyNameHasChanged;
+
+            // If you ever want to branch on manual work:
+            public bool HasManualChange => _isInitialized && ManualHasChanged;
+
+            // If you ever need to branch on pure scaling UI (usually doesn't require portfolio processing):
+            public bool HasScaleFactorEdit => _isInitialized && NewScaleFactorHasChanged;
 
             //for setting colours
             // Reuse ONE set of static, frozen brushes
@@ -2222,6 +3246,68 @@ namespace wpfTDX
             }
 
 
+            public void AcceptManualAsOriginal()
+            {
+                // private setter, so do it here
+                OriginalManual = _manual;
+                OnPropertyChanged(nameof(ManualHasChanged));
+            }
+
+
+
+
+            // Keep the full override row for this ticker (may be null if none exists yet)
+            public StrategiesOverrideDataModel StrategyOverride { get; private set; }
+
+            public void AttachStrategyOverride(StrategiesOverrideDataModel so)
+            {
+                StrategyOverride = so;
+
+                // Use the override's strategy as the "original" baseline (fall back to "default")
+                var baseline = so?.StrategyName ?? "default";
+                OriginalStrategyName = baseline;
+                StrategyName = baseline;         // this is what your UI binds to
+                OnPropertyChanged(nameof(OriginalStrategyName));
+                OnPropertyChanged(nameof(StrategyName));
+                OnPropertyChanged(nameof(StrategyNameHasChanged));
+            }
+
+            // Build the payload row for /strategies_override insert when StrategyName changed
+            public object ToStrategyOverrideInsertModel(DateTime runtimeUtc, string envDefault)
+            {
+                // choose env from current override else fall back to a VM-wide default
+                var env = StrategyOverride?.Env ?? envDefault;
+
+                // business rule: if strategyname != "default" then min_* = "y1", else "default"
+                bool isNonDefault = !string.Equals(StrategyName, "default", StringComparison.OrdinalIgnoreCase);
+                string minVal = isNonDefault ? "y1" : "default";
+
+                return new
+                {
+                    tickername = this.Tickername,
+                    env = env,
+                    runtime = runtimeUtc,                 // UTC, seconds-rounded
+                    strategyname = this.StrategyName,
+
+                    // carry other fields from existing override row if present (so we don’t null them out),
+                    // or pick sane defaults if we are creating a first row
+                    enable = StrategyOverride?.Enable ?? true,
+                    sort_key = StrategyOverride?.SortKey ?? 0,
+                    watchlist = StrategyOverride?.Watchlist,
+                    keep_updated = StrategyOverride?.KeepUpdated ?? true,
+                    calc_trades = StrategyOverride?.CalcTrades ?? true,
+                    take_position = StrategyOverride?.TakePosition ?? true,
+                    strategyname_base = StrategyOverride?.StrategyNameBase ?? "default",
+                    strategyname_base_daily = StrategyOverride?.StrategyNameBaseDaily ?? "default",
+
+                    // your frequency rule
+                    min_update_freq = minVal,
+                    min_chart_freq = minVal,
+                    min_pos_freq = minVal,
+                };
+            }
+
+
             public void RestoreOriginalsFrom(MergedTickerRow src)
             {
                 OriginalRescale = src.OriginalRescale;
@@ -2256,7 +3342,9 @@ namespace wpfTDX
                 OriginalW1 = src.OriginalW1;
                 OriginalD8 = src.OriginalD8;
                 OriginalW2 = src.OriginalW2;
-
+                OriginalManual = src.OriginalManual;
+                OriginalStrategyName = src.OriginalStrategyName;
+                _isInitialized = true;
                 _isInitialized = true;
 
                 // refresh HasChanged bindings
@@ -2287,6 +3375,8 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W1HasChanged));
                 OnPropertyChanged(nameof(D8HasChanged));
                 OnPropertyChanged(nameof(W2HasChanged));
+                OnPropertyChanged(nameof(ManualHasChanged));
+                OnPropertyChanged(nameof(StrategyNameHasChanged));
             }
 
 
@@ -2569,11 +3659,6 @@ namespace wpfTDX
                     ScaledDeployment = sd;  // assume setter raises PropertyChanged
             }
 
-
-
-
-
-
             public void SnapshotOriginals()
             {
                 OriginalRescale = _rescale;
@@ -2605,7 +3690,9 @@ namespace wpfTDX
                 OriginalW2 = _W2;
                 OriginalD8 = _D8;
 
-
+                OriginalManual = _manual;
+                OriginalStrategyName = _strategyName;
+                _isInitialized = true;
 
                 // (repeat for other tracked fields)
 
@@ -2640,6 +3727,8 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W1HasChanged));
                 OnPropertyChanged(nameof(D8HasChanged));
                 OnPropertyChanged(nameof(W2HasChanged));
+                OnPropertyChanged(nameof(ManualHasChanged));
+                OnPropertyChanged(nameof(StrategyNameHasChanged));
 
                 // (repeat for others)
             }

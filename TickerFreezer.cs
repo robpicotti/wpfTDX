@@ -40,7 +40,7 @@ namespace TDX
             int _override,DateTime? override_expiration,string notes,DateTime? runtime_resolved,
             string ems="*",string broker_code_exec= "*",
             string fundname="*",string subaccountname="*",string execaccountname="*",string tad_id="*",string tickername="*",
-            string benchmarkname = "*"
+            string benchmarkname = "*",string fundgroupname = "*"
             )
         {
             int resolved = 0;
@@ -73,7 +73,7 @@ namespace TDX
                 rt_resolved = "NULL";
             }
             string tsql = "INSERT ticker_freezer VALUES('" + runtime + "','";
-            tsql +=   ems + "','" + broker_code_exec + "','" + fundname + "','";
+            tsql +=   ems + "','" + broker_code_exec + "','" + fundgroupname + "','"  + fundname + "','";
             tsql += subaccountname + "','" + execaccountname + "','" + tad_id + "','";
             tsql += tickername + "'," + error_code.ToString() + ",'" + error_string + "',";
             tsql += resolved + "," + expiration + "," + _override.ToString() + "," + override_expire;
@@ -81,10 +81,11 @@ namespace TDX
             _db.execSQL(tsql, gbl_conn);
         }
       
-        public string Thaw(string runtime, string ems, string broker_code_exec, string fundname, string subaccountname,string execaccountname, string tad_id, 
+        public string Thaw(string runtime, string ems, string broker_code_exec,string fundgroupname,
+            string fundname, string subaccountname,string execaccountname, string tad_id, 
             string tickername,string error_code, string benchmarkname,string notes,SqlConnection gbl_conn)
         {
-            return _db.thaw_tad_id(runtime, ems, broker_code_exec, fundname, subaccountname,execaccountname, tad_id,tickername, error_code,benchmarkname,notes, gbl_conn);
+            return _db.thaw_tad_id(runtime, ems, broker_code_exec, fundgroupname, fundname, subaccountname,execaccountname, tad_id,tickername, error_code,benchmarkname,notes, gbl_conn);
         }
         
         public void Override_freezer(string runtime, string ems, string brokercode_exec, string fundname, string execaccountname, string subaccountname, string tad_id, string error_code,

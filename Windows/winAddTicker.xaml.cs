@@ -17,6 +17,7 @@ namespace wpfTDX
 
         // Exposed for the DataGridComboBoxColumn ItemsSource
         public ObservableCollection<string> FundGroups { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> FundNames { get; } = new ObservableCollection<string>();
 
 
         public List<TickerRow> SelectedTickers { get; private set; }
@@ -60,7 +61,18 @@ namespace wpfTDX
                 FundGroups.Add("*");
                 foreach (var g in groups)
                     FundGroups.Add(g);
+                // --- Fund names ---
+                var names = arr
+                    .Select(x => (string)(x["fundname"] ?? string.Empty))
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
+                FundNames.Clear();
+                FundNames.Add("*"); // optional – only if you want a wildcard here too
+                foreach (var n in names)
+                    FundNames.Add(n);
                 // Refresh grid in case any edit was pending
                 GridTickers.CommitEdit();
                 GridTickers.Items.Refresh();

@@ -20,6 +20,7 @@ namespace wpfTDX
         private DateTime _runtime;
         private string _emsname;
         private string _broker_code_exec;
+        private string _fundgroupname;
         private string _fundname;
         private string _subaccountname;
         private string _execaccountname;
@@ -74,6 +75,20 @@ namespace wpfTDX
                 if (_broker_code_exec != value)
                 {
                     _broker_code_exec = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty ("fundgroupname")]
+        public string FundGroupName
+        {
+            get => _fundgroupname;
+            set
+            {
+                if (_fundgroupname != value)
+                {
+                    _fundgroupname = value;
                     OnPropertyChanged();
                 }
             }

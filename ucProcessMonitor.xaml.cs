@@ -71,16 +71,25 @@ namespace wpfTDX
         }
         private async Task<string> GetHostEnvironment()
         {
-            string url = "http://localhost:5001/get_hostenv";
-            using (HttpClient client = new HttpClient())
+            try
             {
-                HttpResponseMessage response = await client.PostAsync(url, null);
-                response.EnsureSuccessStatusCode();
+                string url = "http://localhost:5001/get_hostenv";
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.PostAsync(url, null);
+                    response.EnsureSuccessStatusCode();
 
-                string jsonResponse = await response.Content.ReadAsStringAsync();
-                JObject json = JObject.Parse(jsonResponse);
-                return json["hostenv"]?.ToString();
+                    string jsonResponse = await response.Content.ReadAsStringAsync();
+                    JObject json = JObject.Parse(jsonResponse);
+                    return json["hostenv"]?.ToString();
+                }
             }
+            catch(Exception ex)
+            {
+                MessageBox.Show("Error getting host environment: " + ex.Message);
+                return "";
+            }
+
         }
         private async Task InitializeAsync()
         {

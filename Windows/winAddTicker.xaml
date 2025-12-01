@@ -39,6 +39,17 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
+                <!-- NEW: Fund Name column -->
+                <DataGridTemplateColumn Header="Fund Name">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox
+                    ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FundNames}"
+                    SelectedItem="{Binding FundName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    MinWidth="160"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
             </DataGrid.Columns>
         </DataGrid>

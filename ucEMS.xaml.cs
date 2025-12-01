@@ -99,9 +99,10 @@ namespace wpfTDX
         {
             DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
             endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
+            DateTime fromDate = (DateTime)dtPickerFrom.SelectedDate;
             dtTransactions = _db.get_account_transactions(
-                cboFundname.Text, dtPickerFrom.SelectedDate.ToString(),
-                endDate.ToString(), gbl_conn);
+                cboFundname.Text, fromDate.ToString("yyyy-MM-dd"),
+                endDate.ToString("yyyy-MM-dd HH:mm:ss"), gbl_conn);
             dgTransactions.ItemsSource = dtTransactions.DefaultView;
             tabiTransactions.Header = "Transactions - " + dgTransactions.Items.Count.ToString();
         }

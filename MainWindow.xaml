@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
-        Title="TDX 2.8" Height="1000" Width="1800">
+        Title="TDX 2.15" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 
@@ -50,26 +50,29 @@
             </Border>
 
             <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5 1 5 1">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Adjust Intervals" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_13"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
-                    <TextBlock Text="Comm fee adjustments" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_9" FontSize="15" FontWeight="Bold" Margin="10 10 20 10" />
-                    <TextBlock Text="Corporate actions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_10" FontSize="15" FontWeight="Bold" Margin="10 10 20 10" />
-                    <TextBlock Text="Deposits" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_7" FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
-                    <TextBlock Text="EMS" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="Jobs" x:Name="txbJobs" MouseLeftButtonDown="txbJobs_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
-                    <TextBlock Text="Limits" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_12" FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
-                    <TextBlock Text="Metadata Changes" x:Name="txbMeta" MouseLeftButtonDown="txbMeta_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
-                    <TextBlock Text="MTM" x:Name="txbMtm" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
-                    <TextBlock Text="NAV" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="Orders archive" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_11"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="Order Rejections" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_4" FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="Payments" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_8" FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
-                    <TextBlock Text="Scaled Posns" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_14"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
-                    <TextBlock Text="Slippage" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_6"  FontWeight="Bold" Margin="5 10 20 10"/>
-                    <TextBlock Text="Ticker Freezer" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_3" FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
+                    <WrapPanel ItemHeight="40" ItemWidth="Auto">
+                        <TextBlock Text="Adjust Intervals" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_13"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
+                        <TextBlock Text="Comm fee adjustments" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_9" FontSize="15" FontWeight="Bold" Margin="10 10 20 10" />
+                        <TextBlock Text="Corporate actions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_10" FontSize="15" FontWeight="Bold" Margin="10 10 20 10" />
+                        <TextBlock Text="Deposits" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_7" FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
+                        <TextBlock Text="EMS" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Jobs" x:Name="txbJobs" MouseLeftButtonDown="txbJobs_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
+                        <TextBlock Text="Limits" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_12" FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
+                        <TextBlock Text="Metadata Changes" x:Name="txbMeta" MouseLeftButtonDown="txbMeta_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
+                        <TextBlock Text="MTM" x:Name="txbMtm" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
+                        <TextBlock Text="NAV" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Orders archive" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_11"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Order Rejections" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_4" FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Payments" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_8" FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Portfolio Weights" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_15"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
+                        <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
+                        <TextBlock Text="Scaled Posns" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_14"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
+                        <TextBlock Text="Slippage" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_6"  FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Ticker Freezer" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_3" FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>
 
-                </StackPanel>
+                    </WrapPanel>
+                </ScrollViewer>
             </Border >
             <Border BorderBrush="Black" BorderThickness="1" Padding="5"  HorizontalAlignment="Stretch" Margin="5 1 5 1">
                 <StackPanel x:Name="processCheckerPanel" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="5">

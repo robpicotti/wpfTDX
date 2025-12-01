@@ -91,6 +91,7 @@ namespace wpfTDX
                 // Pass the required parameters to the dialog
                 winThawFreezer thaw = new winThawFreezer(
                     e.RunTime,
+                    e.FundGroupName,
                     e.FundName,
                     e.ExecAccountName,
                     e.SubAccountName,

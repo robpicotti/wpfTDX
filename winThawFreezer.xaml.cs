@@ -22,6 +22,7 @@ namespace wpfTDX
     {
         TDX.db _db = new TDX.db();
         SqlConnection gbl_conn;
+        string FUNDGROUPNAME = "";
         string FUNDNAME = "";
         string EXECACCOUNTNAME = "";
         string SUBACCOUNTNAME = "";
@@ -34,7 +35,7 @@ namespace wpfTDX
         string RUN_TIME = "";
         ucTickerFreezer MAIN_FORM;
         TickerFreezer TFR;
-        public winThawFreezer(string runtime,string fundname,string execaccountname,
+        public winThawFreezer(string runtime,string fundgroupname, string fundname,string execaccountname,
             string subaccountname,string tad_id,string tickername,
             string benchmarkname, string broker_code_exec,
             string emsname,string error_code,
@@ -43,6 +44,7 @@ namespace wpfTDX
             InitializeComponent();
 
             gbl_conn = conn;
+            FUNDGROUPNAME= fundgroupname;
             FUNDNAME = fundname;
             EXECACCOUNTNAME = execaccountname;
             SUBACCOUNTNAME = subaccountname;
@@ -61,6 +63,7 @@ namespace wpfTDX
         {
             string message = "Are you sure you want to thaw an item from the freezer with the following details?";
             message += "\r\n";
+            message += "fundgroup name: " + FUNDGROUPNAME;
             message += "\r\n";
             message += "fund name: " + FUNDNAME;
             message += "\r\n";
@@ -98,7 +101,7 @@ namespace wpfTDX
         {
             try
             {
-                string sql_text = TFR.Thaw(RUN_TIME, EMSNAME, BROKER_CODE_EXEC, FUNDNAME, SUBACCOUNTNAME, EXECACCOUNTNAME, TAD_ID, TICKERNAME, ERROR_CODE, BENCHMARKNAME, txtReason.Text, gbl_conn);
+                string sql_text = TFR.Thaw(RUN_TIME, EMSNAME, BROKER_CODE_EXEC,FUNDGROUPNAME, FUNDNAME, SUBACCOUNTNAME, EXECACCOUNTNAME, TAD_ID, TICKERNAME, ERROR_CODE, BENCHMARKNAME, txtReason.Text, gbl_conn);
                 MessageBox.Show("Item thawed successfully. Update statement: " + sql_text, "Ticker Freezer", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

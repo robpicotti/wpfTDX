@@ -1315,6 +1315,7 @@ namespace wpfTDX
             finally
             {
                 Cursor = Cursors.Arrow;
+                UpdateFundLimits();
             }
         }
 
@@ -1336,12 +1337,14 @@ namespace wpfTDX
             string action = Convert.ToString(row["action"]) ?? "Default";
             double? custom = ToNullableDouble(row["custom"]);
 
-            // If user typed a custom but left action at Default → treat as Hard (matches your old behavior)
-            if (custom.HasValue && string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
-                action = "Hard";
+            if (string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
+                custom = null;
+            else if (!custom.HasValue && !string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
+                return;
 
-            // Refresh the FundLimits instance used for writing:
-            this.limits.fundLimits = new FundLimits(fund, this.gbl_conn);
+
+                // Refresh the FundLimits instance used for writing:
+                this.limits.fundLimits = new FundLimits(fund, this.gbl_conn);
 
             ActionType at = this.limits.fundLimits.GetActionType(action);
 
@@ -1414,7 +1417,7 @@ namespace wpfTDX
             }
 
             // write & refresh
-            UpdateFundLimits();                 // reuses your existing method
+            //UpdateFundLimits();                 // reuses your existing method
                                                 // row.AcceptChanges();             // optional; RefreshFundLimits() reloads anyway
         }
 
@@ -1430,12 +1433,10 @@ namespace wpfTDX
             string action = Convert.ToString(row["Action"]) ?? "Default";
             double? custom = ToNullableDouble(row["Custom"]);
 
-            // If Action is Default, we must null the Custom (your Insert method handles this convention)
             if (string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
                 custom = null;
-            else if (!custom.HasValue && !actionChanged)
-                // If user didn’t touch action but typed a number earlier → default to Hard
-                action = "Hard";
+            else if (!custom.HasValue && !string.Equals(action, "Default", StringComparison.OrdinalIgnoreCase))
+                return;
 
             InsertTickerLimitRow(fund, limitType, ticker, custom, action);
             RefreshTickerLimits();

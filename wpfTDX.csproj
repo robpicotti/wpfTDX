@@ -114,19 +114,25 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\FilterIntervalsUpsertRow.cs" />
+    <Compile Include="Classes\NumericRangeBehaviour.cs" />
+    <Compile Include="Classes\RangeValidationRule.cs" />
     <Compile Include="Classes\ScaledPositionsInsertRow.cs" />
+    <Compile Include="DataModels\PortfolioDataModel.cs" />
     <Compile Include="DataModels\ExecutionsDataModel.cs" />
     <Compile Include="DataModels\FilterIntervalsDataModel.cs" />
     <Compile Include="DataModels\JobParametersDataModel.cs" />
     <Compile Include="DataModels\JobParameterValueDataModel.cs" />
     <Compile Include="DataModels\OrderDataModel.cs" />
+    <Compile Include="DataModels\PortfolioWeightsDataModel.cs" />
     <Compile Include="DataModels\PositionsDataModel.cs" />
     <Compile Include="DataModels\ScaledPositionsDataModel.cs" />
     <Compile Include="DataModels\ScheduleDaysDataModel.cs" />
     <Compile Include="DataModels\ScheduledJobDataModel.cs" />
     <Compile Include="DataModels\ScheduleFrequenciesDataModel.cs" />
+    <Compile Include="DataModels\StrategiesOverrideDataModel.cs" />
     <Compile Include="DataModels\SubaccountDataModel.cs" />
     <Compile Include="DataModels\TadPositionsDataModel.cs" />
+    <Compile Include="DataModels\TickerDataModel.cs" />
     <Compile Include="DataModels\TickerFreezerDataModel.cs" />
     <Compile Include="Fund.cs" />
     <Compile Include="DataModels\FundsDataModel.cs" />
@@ -192,6 +198,7 @@
       <DependentUpon>ucTickerFreezer.xaml</DependentUpon>
     </Compile>
     <Compile Include="Util.cs" />
+    <Compile Include="ViewModels\PortfolioWeightsViewModel.cs" />
     <Compile Include="ViewModels\PositionViewModel.cs" />
     <Compile Include="ViewModels\ScaledPositionsViewModel.cs" />
     <Compile Include="ViewModels\ScheduleJobViewModel.cs" />
@@ -200,6 +207,9 @@
     <Compile Include="WebServiceData\WebServiceData.cs" />
     <Compile Include="Windows\winAddTicker.xaml.cs">
       <DependentUpon>winAddTicker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\winPortfolioWeights.xaml.cs">
+      <DependentUpon>winPortfolioWeights.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\winScaledPositions.xaml.cs">
       <DependentUpon>winScaledPositions.xaml</DependentUpon>
@@ -305,6 +315,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\winAddTicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\winPortfolioWeights.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

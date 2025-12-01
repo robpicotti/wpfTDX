@@ -1409,5 +1409,11 @@ namespace wpfTDX
             winScaledPositions winScaledPositions = new winScaledPositions();
             winScaledPositions.Show();
         }
+
+        private void TextBlock_MouseLeftButtonDown_15(object sender, MouseButtonEventArgs e)
+        {
+            winPortfolioWeights winPortfolioWeights = new winPortfolioWeights(this.sql_conn);
+            winPortfolioWeights.Show();
+        }
     }
 }

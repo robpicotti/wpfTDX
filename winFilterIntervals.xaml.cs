@@ -32,7 +32,7 @@ namespace wpfTDX
         {
             InitializeComponent();
             this.gbl_conn = conn;
-            _viewModel = new FilterIntervalsViewModel();
+            _viewModel = new FilterIntervalsViewModel(this.gbl_conn);
             DataContext = _viewModel;
         }
 
@@ -40,10 +40,7 @@ namespace wpfTDX
         {
             try
             {
-                await _viewModel.LoadTickerUniverseAsync();
-                await _viewModel.LoadFilterIntervalsDataAsync();
-                await _viewModel.LoadTadPositionsDataAsync();
-                await _viewModel.RebuildMerged();
+                await LoadAllAsync();
             }
             catch (Exception ex)
             {
@@ -51,7 +48,20 @@ namespace wpfTDX
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        private async Task LoadAllAsync()
+        {
+            await _viewModel.LoadHostEnvAsync();
+            await _viewModel.LoadManualFreezeDefsAsync();
+            await _viewModel.LoadActiveManualFreezesAsync();
+            await _viewModel.LoadStrategiesOverrideAsync();
+            await _viewModel.LoadStrategyNamesAsync();
 
+
+            await _viewModel.LoadTickerUniverseAsync();
+            await _viewModel.LoadFilterIntervalsDataAsync();
+            await _viewModel.LoadTadPositionsDataAsync();
+            await _viewModel.RebuildMerged();
+        }
         private async Task RunWithBusy(Func<Task> work)
         {
             try
@@ -124,6 +134,7 @@ namespace wpfTDX
             {
                 // top-level booleans (no Position* guard)
                 case "rescale": flagProp = "Rescale"; return true;
+                case "manual": flagProp = "Manual"; return true;
                 case "lo_only": flagProp = "LongOnly"; return true;
                 case "so_only": flagProp = "ShortOnly"; return true;
                 case "buy_only": flagProp = "BuyOnly"; return true;
@@ -247,19 +258,11 @@ namespace wpfTDX
         {
             try
             {
-
-                await RunWithBusy(async () =>
-                {
-                    await Task.WhenAll(
-                        _viewModel.LoadFilterIntervalsDataAsync(),
-                        _viewModel.LoadTadPositionsDataAsync()
-                    );
-                    await _viewModel.RebuildMerged();
-                });
+                await RunWithBusy(LoadAllAsync);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Load failed:\n" + ex.Message, "Error",
+                MessageBox.Show(this, "Reload failed:\n" + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -278,6 +281,34 @@ namespace wpfTDX
             _viewModel.MergedRows.Remove(row);
         }
 
+        //private async void AddTickerMenuItem_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var vm = DataContext as FilterIntervalsViewModel;
+        //    if (vm == null) return;
+
+        //    if (vm.TickerUniverse == null || vm.TickerUniverse.Count == 0)
+        //        await vm.LoadTickerUniverseAsync();
+
+        //    var dlg = new winAddTicker(vm.TickerUniverse);
+        //    if (dlg.ShowDialog() == true)
+        //    {
+        //        foreach (var tr in dlg.SelectedTickers)
+        //        {
+        //            var row = vm.CreateDefaultRow(tr.TickerName,tr.FundGroupName,tr.FundName);
+
+        //            // Apply the fund group chosen per row (user picked it in the grid)
+        //            // "ALL" can mean no specific group if you prefer null
+        //            row.FundGroup = string.IsNullOrWhiteSpace(tr.FundGroupName)
+        //                ? null
+        //                : tr.FundGroupName.Trim();
+
+        //            //need to change this
+        //            row.FundName = "*";
+        //            vm.MergedRows.Add(row);
+        //        }
+        //    }
+
+        //}
         private async void AddTickerMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as FilterIntervalsViewModel;
@@ -287,25 +318,62 @@ namespace wpfTDX
                 await vm.LoadTickerUniverseAsync();
 
             var dlg = new winAddTicker(vm.TickerUniverse);
-            if (dlg.ShowDialog() == true)
+            if (dlg.ShowDialog() != true) return;
+
+            string Norm(string s) => (s ?? "").Trim();
+            bool EqTicker(string a, string b) =>
+                string.Equals(Norm(a), Norm(b), StringComparison.OrdinalIgnoreCase);
+
+            foreach (var tr in dlg.SelectedTickers)
             {
-                foreach (var tr in dlg.SelectedTickers)
+                var ticker = Norm(tr.TickerName);
+
+                // Find ANY existing rows with same ticker (primary key = ticker only)
+                var existingForTicker = vm.MergedRows
+                    .Where(r => EqTicker(r.Tickername, ticker))
+                    .ToList();
+
+                if (existingForTicker.Count > 0)
                 {
-                    var row = vm.CreateDefaultRow(tr.TickerName,tr.FundGroupName,tr.FundName);
+                    var msg =
+                        $"A row for ticker '{ticker}' already exists " +
+                        $"({existingForTicker.Count} entr{(existingForTicker.Count == 1 ? "y" : "ies")}).\n\n" +
+                        $"Adding a new one will overwrite the existing entr{(existingForTicker.Count == 1 ? "y" : "ies")}" +
+                        $" when saved.\n\n" +
+                        $"Do you want to continue?";
+                    var result = MessageBox.Show(this, msg, "Overwrite existing?",
+                        MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
-                    // Apply the fund group chosen per row (user picked it in the grid)
-                    // "ALL" can mean no specific group if you prefer null
-                    row.FundGroup = string.IsNullOrWhiteSpace(tr.FundGroupName)
-                        ? null
-                        : tr.FundGroupName.Trim();
-
-                    //need to change this
-                    row.FundName = "*";
-                    vm.MergedRows.Add(row);
+                    if (result != MessageBoxResult.Yes)
+                        continue; // skip this ticker
                 }
+
+                // Build the new row
+                var fundGroup = string.IsNullOrWhiteSpace(tr.FundGroupName) ? null : Norm(tr.FundGroupName);
+                var fundName = string.IsNullOrWhiteSpace(tr.FundName) ? "*" : tr.FundName;
+                var manual = true;
+                var newRow = vm.CreateDefaultRow(ticker, fundGroup, fundName);
+                newRow.FundGroup = fundGroup;
+                newRow.FundName = fundName;
+                newRow.Manual = manual; // default to manual
+
+                // Overwrite: remove all existing rows for this ticker, then add the new row
+                if (existingForTicker.Count > 0)
+                {
+                    // Remove in reverse index order to avoid reindexing issues
+                    for (int i = vm.MergedRows.Count - 1; i >= 0; i--)
+                    {
+                        if (EqTicker(vm.MergedRows[i].Tickername, ticker))
+                            vm.MergedRows.RemoveAt(i);
+                    }
+                }
+
+                vm.MergedRows.Add(newRow);
             }
 
+            vm.MergedRowsView?.Refresh();
         }
+
         private async void ReloadUniverseButton_Click(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as FilterIntervalsViewModel;
@@ -340,6 +408,24 @@ namespace wpfTDX
                 // --- payloads ---
                 var intervalRows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
 
+                var affectedIntervalTickers = vm.MergedRows
+                .Where(r => r.HasAnyEdits)                       // interval-affecting edits only
+                .Select(r => r.Tickername)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+                var affectedStrategyTickers = vm.MergedRows
+                    .Where(r => r.StrategyNameHasChanged)            // strategy override changed
+                    .Select(r => r.Tickername)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var tickersToProcess = affectedIntervalTickers
+                    .Union(affectedStrategyTickers, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+
+
                 bool Changed(double? oldV, double? newV)
                     => newV.HasValue && (!oldV.HasValue || Math.Abs(newV.Value - oldV.Value) > 1e-9);
 
@@ -348,8 +434,23 @@ namespace wpfTDX
                     .Select(r => r.ToScaledPositionInsertRow())
                     .ToList();
 
-                // --- Phase 1: intervals job ---
-                string jobId = await vm.UpsertFilterIntervalsStartAsync(intervalRows);
+                //apply any changes to the manual flag
+                await vm.ApplyManualChangesAsync_UsingTickerFreezer();
+
+
+                var nowUtc = DateTime.UtcNow;
+
+                var strategyOverridesPayload = vm.MergedRows
+                    .Where(r => r.StrategyNameHasChanged)
+                    .Select(r => r.ToStrategyOverrideInsertModel(nowUtc,vm.HostEnv))  // your helper
+                    .ToList();
+
+                // Phase 1
+                string jobId = await vm.UpsertFilterIntervalsStartAsync(
+                    intervalRows,
+                    tickersToProcess,
+                    strategyOverridesPayload
+                );
 
 
 
@@ -444,106 +545,6 @@ namespace wpfTDX
         }
 
 
-        //private async void Button_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var vm = DataContext as FilterIntervalsViewModel;
-        //    if (vm == null) return;
-
-        //    try
-        //    {
-        //        // Stop any previous poll/boost
-        //        if (_pollTimer != null) { _pollTimer.Stop(); _pollTimer = null; }
-        //        if (_boostTimer != null) { _boostTimer.Stop(); _boostTimer = null; }
-
-        //        vm.IsExecuting = true;
-        //        vm.ResetBoost(); // <— start boost from 0
-        //        StatusTextBlock.Text = "Save started…";
-
-        //        var rows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
-        //        // Changed-scale rows (treat nulls carefully; only send when NewScaleFactor has a value and differs)
-        //        bool Changed(double? a, double? b)
-        //            => b.HasValue && (!a.HasValue || Math.Abs(b.Value - a.Value) > 1e-9);
-
-        //        var scaledRows = vm.MergedRows
-        //            .Where(r => Changed(r.ScaleFactor, r.NewScaleFactor))
-        //            .Select(r => r.ToScaledPositionInsertRow())  // implement this similar to ToUpsertRow()
-        //            .ToList();
-
-        //        string jobId = await vm.UpsertFilterIntervalsStartAsync(rows);
-
-        //        // Start the +10%/minute visual boost (capped at 90 while running)
-        //        _boostTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-        //        _boostTimer.Tick += (s2, e2) =>
-        //        {
-        //            if (vm.IsUpsertRunning) vm.IncreaseBoost(10);
-        //        };
-        //        _boostTimer.Start();
-
-        //        // Poll every 3 seconds (unchanged cadence)
-        //        _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-        //        _pollTimer.Tick += async (s, args) =>
-        //        {
-        //            try
-        //            {
-        //                var st = await vm.GetUpsertFilterIntervalsStatusAsync(jobId);
-
-        //                // Keep VM in sync so ProgressPercent (and bar) blend server+boost
-        //                vm.ApplyJobStatus(st); // <— IMPORTANT
-
-        //                var status = st?.Status ?? "running";
-        //                var msg = st?.Message ?? "";
-
-        //                // Show the displayed (blended) percent, not raw server pct
-        //                var displayPct = vm.ProgressPercent;
-        //                StatusTextBlock.Text = $"{status} {displayPct}% – {msg}";
-
-        //                if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase) ||
-        //                    string.Equals(status, "failed", StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    _pollTimer.Stop(); _pollTimer = null;
-        //                    _boostTimer.Stop(); _boostTimer = null;
-
-        //                    vm.IsExecuting = false;
-
-        //                    if (string.Equals(status, "done", StringComparison.OrdinalIgnoreCase))
-        //                    {
-        //                        // vm.ProgressPercent will now be 100 via EffectivePercent
-        //                        MessageBox.Show(this, "Saved filter intervals.", "Save",
-        //                            MessageBoxButton.OK, MessageBoxImage.Information);
-        //                    }
-        //                    else
-        //                    {
-        //                        MessageBox.Show(this, "Save failed:\n" + (msg ?? "unknown error"), "Error",
-        //                            MessageBoxButton.OK, MessageBoxImage.Error);
-        //                    }
-        //                }
-        //            }
-        //            catch (Exception pollEx)
-        //            {
-        //                _pollTimer?.Stop(); _pollTimer = null;
-        //                _boostTimer?.Stop(); _boostTimer = null;
-
-        //                vm.IsExecuting = false;
-        //                StatusTextBlock.Text = "failed – " + pollEx.Message;
-
-        //                MessageBox.Show(this, "Save status check failed:\n" + pollEx.Message, "Error",
-        //                    MessageBoxButton.OK, MessageBoxImage.Error);
-        //            }
-        //        };
-        //        _pollTimer.Start();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _pollTimer?.Stop(); _pollTimer = null;
-        //        _boostTimer?.Stop(); _boostTimer = null;
-
-        //        vm.IsExecuting = false;
-        //        StatusTextBlock.Text = "failed – " + ex.Message;
-
-        //        MessageBox.Show(this, "Save failed:\n" + ex.Message, "Error",
-        //            MessageBoxButton.OK, MessageBoxImage.Error);
-        //    }
-        //}
 
         private void ScalePosition_Click(object sender, RoutedEventArgs e)
         {

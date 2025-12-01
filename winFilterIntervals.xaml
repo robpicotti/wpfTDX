@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:globalization="clr-namespace:System.Globalization;assembly=mscorlib"
         xmlns:local="clr-namespace:wpfTDX"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
@@ -41,6 +42,8 @@
         </Style>
 
         <local:NotEqualConverter x:Key="NotEqualConverter"/>
+        <SolidColorBrush x:Key="DiffFromDefaultBrush" Color="#B7E0FF"/>
+
 
     </Window.Resources>
 
@@ -243,17 +246,115 @@
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="new_scale_f">
+                <DataGridTextColumn Header="new_f" Width="50">
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewScaleFactor"
-                         Converter="{StaticResource NullablePercentDoubleConverter}"
-                         StringFormat="{}{0:P1}"
-                         UpdateSourceTrigger="LostFocus"
-                         ValidatesOnExceptions="True"
-                         ValidatesOnDataErrors="True"/>
+                             Converter="{StaticResource NullablePercentDoubleConverter}"
+                            ConverterCulture="{x:Static globalization:CultureInfo.InvariantCulture}"
+                             StringFormat="{}{0:P1}"
+                             UpdateSourceTrigger="LostFocus"   
+                            ValidatesOnExceptions="True"
+                            NotifyOnValidationError="True">
+                            <Binding.ValidationRules>
+                                <local:RangeValidationRule
+                                    Min="0" Max="3" ValidationStep="ConvertedProposedValue" />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="local:NumericRangeBehavior.Enable" Value="True"/>
+                            <Setter Property="local:NumericRangeBehavior.Min" Value="0"/>
+                            <Setter Property="local:NumericRangeBehavior.Max" Value="3"/>
+                            <!-- optional: right-align numbers -->
+                            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
+                <!-- MANUAL  -->
+                <DataGridTextColumn Header="manual" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Manual" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
 
+                    <!-- optional: center text -->
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- same default border as your other columns -->
+                            <Setter Property="BorderThickness" Value="0.5"/>
+                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers>
+                                <!-- MATCH the other columns’ highlight behaviour -->
+                                <DataTrigger Binding="{Binding ManualHasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
+
+                                <!-- NEW: when Manual == True AND not changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Manual}" Value="True"/>
+                                        <Condition Binding="{Binding ManualHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="Orange"/>
+                                    <!-- light orange -->
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
+
+                <!-- STRATEGY NAME (dropdown; shows text when not editing) -->
+                <DataGridTemplateColumn Header="strategy" Width="70">
+                    <!-- display -->
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding StrategyName}"
+                       VerticalAlignment="Center"
+                       Padding="2">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StrategyNameHasChanged}" Value="True">
+                                                <Setter Property="Background" Value="Khaki"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+
+                    <!-- edit -->
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox IsEditable="False"
+                      ItemsSource="{Binding DataContext.StrategyNames,
+                                            RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                      SelectedItem="{Binding StrategyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      MinWidth="140">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StrategyNameHasChanged}" Value="True">
+                                                <Setter Property="Background" Value="Khaki"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
 
 
 
@@ -268,27 +369,29 @@
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
+                                <!-- YELLOW: user changed it (wins) -->
                                 <DataTrigger Binding="{Binding RescaleHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding RescaleHasChanged}" Value="True">
-                                    <!-- highlight when changed -->
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
-                                            <!-- This comes from the row item (MergedTickerRow) -->
-                                            <Binding Path="Rescale"/>
-
-                                            <!-- This comes from the view model on the DataGrid.DataContext -->
-                                            <Binding Path="DataContext.DefaultRescale"
-                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+                                <!-- LIGHT BLUE: different from default AND not changed by user -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Value="True">
+                                            <Condition.Binding>
+                                                <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                                    <Binding Path="Rescale"/>
+                                                    <Binding Path="DataContext.DefaultRescale"
+                                         RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                                </MultiBinding>
+                                            </Condition.Binding>
+                                        </Condition>
+                                        <Condition Binding="{Binding RescaleHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="{StaticResource DiffFromDefaultBrush}"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -306,24 +409,30 @@
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
+                                <!-- YELLOW: user changed it -->
                                 <DataTrigger Binding="{Binding LongOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
-                                            <!-- This comes from the row item (MergedTickerRow) -->
-                                            <Binding Path="LongOnly"/>
-
-                                            <!-- This comes from the view model on the DataGrid.DataContext -->
-                                            <Binding Path="DataContext.DefaultLongOnly"
-                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+
+                                <!-- LIGHT BLUE: differs from default AND not user-changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Value="True">
+                                            <Condition.Binding>
+                                                <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                                    <Binding Path="LongOnly"/>
+                                                    <Binding Path="DataContext.DefaultLongOnly"
+                                             RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                                </MultiBinding>
+                                            </Condition.Binding>
+                                        </Condition>
+                                        <Condition Binding="{Binding LongOnlyHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="{StaticResource DiffFromDefaultBrush}"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -340,24 +449,30 @@
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
+                                <!-- YELLOW: user changed it -->
                                 <DataTrigger Binding="{Binding ShortOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
-                                            <!-- This comes from the row item (MergedTickerRow) -->
-                                            <Binding Path="ShortOnly"/>
-
-                                            <!-- This comes from the view model on the DataGrid.DataContext -->
-                                            <Binding Path="DataContext.DefaultShortOnly"
-                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+
+                                <!-- LIGHT BLUE: differs from default AND not user-changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Value="True">
+                                            <Condition.Binding>
+                                                <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                                    <Binding Path="ShortOnly"/>
+                                                    <Binding Path="DataContext.DefaultLongOnly"
+                                             RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                                </MultiBinding>
+                                            </Condition.Binding>
+                                        </Condition>
+                                        <Condition Binding="{Binding ShortOnlyHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="{StaticResource DiffFromDefaultBrush}"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -374,24 +489,30 @@
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
+                                <!-- YELLOW: user changed it -->
                                 <DataTrigger Binding="{Binding BuyOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
-                                            <!-- This comes from the row item (MergedTickerRow) -->
-                                            <Binding Path="BuyOnly"/>
-
-                                            <!-- This comes from the view model on the DataGrid.DataContext -->
-                                            <Binding Path="DataContext.DefaultBuyOnly"
-                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+
+                                <!-- LIGHT BLUE: differs from default AND not user-changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Value="True">
+                                            <Condition.Binding>
+                                                <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                                    <Binding Path="BuyOnly"/>
+                                                    <Binding Path="DataContext.DefaultBuyOnly"
+                                             RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                                </MultiBinding>
+                                            </Condition.Binding>
+                                        </Condition>
+                                        <Condition Binding="{Binding BuyOnlyHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="{StaticResource DiffFromDefaultBrush}"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -408,24 +529,31 @@
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
+
+                                <!-- YELLOW: user changed it -->
                                 <DataTrigger Binding="{Binding SellOnlyHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
-                                            <!-- This comes from the row item (MergedTickerRow) -->
-                                            <Binding Path="SellOnly"/>
-
-                                            <!-- This comes from the view model on the DataGrid.DataContext -->
-                                            <Binding Path="DataContext.DefaultSellOnly"
-                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+
+                                <!-- LIGHT BLUE: differs from default AND not user-changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Value="True">
+                                            <Condition.Binding>
+                                                <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                                    <Binding Path="SellOnly"/>
+                                                    <Binding Path="DataContext.DefaultSellOnly"
+                                             RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                                </MultiBinding>
+                                            </Condition.Binding>
+                                        </Condition>
+                                        <Condition Binding="{Binding SellOnlyHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="{StaticResource DiffFromDefaultBrush}"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -443,24 +571,30 @@
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
                             <Style.Triggers>
+                                <!-- YELLOW: user changed it -->
                                 <DataTrigger Binding="{Binding AllIntervalsHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                                <DataTrigger Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource NotEqualConverter}">
-                                            <!-- This comes from the row item (MergedTickerRow) -->
-                                            <Binding Path="AllIntervals"/>
-
-                                            <!-- This comes from the view model on the DataGrid.DataContext -->
-                                            <Binding Path="DataContext.DefaultAllIntervals"
-                                                    RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+
+                                <!-- LIGHT BLUE: differs from default AND not user-changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Value="True">
+                                            <Condition.Binding>
+                                                <MultiBinding Converter="{StaticResource NotEqualConverter}">
+                                                    <Binding Path="AllIntervals"/>
+                                                    <Binding Path="DataContext.DefaultAllIntervals"
+                                             RelativeSource="{RelativeSource AncestorType={x:Type DataGrid}}"/>
+                                                </MultiBinding>
+                                            </Condition.Binding>
+                                        </Condition>
+                                        <Condition Binding="{Binding AllIntervalsHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="{StaticResource DiffFromDefaultBrush}"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>

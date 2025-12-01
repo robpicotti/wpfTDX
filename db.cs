@@ -343,7 +343,99 @@ namespace TDX
             DataTable dt = execSQL(sql_text,conn);
             return dt;
         }
-        public DataTable get_fund_executions(string fundname,string start_date,string end_date,SqlConnection conn)
+
+
+        public DataTable get_fund_executions(string fundname, string start_date, string end_date, SqlConnection conn)
+        {
+            // Parse inputs (assumes ISO-like strings, e.g., "2025-10-23")
+            // If your inputs already include times, you can drop the Date part normalization.
+            DateTime start;
+            DateTime endInclusive;
+            if (!DateTime.TryParse(start_date, out start))
+                throw new ArgumentException("Invalid start_date", nameof(start_date));
+            if (!DateTime.TryParse(end_date, out endInclusive))
+                throw new ArgumentException("Invalid end_date", nameof(end_date));
+
+            // Make [start, endExclusive) range; end_date may be a date-only → include whole day
+            // If end_date already has time, you can set endExclusive = endInclusive instead.
+            var endExclusive = endInclusive;
+            if (endExclusive.TimeOfDay == TimeSpan.Zero)
+                endExclusive = endExclusive.AddDays(1); // include entire end day
+
+            const string sql = @"
+SET NOCOUNT ON;
+
+WITH topaccount AS (
+    SELECT DISTINCT
+        CASE WHEN b.topaccountname = 'None'
+             THEN s.subaccountname
+             ELSE b.topaccountname
+        END AS topaccountname
+    FROM broker b
+    INNER JOIN subaccounts s
+        ON s.broker_code_exec = b.broker_code
+    WHERE b.broker_type = 'execution'
+      AND s.fundname = @fundname
+),
+max_runtime AS (
+    SELECT e.execution_id, MAX(e.runtime) AS runtime
+    FROM executions e
+    WHERE e.account IN (SELECT topaccountname FROM topaccount)
+    GROUP BY e.execution_id
+),
+broker_id AS (
+    SELECT b.broker_id
+    FROM broker b
+    INNER JOIN subaccounts a ON a.broker_code_exec = b.broker_code
+    INNER JOIN funds f       ON f.fundname       = a.fundname
+    WHERE a.fundname = @fundname
+)
+SELECT DISTINCT e.*
+FROM executions e
+INNER JOIN broker_id   b  ON e.broker_id = b.broker_id
+INNER JOIN max_runtime mr ON mr.execution_id = e.execution_id
+                         AND mr.runtime      = e.runtime
+WHERE e.account IN (SELECT topaccountname FROM topaccount)
+  AND e.execution_time >= @start
+  AND e.execution_time <  @end
+ORDER BY e.execution_time DESC;
+";
+
+            var dt = new DataTable();
+
+            // One command, one batch, parameterized
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.Add("@fundname", SqlDbType.NVarChar, 200).Value = fundname ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@start", SqlDbType.DateTime).Value = start;
+                cmd.Parameters.Add("@end", SqlDbType.DateTime).Value = endExclusive;
+
+                var mustClose = false;
+                if (conn.State != ConnectionState.Open)
+                {
+                    conn.Open();
+                    mustClose = true;
+                }
+
+                try
+                {
+                    using (var da = new SqlDataAdapter(cmd))
+                    {
+                        da.Fill(dt);
+                    }
+                }
+                finally
+                {
+                    if (mustClose) conn.Close();
+                }
+            }
+
+            return dt;
+        }
+
+
+        public DataTable get_fund_executions_OLD(string fundname,string start_date,string end_date,SqlConnection conn)
         {
             DataTable dt = new DataTable();
 
@@ -585,7 +677,7 @@ namespace TDX
             dt = execSQL(sql_text, conn);
             return dt;
         }
-        public string thaw_tad_id(string runtime,string ems,string broker_code_exec,string fundname,string subaccountname,
+        public string thaw_tad_id(string runtime,string ems,string broker_code_exec,string fundgroupname,string fundname,string subaccountname,
             string execaccountname,string tad_id,string tickername,string error_code,string benchmarkname,string notes,SqlConnection conn)
         {
             //bool isNumber = int.TryParse(broker_id);
@@ -593,6 +685,7 @@ namespace TDX
             sql_text += " WHERE runtime ='" + runtime + "' AND emsname ='" + ems + "' AND broker_code_exec='" + broker_code_exec + "' AND fundname='";
             sql_text += fundname + "' and subaccountname='" + subaccountname + "' and tad_id = '" + tad_id + "'" + " AND tickername='" + tickername + "' AND error_code=" + error_code;
             sql_text += " AND benchmarkname='" + benchmarkname + "'" ;
+            sql_text += " AND fundgroupname='" + fundgroupname + "'";
             execSQL(sql_text,conn);
             return sql_text;
         }

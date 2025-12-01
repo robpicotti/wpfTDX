@@ -147,7 +147,7 @@
                         <DataGridTextColumn Header="Tickername" Binding="{Binding Tickername}" MinWidth="80" />
                         <DataGridTextColumn Header="Instrument" Binding="{Binding Instrument}" MinWidth="80" />
                         <DataGridTextColumn Header="Exch Curr" Binding="{Binding ExchangeCurrency}" MinWidth="80" />
-                        <DataGridTextColumn Header="Posn" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" MinWidth="80" />
+                        <DataGridTextColumn Header="Posn Tminus" Binding="{Binding ExecutedQuantity,StringFormat={}{0:N0}}" MinWidth="80" />
                         <DataGridTextColumn Header="Closing Price T" Binding="{Binding ClosingPriceT,StringFormat={}{0:N2}}" MinWidth="100" />
                         <DataGridTextColumn Header="Closing Price Tminus" Binding="{Binding ClosingPriceTMinus1,StringFormat={}{0:N2}}" MinWidth="120" />
                         <DataGridTextColumn Header="Cash T" Binding="{Binding CashT,StringFormat={}{0:N0}}" MinWidth="50"/>

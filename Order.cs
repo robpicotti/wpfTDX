@@ -69,7 +69,7 @@ namespace wpfTDX
             execSQL += "SET @fundname ='" + fundname + "' ";
             execSQL += "SELECT subaccountname INTO	#subaccounts FROM	subaccounts WHERE fundname  = @fundname ";
             execSQL += "SELECT ord.* FROM orders ord CROSS APPLY string_split(ord.subaccounts,',') s ";
-            execSQL += "JOIN #subaccounts sub ON s.value = sub.subaccountname WHERE	ord.status = 'FILLED' ";
+            execSQL += "JOIN #subaccounts sub ON s.value = sub.subaccountname WHERE	ord.status in ('FILLED','PARTIALLYCANCELLED') ";
             execSQL += " AND ord.order_submit_time BETWEEN '" +startDateTime ;
             execSQL += "' AND '" + endDateTime + "'";
             dtOut = DB.execSQL(execSQL, this.gbl_conn);
@@ -109,7 +109,7 @@ namespace wpfTDX
             execSQL += "INNER JOIN #max_orders_key m ";
             execSQL += "ON m.max_orders_key = a.orders_key ";
             execSQL += "AND m.tad_order_id = a.tad_order_id ";
-            execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED','VAPORIZED') ";
+            execSQL += "WHERE a.status NOT IN ('FILLED','CANCELLED','VAPORIZED','PARTIALLYCANCELLED') ";
             execSQL += "ORDER BY a.tad_order_id ";
             dtOut = DB.execSQL(execSQL, this.gbl_conn);
             
