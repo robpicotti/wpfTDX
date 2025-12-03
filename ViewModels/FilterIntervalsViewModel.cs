@@ -650,6 +650,7 @@ namespace wpfTDX
 
                 foreach (var r in MergedRows)
                 {
+
                     if (!r.ManualHasChanged) continue;
 
                     string level = DetermineFreezeLevel(r);
@@ -723,21 +724,6 @@ namespace wpfTDX
             // await LoadActiveManualFreezesAsync();
         }
 
-        //private async Task SubmitManualChangesBatchAsync(List<ManualChangeDto> items)
-        //{
-        //    // shape: { items: [...] }
-        //    var payload = new { items = items };
-        //    var json = JsonConvert.SerializeObject(payload);
-        //    using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-        //    {
-        //        // swap this route to your actual endpoint if different
-        //        using (var resp = await _http.PostAsync("/manual_freezes/batch", content))
-        //        {
-        //            resp.EnsureSuccessStatusCode();
-        //            // no body required; if your API returns something, parse here
-        //        }
-        //    }
-        //}
 
 
         private static bool WildEq(string a, string b)
@@ -1098,7 +1084,8 @@ namespace wpfTDX
         {
             var row = obj as MergedTickerRow;
             if (row == null) return false;
-
+            if (row.IsDeleted)
+                return false;
             return _tickerPredicate(row.Tickername) &&
                    _groupPredicate(row.FundGroup);
         }
@@ -1308,7 +1295,54 @@ namespace wpfTDX
         {
             return (s ?? "").Replace(" ", "").ToLowerInvariant();
         }
+        //unfreeze 
+        public void RemoveRow(MergedTickerRow row)
+        {
+            if (row == null) return;
+            //first figure out the freeze level
 
+            var freezer = new TickerFreezer(SqlConn);
+            string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"); // your DB likes string runtimes
+
+
+            var r = row as MergedTickerRow;
+            string level = DetermineFreezeLevel(r);
+            var def = GetManualErrorDefForLevel(level);
+            int errorCode = def?.ErrorCode ?? 9999;
+            string errorReason = string.IsNullOrWhiteSpace(def?.Reason)
+                ? $"Manual trading freeze ({level})"
+                : def.Reason;
+
+            // Normalise wildcards to "*"
+            string fund = string.IsNullOrWhiteSpace(r.FundName) ? "*" : r.FundName.Trim();
+            string group = string.IsNullOrWhiteSpace(r.FundGroup) ? "*" : r.FundGroup.Trim();
+            string tkr = r.Tickername?.Trim() ?? "*";
+
+            var match = _activeManualFreezes.FirstOrDefault(f => FreezeMatchesRow(f, r));
+
+            // Fallback to "now" only if we couldn't find a matching unresolved freeze
+            string thawRuntime = (match?.RunTime?.ToString("yyyy-MM-dd HH:mm:ss"))
+                                      ?? now;
+            // Resolve existing manual freeze entry
+            freezer.Thaw(
+                runtime: thawRuntime,
+                ems: "*",
+                broker_code_exec: "*",
+                fundgroupname: group,
+                fundname: fund,
+                subaccountname: "*",
+                execaccountname: "*",
+                tad_id: "*",
+                tickername: tkr,
+                error_code: errorCode.ToString(),
+                benchmarkname: "*",
+                notes: "FilterIntervals UI",
+                gbl_conn: SqlConn
+            );
+            // Remove from MergedRows
+            MergedRows.Remove(r);
+
+        }
         private bool ManualAppliesToRowByRowLevel(MergedTickerRow r)
         {
             if (r == null || _activeManualFreezes == null || _activeManualFreezes.Count == 0)
@@ -3154,6 +3188,20 @@ namespace wpfTDX
 
             // If you ever need to branch on pure scaling UI (usually doesn't require portfolio processing):
             public bool HasScaleFactorEdit => _isInitialized && NewScaleFactorHasChanged;
+
+            private bool _isDeleted;
+            public bool IsDeleted
+            {
+                get => _isDeleted;
+                set
+                {
+                    if (_isDeleted != value)
+                    {
+                        _isDeleted = value;
+                        OnPropertyChanged(nameof(IsDeleted));
+                    }
+                }
+            }
 
             //for setting colours
             // Reuse ONE set of static, frozen brushes

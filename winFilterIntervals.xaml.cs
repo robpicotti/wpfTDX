@@ -278,8 +278,20 @@ namespace wpfTDX
         {
             var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
             if (row == null) return;
-            _viewModel.MergedRows.Remove(row);
+
+            // Thaw it
+            row.Manual = false;
+
+            // Soft delete
+            row.IsDeleted = true;
+
+            //set strategies override strategyname  = "default"
+            row.StrategyName = "default";
+
+            // Refresh UI to hide it immediately
+            _viewModel.MergedRowsView?.Refresh();
         }
+
 
         //private async void AddTickerMenuItem_Click(object sender, RoutedEventArgs e)
         //{
