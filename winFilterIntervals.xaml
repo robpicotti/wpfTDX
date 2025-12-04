@@ -1382,11 +1382,23 @@
 
                 <DataGridTextColumn Header="trades"
                                     Binding="{Binding NumTrades}"
-                                    IsReadOnly="True" />
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="TextAlignment" Value="Center"/>
+                    </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
                 <DataGridTextColumn Header="n"
                                     Binding="{Binding NumPositionIntervals}"
-                                    IsReadOnly="True" />
+                                    IsReadOnly="True" >
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <DataGridTextColumn Header="dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
@@ -1404,13 +1416,25 @@
 
 
                 <!-- Ticker (read-only) -->
-                <DataGridTextColumn Header="filt_trades"
+                <DataGridTextColumn Header="filt_t"
                                     Binding="{Binding NumFilteredTrades}"
-                                    IsReadOnly="True" />
+                                    IsReadOnly="True" >
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
-                <DataGridTextColumn Header="n_filt"
+                <DataGridTextColumn Header="filt_n"
                                     Binding="{Binding NumFiltIntervals}"
-                                    IsReadOnly="True" />
+                                    IsReadOnly="True" >
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <DataGridTextColumn Header="filt_dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
@@ -1428,13 +1452,13 @@
 
 
                 <!-- new_trades -->
-                <DataGridTextColumn Header="new_trades" IsReadOnly="True">
+                <DataGridTextColumn Header="new_t" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewTrades" TargetNullValue=""/>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="TextAlignment" Value="Right"/>
+                            <Setter Property="TextAlignment" Value="Center"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
                             <Setter Property="Background" Value="{Binding NewTradesBrush}"/>
                         </Style>
