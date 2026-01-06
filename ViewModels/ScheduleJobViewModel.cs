@@ -23,8 +23,10 @@ namespace wpfTDX
 {
     public class ScheduleJobViewModel : INotifyPropertyChanged
     {
+        private string _oneDrivePath;
+        private string _excelpath;
+        //private string _excelpath = @"\\ad01-har.10dynamics.com\Ray_Share\Files\files_backup\";
 
-        private string _excelpath = @"\\ad01-har.10dynamics.com\Ray_Share\Files\files_backup\";
         public ICommand SaveCommand { get; private set; }
         public ICommand AddParameterCommand { get; private set; }
         public ICommand AddParameterValueCommand { get;private set; }
@@ -508,6 +510,13 @@ namespace wpfTDX
 
         public ScheduleJobViewModel()
         {
+            _oneDrivePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "OneDrive - 10dynamics",
+            "IT Drive"
+        );
+
+            _excelpath = Path.Combine(_oneDrivePath, "files_backup");
             SaveCommand = new RelayCommand(SaveAllJobs);
             AddParameterCommand = new RelayCommand(SaveParameters);
             AddParameterValueCommand = new RelayCommand(SaveParameterValues);
