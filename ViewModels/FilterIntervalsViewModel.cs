@@ -408,6 +408,24 @@ namespace wpfTDX
             public int ErrorCode;
             public string FreezeLevel;    // e.g. "tickername,fundname"
         }
+
+
+        public sealed class FilterIntervalsDeleteRow
+        {
+            [JsonProperty("tickername")]
+            public string Tickername { get; set; }
+
+            [JsonProperty("fundgroupname")]
+            public string FundGroup { get; set; }
+
+            [JsonProperty("fundname")]
+            public string FundName { get; set; }
+
+            // optional if you need it server-side
+            [JsonProperty("hostenv")]
+            public string HostEnv { get; set; }
+        }
+
         private List<ActiveFreezeRow> _activeManualFreezes = new List<ActiveFreezeRow>();
 
         // latest override by ticker (store the full model, not just the name)
@@ -597,6 +615,13 @@ namespace wpfTDX
 
         }
 
+        public FilterIntervalsDeleteRow ToDeleteRow(MergedTickerRow r) => new FilterIntervalsDeleteRow
+        {
+            Tickername = r.Tickername?.Trim(),
+            FundGroup = string.IsNullOrWhiteSpace(r.FundGroup) ? "*" : r.FundGroup.Trim(),
+            FundName = string.IsNullOrWhiteSpace(r.FundName) ? "*" : r.FundName.Trim(),
+            HostEnv = this.HostEnv
+        };
 
         private static string JStr(JToken t, string name)
         {
@@ -698,6 +723,7 @@ namespace wpfTDX
                         string thawRuntime = (match?.RunTime?.ToString("yyyy-MM-dd HH:mm:ss"))
                                              ?? now;
                         // Resolve existing manual freeze entry
+                        //MessageBox.Show($"Resolving manual freeze for {tkr} ({group}/{fund}/{errorCode}) at {thawRuntime}.");
                         freezer.Thaw(
                             runtime: thawRuntime,
                             ems: "*",
@@ -3910,20 +3936,90 @@ namespace wpfTDX
 
 
 
-        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker,string fundgroupname,string fundname)
+        //public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker,string fundgroupname,string fundname)
+        //{
+        //    var row = new FilterIntervalsViewModel.MergedTickerRow
+        //    {
+        //        Tickername = ticker,
+        //        FundGroup = fundgroupname,
+        //        FundName = fundname,    
+        //        // safe defaults — tweak if you prefer different starting flags
+        //        Rescale = DefaultRescale,
+        //        LongOnly = DefaultLongOnly,
+        //        ShortOnly = DefaultShortOnly,
+        //        BuyOnly = DefaultBuyOnly,
+        //        SellOnly = DefaultSellOnly,
+        //        AllIntervals = DefaultAllIntervals,
+        //        y1 = false,
+        //        y2 = false,
+        //        y3 = false,
+        //        H2 = false,
+        //        H3 = false,
+        //        H4 = false,
+        //        H6 = false,
+        //        H12 = false,
+        //        H16 = false,
+        //        H36 = false,
+        //        D1 = false,
+        //        D2 = false,
+        //        D3 = false,
+        //        D4 = false,
+        //        D8 = false,
+        //        W1 = false,
+        //        W2 = false,
+        //        // make intervals editable-looking (NOT grey) for *new* tickers:
+        //        PositionY1 = 0f,
+        //        PositionY2 = 0f,
+        //        PositionY3 = 0f,
+        //        PositionH2 = 0f,
+        //        PositionH3 = 0f,
+        //        PositionH4 = 0f,
+        //        // PositionH5 intentionally NOT set (you said H5 isn’t in the DB)
+        //        PositionH6 = 0f,
+        //        PositionH12 = 0f,
+        //        PositionH16 = 0f,
+        //        PositionH36 = 0f,
+        //        PositionD1 = 0f,
+        //        PositionD2 = 0f,
+        //        PositionD3 = 0f,
+        //        PositionD4 = 0f,
+        //        PositionD8 = 0f,
+        //        PositionW1 = 0f,
+        //        PositionW2 = 0f,
+
+        //        // positions/metrics start empty
+        //        NumTrades = 0,
+        //        NumPositionIntervals = 0,
+        //        NumFiltIntervals = 0,
+        //        NumFilteredTrades = 0,
+        //        FilteredDeployment = 0,
+        //        ViewDeployment = 0,
+        //        PositionDeployment = 0
+        //    };
+
+        //    row.SnapshotOriginals();
+        //    row.RecalcNewTrades();
+        //    row.RecalcRescaledIntervals();
+        //    row.RecalcNewDeployment();
+        //    return row;
+        //}
+        public FilterIntervalsViewModel.MergedTickerRow CreateDefaultRow(string ticker, string fundgroupname, string fundname)
         {
             var row = new FilterIntervalsViewModel.MergedTickerRow
             {
                 Tickername = ticker,
                 FundGroup = fundgroupname,
-                FundName = fundname,    
-                // safe defaults — tweak if you prefer different starting flags
+                FundName = fundname,
+
                 Rescale = DefaultRescale,
                 LongOnly = DefaultLongOnly,
                 ShortOnly = DefaultShortOnly,
                 BuyOnly = DefaultBuyOnly,
                 SellOnly = DefaultSellOnly,
-                AllIntervals = DefaultAllIntervals,
+
+                // IMPORTANT: baseline should remain false
+                AllIntervals = false,
+
                 y1 = false,
                 y2 = false,
                 y3 = false,
@@ -3941,14 +4037,13 @@ namespace wpfTDX
                 D8 = false,
                 W1 = false,
                 W2 = false,
-                // make intervals editable-looking (NOT grey) for *new* tickers:
+
                 PositionY1 = 0f,
                 PositionY2 = 0f,
                 PositionY3 = 0f,
                 PositionH2 = 0f,
                 PositionH3 = 0f,
                 PositionH4 = 0f,
-                // PositionH5 intentionally NOT set (you said H5 isn’t in the DB)
                 PositionH6 = 0f,
                 PositionH12 = 0f,
                 PositionH16 = 0f,
@@ -3961,7 +4056,6 @@ namespace wpfTDX
                 PositionW1 = 0f,
                 PositionW2 = 0f,
 
-                // positions/metrics start empty
                 NumTrades = 0,
                 NumPositionIntervals = 0,
                 NumFiltIntervals = 0,
@@ -3971,7 +4065,12 @@ namespace wpfTDX
                 PositionDeployment = 0
             };
 
+            // Snapshot the "original" state (AllIntervals=false)
             row.SnapshotOriginals();
+
+            // NOW force the new ticker to look like an edit
+            row.AllIntervals = true;
+
             row.RecalcNewTrades();
             row.RecalcRescaledIntervals();
             row.RecalcNewDeployment();

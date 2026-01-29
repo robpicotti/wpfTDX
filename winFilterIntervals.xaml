@@ -48,6 +48,10 @@
     </Window.Resources>
 
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="41*"/>
+            <ColumnDefinition Width="7*"/>
+        </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -57,11 +61,11 @@
             <RowDefinition Height="Auto"/>
             <!-- Status bar -->
         </Grid.RowDefinitions>
-        
-        
+
+
 
         <!-- Toolbar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,0" >
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" Grid.ColumnSpan="2"  >
             <Button Content="Reload" Click="ReloadBothButton_Click" Padding="12,4"
                     Style="{StaticResource BusyButtonStyle}"
                      Margin="0,0,8,0"
@@ -85,7 +89,7 @@
          ToolTip="Use * and ? wildcards"
          Text="{Binding FundGroupFilter, UpdateSourceTrigger=PropertyChanged,Delay=250}"/>
 
-         <Button Content="Save Filter Intervals"
+            <Button Content="Save Filter Intervals"
             Padding="12,4"
             Margin="8,0,0,0"
             Style="{StaticResource BusyButtonStyle}"
@@ -98,7 +102,7 @@
         </StackPanel>
 
 
-        <StatusBar Grid.Row="2" Margin="10,6,10,10">
+        <StatusBar Grid.Row="2" Margin="10,6,10,10" Grid.ColumnSpan="2">
             <!-- Left: code-behind updates this (StatusTextBlock.Text) -->
             <TextBlock x:Name="StatusTextBlock" />
 
@@ -132,7 +136,7 @@
                   Grid.Row="1"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
-                  Margin="10"
+                  Margin="10,10,10,10"
                   EnableRowVirtualization="True"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling"
@@ -144,7 +148,7 @@
                   FrozenColumnCount="0"
                   PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
                       SelectionMode="Single"
-                        SelectionUnit="FullRow"
+                        SelectionUnit="FullRow" Grid.ColumnSpan="2"
                   >
 
             <!-- Bold headers + show underscores literally -->
@@ -179,9 +183,9 @@
                 <Style x:Key="PercentDisplayStyle" TargetType="TextBlock">
                     <Setter Property="Text"
                 Value="{Binding ScaleFactor, StringFormat={}{0:P1}}"/>
-                    </Style>
-                    <Style x:Key="PercentEditStyle" TargetType="TextBox">
-                        <Setter Property="Text"
+                </Style>
+                <Style x:Key="PercentEditStyle" TargetType="TextBox">
+                    <Setter Property="Text"
                 Value="{Binding ScaleFactor,
                                 Converter={StaticResource NullablePercentDoubleConverter},
                                 UpdateSourceTrigger=PropertyChanged}"/>
@@ -395,7 +399,7 @@
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
-                    
+
                 </DataGridTextColumn>
 
                 <!-- LongOnly -->
@@ -1153,7 +1157,7 @@
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="D2" />
-                            <Binding Path="PositionD2" />   
+                            <Binding Path="PositionD2" />
                         </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
@@ -1308,7 +1312,7 @@
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="D8" />
-                            <Binding Path="PositionD8"/>    
+                            <Binding Path="PositionD8"/>
                         </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
@@ -1384,11 +1388,11 @@
                                     Binding="{Binding NumTrades}"
                                     IsReadOnly="True">
                     <DataGridTextColumn.ElementStyle>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="TextAlignment" Value="Center"/>
-                    </Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextAlignment" Value="Center"/>
+                        </Style>
                     </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
+                </DataGridTextColumn>
 
                 <DataGridTextColumn Header="n"
                                     Binding="{Binding NumPositionIntervals}"

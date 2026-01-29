@@ -328,7 +328,8 @@ namespace wpfTDX
 
             if (vm.TickerUniverse == null || vm.TickerUniverse.Count == 0)
                 await vm.LoadTickerUniverseAsync();
-
+            //MessageBox.Show(this, "New ticker test",
+            //    "Select Tickers", MessageBoxButton.OK, MessageBoxImage.Information);
             var dlg = new winAddTicker(vm.TickerUniverse);
             if (dlg.ShowDialog() != true) return;
 
@@ -418,7 +419,18 @@ namespace wpfTDX
                 StatusTextBlock.Text = "Save started…";
 
                 // --- payloads ---
-                var intervalRows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
+                //var intervalRows = vm.MergedRows.Select(r => r.ToUpsertRow()).ToList();
+                var intervalRows = vm.MergedRows
+                .Where(r => !r.IsDeleted)   // <-- exclude deleted rows
+                .Select(r => r.ToUpsertRow())
+                .ToList();
+
+
+                //for deleting tickers
+                var deleteRows = vm.MergedRows
+                    .Where(r => r.IsDeleted)     // or a stricter condition if you add an "OriginalIsDeleted"
+                    .Select(r => vm.ToDeleteRow(r))
+                    .ToList();
 
                 var affectedIntervalTickers = vm.MergedRows
                 .Where(r => r.HasAnyEdits)                       // interval-affecting edits only
@@ -436,21 +448,46 @@ namespace wpfTDX
                     .Union(affectedStrategyTickers, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
+                var deletedTickers = vm.MergedRows
+                    .Where(r => r.IsDeleted)
+                    .Select(r => (r.Tickername ?? "").Trim())
+                    .Where(t => t.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                tickersToProcess = tickersToProcess
+                    .Union(deletedTickers, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
 
 
                 bool Changed(double? oldV, double? newV)
                     => newV.HasValue && (!oldV.HasValue || Math.Abs(newV.Value - oldV.Value) > 1e-9);
 
+                //var scaledRows = vm.MergedRows
+                //    .Where(r => Changed(r.ScaleFactor, r.NewScaleFactor))
+                //    .Select(r => r.ToScaledPositionInsertRow())
+                //    .ToList();
                 var scaledRows = vm.MergedRows
-                    .Where(r => Changed(r.ScaleFactor, r.NewScaleFactor))
-                    .Select(r => r.ToScaledPositionInsertRow())
-                    .ToList();
+                .Where(r => !r.IsDeleted)
+                .Where(r => Changed(r.ScaleFactor, r.NewScaleFactor))
+                .Select(r => r.ToScaledPositionInsertRow())
+                .ToList();
+
 
                 //apply any changes to the manual flag
                 await vm.ApplyManualChangesAsync_UsingTickerFreezer();
 
 
                 var nowUtc = DateTime.UtcNow;
+
+                //make sure the strategy name is default for deleted rows. fail safe
+                foreach (var r in vm.MergedRows.Where(r => r.IsDeleted))
+                {
+                    r.StrategyName = "default";
+                }
+
+
 
                 var strategyOverridesPayload = vm.MergedRows
                     .Where(r => r.StrategyNameHasChanged)
