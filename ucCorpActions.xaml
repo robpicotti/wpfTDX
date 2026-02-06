@@ -26,9 +26,9 @@
                                Margin="5 1" />
                 </StackPanel>
                 
-                <StackPanel Grid.Column="9">
+                <!--<StackPanel Grid.Column="9">
                     <Button x:Name="cmdCloseScreen" Click="cmdClose_Click_1" Content="X"/>
-                </StackPanel>
+                </StackPanel>-->
             </Grid>
         </Border>
         <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">

@@ -72,6 +72,79 @@ namespace wpfTDX
         /// </summary>
         private const int NumberOfColumns = 3;
         double Window_Width;
+
+
+        //NEW CODE TO OPEN UP SEPERATE WINDOWS
+        private readonly Dictionary<Guid, Window> _openToolWindows = new Dictionary<Guid, Window>();
+        private readonly Dictionary<Guid, Delegate> _removeHandlers = new Dictionary<Guid, Delegate>();
+        private void OpenToolWindow(string title, UserControl control)
+        {
+            if (control == null)
+                return;
+
+            Guid windowId = Guid.NewGuid();
+
+            Window wnd = new Window();
+            wnd.Title = title;
+            wnd.Width = 1600;
+            wnd.Height = 900;
+            wnd.Content = control;
+            wnd.Owner = this;
+            wnd.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            _openToolWindows[windowId] = wnd;
+
+            // Hook RemoveControlRequested if it exists
+            TryWireRemoveRequestedToClose(windowId, control, wnd);
+
+            wnd.Closed += delegate (object sender, EventArgs e)
+            {
+                TryUnwireRemoveRequested(windowId, control);
+
+                if (_openToolWindows.ContainsKey(windowId))
+                    _openToolWindows.Remove(windowId);
+            };
+
+            wnd.Show();
+        }
+        private void TryWireRemoveRequestedToClose(Guid windowId, UserControl control, Window wnd)
+        {
+            if (control == null || wnd == null)
+                return;
+
+            var evt = control.GetType().GetEvent("RemoveControlRequested");
+            if (evt == null)
+                return;
+
+            EventHandler handler = delegate (object sender, EventArgs e)
+            {
+                wnd.Close();
+            };
+
+            evt.AddEventHandler(control, handler);
+
+            _removeHandlers[windowId] = handler;
+        }
+
+        private void TryUnwireRemoveRequested(Guid windowId, UserControl control)
+        {
+            if (control == null)
+                return;
+
+            if (!_removeHandlers.ContainsKey(windowId))
+                return;
+
+            var evt = control.GetType().GetEvent("RemoveControlRequested");
+            if (evt == null)
+                return;
+
+            evt.RemoveEventHandler(control, _removeHandlers[windowId]);
+
+            _removeHandlers.Remove(windowId);
+        }
+
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -89,6 +162,7 @@ namespace wpfTDX
                 Exception exception = args.Exception;
                 MessageBox.Show(exception.Message, "Unobserved Task Exception", MessageBoxButton.OK, MessageBoxImage.Error);
             }; 
+            
         }
 
         private async void cboServer_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -470,6 +544,7 @@ namespace wpfTDX
                     if (!string.IsNullOrEmpty(sqlDb))
                     {
                         connect_database();
+                        EnsureTickerFreezerLoaded();
                         //start the process monitor
                         StartMonitoring();
                         //we want the Mtm screen on startup
@@ -675,30 +750,30 @@ namespace wpfTDX
                 MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private void AddMtM(string textblockText)
-        {
-            // Create a new instance of the user control
-            ucMtm newUserControl = CreateNewUserControl(textblockText) as ucMtm;
+        //private void AddMtM(string textblockText)
+        //{
+        //    // Create a new instance of the user control
+        //    ucMtm newUserControl = CreateNewUserControl(textblockText) as ucMtm;
 
-            if (newUserControl != null)
-            {
-                newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+        //    if (newUserControl != null)
+        //    {
+        //        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
 
-                // Set margin to create spacing between user controls
-                newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+        //        // Set margin to create spacing between user controls
+        //        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
 
-                // Wrap the user control in a Border with a black border color and thickness
-                Border userControlBorder = new Border
-                {
-                    BorderBrush = Brushes.Black,
-                    BorderThickness = new Thickness(2),
-                    Child = newUserControl
-                };
+        //        // Wrap the user control in a Border with a black border color and thickness
+        //        Border userControlBorder = new Border
+        //        {
+        //            BorderBrush = Brushes.Black,
+        //            BorderThickness = new Thickness(2),
+        //            Child = newUserControl
+        //        };
 
-                // Add the bordered user control to the WrapPanel
-                userControlsWrapPanel.Children.Add(userControlBorder);
-            }
-        }
+        //        // Add the bordered user control to the WrapPanel
+        //        userControlsWrapPanel.Children.Add(userControlBorder);
+        //    }
+        //}
         /// <summary>
         /// MtM
         /// </summary>
@@ -710,12 +785,106 @@ namespace wpfTDX
             {
                 if (sender is TextBlock textBlock)
                 {
-                    AddMtM(textBlock.Text);
+                    //AddMtM(textBlock.Text);
+                    OpenMtMWindow(textBlock.Text);
+
                 }
             }
             else
             {
                 MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private bool EnsureSqlOrShowError()
+        {
+            if (sql_conn != null) return true;
+
+            MessageBox.Show("No database connection was set up", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
+        }
+
+
+        private void OpenCommFeeAdjustmentsWindow()
+        {
+            var uc = new ucCommFeeAdj(sql_conn);
+            OpenToolWindow("Comm fee adjustments", uc);
+        }
+        private void OpenNavWindow()
+        {
+            var uc = new ucNav(sql_conn);
+            OpenToolWindow("NAV", uc);
+        }
+        private void OpenCorporateActionsWindow()
+        {
+            var uc = new ucCorpActions(sql_conn);
+            OpenToolWindow("Corporate actions", uc);
+        }
+        private void OpenSlippageWindow()
+        {
+            var uc = new ucSlippage(sql_conn);
+            OpenToolWindow("Slippage", uc);
+        }
+        private void OpenPaymentsWindow()
+        {
+            var uc = new ucPayments(sql_conn);
+            OpenToolWindow("Payments", uc);
+        }
+        private void OpenOrderRejectionsWindow()
+        {
+            var uc = new ucOrderRejections(sql_conn);
+            OpenToolWindow("Order Rejections", uc);
+        }
+        private void OpenLimitsWindow()
+        {
+            var uc = new ucLimits(sql_conn);
+            OpenToolWindow("Limits", uc);
+        }
+        private void OpenOrdersArchiveWindow()
+        {
+            var uc = new ucOrdersArchive(sql_conn);
+            OpenToolWindow("Orders Archive", uc);
+        }
+        private void OpenDepositsWindow()
+        {
+            var uc = new ucDeposits(sql_conn);
+            OpenToolWindow("Deposits", uc);
+        }
+        private void OpenMtMWindow(string textblockText)
+        {
+            ucMtm newUserControl = CreateNewUserControl(textblockText) as ucMtm;
+
+            if (newUserControl != null)
+            {
+                // optionally pass sql_conn if your UC needs it
+                // newUserControl.SetSqlConnection(sql_conn);
+
+                OpenToolWindow(textblockText, newUserControl);
+            }
+        }
+        private void OpenJobsWindow(string textblockText)
+        {
+            ucScheduledJobsManager newUserControl = CreateNewUserControl(textblockText) as ucScheduledJobsManager;
+
+            if (newUserControl != null)
+            {
+                // optionally pass sql_conn if your UC needs it
+                // newUserControl.SetSqlConnection(sql_conn);
+
+                OpenToolWindow(textblockText, newUserControl);
+            }
+        }
+        private void OpenEMSWindow(string textblockText)
+        {
+            ucEMS newUserControl = CreateNewUserControl(textblockText) as ucEMS;
+
+            if (newUserControl != null)
+            {
+                // optionally pass sql_conn if your UC needs it
+                // newUserControl.SetSqlConnection(sql_conn);
+
+                OpenToolWindow(textblockText, newUserControl);
             }
         }
 
@@ -902,44 +1071,15 @@ namespace wpfTDX
                 }
             }
         }
-        /// <summary>
+    /// <summary>
         /// ems
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_2(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucEMS newUserControl = CreateNewUserControl(textBlock.Text) as ucEMS;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenEMSWindow("EMS");
         }
 
         /// <summary>
@@ -947,40 +1087,7 @@ namespace wpfTDX
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void TextBlock_MouseLeftButtonDown_3(object sender, MouseButtonEventArgs e)
-        {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucTickerFreezer newUserControl = CreateNewUserControl(textBlock.Text) as ucTickerFreezer;
 
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
 
         /// <summary>
         /// order rejections
@@ -989,37 +1096,8 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_4(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucOrderRejections newUserControl = CreateNewUserControl(textBlock.Text) as ucOrderRejections;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenOrderRejectionsWindow();
         }
 
         /// <summary>
@@ -1029,37 +1107,8 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_5(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucNav newUserControl = CreateNewUserControl(textBlock.Text) as ucNav;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenNavWindow();
         }
 
         /// <summary>
@@ -1069,37 +1118,8 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_6(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucSlippage newUserControl = CreateNewUserControl(textBlock.Text) as ucSlippage;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenSlippageWindow();
         }
 
         /// <summary>
@@ -1109,37 +1129,8 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_7(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucDeposits newUserControl = CreateNewUserControl(textBlock.Text) as ucDeposits;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenDepositsWindow();
         }
 
         /// <summary>
@@ -1149,37 +1140,8 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_8(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucPayments newUserControl = CreateNewUserControl(textBlock.Text) as ucPayments;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenPaymentsWindow();
         }
 
         /// <summary>
@@ -1189,182 +1151,57 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_9(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucCommFeeAdj newUserControl = CreateNewUserControl(textBlock.Text) as ucCommFeeAdj;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenCommFeeAdjustmentsWindow();
         }
 
         private void TextBlock_MouseLeftButtonDown_10(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucCorpActions newUserControl = CreateNewUserControl(textBlock.Text) as ucCorpActions;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenCorporateActionsWindow();
         }
 
         private void TextBlock_MouseLeftButtonDown_11(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucOrdersArchive newUserControl = CreateNewUserControl(textBlock.Text) as ucOrdersArchive;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenOrdersArchiveWindow();
         }
 
         private void TextBlock_MouseLeftButtonDown_12(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucLimits newUserControl = CreateNewUserControl(textBlock.Text) as ucLimits;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenLimitsWindow();
         }
 
         private void txbJobs_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    AddJobs(txbJobs.Text);
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenJobsWindow("Jobs");
         }
-        private void AddJobs(string textblockText)
-        {
-            // Create a new instance of the user control
-            ucScheduledJobsManager newUserControl = CreateNewUserControl(textblockText) as ucScheduledJobsManager;
+        //private void AddJobs(string textblockText)
+        //{
+        //    // Create a new instance of the user control
+        //    ucScheduledJobsManager newUserControl = CreateNewUserControl(textblockText) as ucScheduledJobsManager;
 
-            if (newUserControl != null)
-            {
-                newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
+        //    if (newUserControl != null)
+        //    {
+        //        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
 
-                // Set margin to create spacing between user controls
-                newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
+        //        // Set margin to create spacing between user controls
+        //        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
 
-                // Wrap the user control in a Border with a black border color and thickness
-                Border userControlBorder = new Border
-                {
-                    BorderBrush = Brushes.Black,
-                    BorderThickness = new Thickness(2),
-                    Child = newUserControl
-                };
+        //        // Wrap the user control in a Border with a black border color and thickness
+        //        Border userControlBorder = new Border
+        //        {
+        //            BorderBrush = Brushes.Black,
+        //            BorderThickness = new Thickness(2),
+        //            Child = newUserControl
+        //        };
 
-                // Add the bordered user control to the WrapPanel
-                userControlsWrapPanel.Children.Add(userControlBorder);
-            }
-        }
+        //        // Add the bordered user control to the WrapPanel
+        //        userControlsWrapPanel.Children.Add(userControlBorder);
+        //    }
+        //}
 
         private void txbMeta_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -1415,5 +1252,58 @@ namespace wpfTDX
             winPortfolioWeights winPortfolioWeights = new winPortfolioWeights(this.sql_conn);
             winPortfolioWeights.Show();
         }
+
+
+        private Border _tickerFreezerBorder;   // keep reference so we don't add duplicates
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // If you only want to load it when you already have a connection:
+            if (sql_conn != null)
+            {
+                EnsureTickerFreezerLoaded();
+            }
+
+            // If sql_conn is created later (after user selects server/db),
+            // call EnsureTickerFreezerLoaded() at the point you create sql_conn successfully.
+        }
+
+        private void EnsureTickerFreezerLoaded()
+        {
+            // already loaded? do nothing
+            if (_tickerFreezerBorder != null && userControlsWrapPanel.Children.Contains(_tickerFreezerBorder))
+                return;
+
+            if (sql_conn == null)
+            {
+                MessageBox.Show("No database connection was set up", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Create a new instance of the user control (keep your factory pattern)
+            ucTickerFreezer newUserControl = CreateNewUserControl("Ticker Freezer") as ucTickerFreezer;
+            if (newUserControl == null) return;
+
+            newUserControl.Margin = new Thickness(5);
+
+            Border userControlBorder = new Border
+            {
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(2),
+                Child = newUserControl,
+                Margin = new Thickness(5)
+            };
+
+            // If you still want the UC to be able to request removal, keep this:
+            newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;
+
+            // Add to the WrapPanel
+            userControlsWrapPanel.Children.Add(userControlBorder);
+
+            // remember it so we don't add it twice
+            _tickerFreezerBorder = userControlBorder;
+        }
+
     }
 }

@@ -1,0 +1,15 @@
+﻿<Window x:Class="wpfTDX.ToolHostWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStartupLocation="CenterOwner"
+        Width="1400"
+        Height="900"
+        MinWidth="1100"
+        MinHeight="700"
+        ShowInTaskbar="True">
+    <Grid>
+        <ContentPresenter x:Name="Host"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"/>
+    </Grid>
+</Window>

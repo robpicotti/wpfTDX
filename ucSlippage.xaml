@@ -39,9 +39,7 @@
                 <StackPanel Grid.Column="3" Margin="5 23">
                     <Button x:Name="cmdRun" Click="cmdRun_Click" Content="Run" Background="LightGray" FontWeight="Bold"/>
                 </StackPanel>
-                <StackPanel Grid.Column="8" Margin="5">
-                    <Button x:Name="cmdClose" Click="cmdClose_Click_1" Content="x" FontWeight="Bold" />
-                </StackPanel>
+
             </Grid>
         </Border>
         <ScrollViewer VerticalScrollBarVisibility="Auto">

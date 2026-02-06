@@ -3821,7 +3821,12 @@ namespace wpfTDX
                 ViewDeployment = 0,
                 PositionDeployment = 0
             };
-            row.AttachStrategyOverride(null);
+            // attach existing override if we have it cached (keeps watchlist etc.)
+            if (_overrideByTicker.TryGetValue(ticker, out var so))
+                row.AttachStrategyOverride(so);
+            else
+                row.AttachStrategyOverride(null);
+
             // Snapshot the "original" state (AllIntervals=false)
             row.SnapshotOriginals();
 

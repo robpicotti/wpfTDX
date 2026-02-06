@@ -34,9 +34,7 @@
                     <StackPanel  Grid.Column="1" Margin="2">
                         <Button Content="Save" Command="{Binding SaveCommand}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="3" Margin="5">
-                        <Button x:Name="cmdClose" Width="15" Click="cmdClose_Click" Content="x" FontWeight="Bold" HorizontalAlignment="Right" />
-                    </StackPanel>
+      
                 </Grid>
             </Border>
         </Expander>

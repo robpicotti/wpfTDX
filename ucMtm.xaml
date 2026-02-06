@@ -78,9 +78,9 @@
                 </StackPanel>
 
                 <!-- Close Button -->
-                <StackPanel Grid.Column="8" Margin="5">
+                <!--<StackPanel Grid.Column="8" Margin="5">
                     <Button x:Name="cmdClose" Click="cmdClose_Click" Content="x" FontWeight="Bold" />
-                </StackPanel>
+                </StackPanel>-->
             </Grid>
         </Border>
 

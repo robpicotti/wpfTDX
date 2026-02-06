@@ -48,9 +48,7 @@
                                  FontWeight="Bold"
                                  Margin="5"></RadioButton>
                 </StackPanel>
-                <StackPanel Grid.Column="8" Margin="5">
-                    <Button x:Name="cmdClose" Click="cmdClose_Click" Margin="5 -1 2 2" Content="X"></Button>
-                </StackPanel>
+ 
             </Grid>
 
         </Border>

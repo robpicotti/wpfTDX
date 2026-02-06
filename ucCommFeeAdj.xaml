@@ -33,9 +33,7 @@
                     <TextBlock Text="execution broker code" Margin="5 1" FontWeight="Bold"/>
                     <ComboBox x:Name="cboExecBrokerCode" Margin="5" />
                 </StackPanel>
-                <StackPanel Grid.Column="4">
-                    <Button x:Name="cmdClose"  Click="cmdClose_Click"  Content="X" Margin="1 -5 -5 0" BorderBrush="White" Background="White" FontWeight="Bold" />
-                </StackPanel>
+
             </Grid>
         </Border>
         <Border BorderBrush="Black" BorderThickness="1" Padding="5" Margin="5">

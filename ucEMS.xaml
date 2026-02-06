@@ -42,9 +42,9 @@
                 <StackPanel Grid.Column="3" Margin="5 23">
                     <Button x:Name="cmdRun" Click="cmdRun_Click"  Content="Run" Background="LightGray" FontWeight="Bold" />
                 </StackPanel>
-                <StackPanel Grid.Column="8">
+                <!--<StackPanel Grid.Column="8">
                     <Button x:Name="cmdClose" Click="cmdClose_Click" Content="X"  FontWeight="Bold" />
-                </StackPanel>
+                </StackPanel>-->
             </Grid>
         </Border>
         <TextBlock Text="EMS" FontWeight="Bold" Margin="5"/>

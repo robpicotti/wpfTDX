@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
-        Title="TDX 2.26" Height="1000" Width="1800">
+        Loaded="MainWindow_Loaded"
+        Title="TDX 2.28" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 
@@ -69,7 +70,7 @@
                         <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
                         <TextBlock Text="Scaled Posns" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_14"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
                         <TextBlock Text="Slippage" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_6"  FontWeight="Bold" Margin="5 10 20 10"/>
-                        <TextBlock Text="Ticker Freezer" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_3" FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>
+                        <!--<TextBlock Text="Ticker Freezer" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_3" FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>-->
 
                     </WrapPanel>
                 </ScrollViewer>
