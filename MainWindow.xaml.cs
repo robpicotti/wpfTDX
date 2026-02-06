@@ -718,62 +718,10 @@ namespace wpfTDX
         /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
         {
-            if (sql_conn != null)
-            {
-                if (sender is TextBlock textBlock)
-                {
-                    // Create a new instance of the user control
-                    ucPostions newUserControl = CreateNewUserControl(textBlock.Text) as ucPostions;
-
-                    if (newUserControl != null)
-                    {
-                        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-                        // Set margin to create spacing between user controls
-                        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-                        // Wrap the user control in a Border with a black border color and thickness
-                        Border userControlBorder = new Border
-                        {
-                            BorderBrush = Brushes.Black,
-                            BorderThickness = new Thickness(2),
-                            Child = newUserControl
-                        };
-
-                        // Add the bordered user control to the WrapPanel
-                        userControlsWrapPanel.Children.Add(userControlBorder);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("No database connection was set up", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!EnsureSqlOrShowError()) return;
+            OpenPositionsWindow();
         }
-        //private void AddMtM(string textblockText)
-        //{
-        //    // Create a new instance of the user control
-        //    ucMtm newUserControl = CreateNewUserControl(textblockText) as ucMtm;
-
-        //    if (newUserControl != null)
-        //    {
-        //        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-        //        // Set margin to create spacing between user controls
-        //        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-        //        // Wrap the user control in a Border with a black border color and thickness
-        //        Border userControlBorder = new Border
-        //        {
-        //            BorderBrush = Brushes.Black,
-        //            BorderThickness = new Thickness(2),
-        //            Child = newUserControl
-        //        };
-
-        //        // Add the bordered user control to the WrapPanel
-        //        userControlsWrapPanel.Children.Add(userControlBorder);
-        //    }
-        //}
+        
         /// <summary>
         /// MtM
         /// </summary>
@@ -840,6 +788,11 @@ namespace wpfTDX
         {
             var uc = new ucLimits(sql_conn);
             OpenToolWindow("Limits", uc);
+        }
+        private void OpenPositionsWindow()
+        {
+            var uc = new ucPostions(sql_conn,"");
+            OpenToolWindow("Positions", uc);
         }
         private void OpenOrdersArchiveWindow()
         {
@@ -1178,30 +1131,7 @@ namespace wpfTDX
             if (!EnsureSqlOrShowError()) return;
             OpenJobsWindow("Jobs");
         }
-        //private void AddJobs(string textblockText)
-        //{
-        //    // Create a new instance of the user control
-        //    ucScheduledJobsManager newUserControl = CreateNewUserControl(textblockText) as ucScheduledJobsManager;
 
-        //    if (newUserControl != null)
-        //    {
-        //        newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;  // Subscribe to the event here
-
-        //        // Set margin to create spacing between user controls
-        //        newUserControl.Margin = new Thickness(5); // Adjust the thickness as needed
-
-        //        // Wrap the user control in a Border with a black border color and thickness
-        //        Border userControlBorder = new Border
-        //        {
-        //            BorderBrush = Brushes.Black,
-        //            BorderThickness = new Thickness(2),
-        //            Child = newUserControl
-        //        };
-
-        //        // Add the bordered user control to the WrapPanel
-        //        userControlsWrapPanel.Children.Add(userControlBorder);
-        //    }
-        //}
 
         private void txbMeta_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
