@@ -18,6 +18,7 @@ using System.Windows.Threading;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Configuration;
 
 namespace wpfTDX
 {
@@ -43,7 +44,8 @@ namespace wpfTDX
                 }
             }
         }
-
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         public ucProcess(string processName,Color colour,SqlConnection conn )
         {
             InitializeComponent();
@@ -88,9 +90,10 @@ namespace wpfTDX
         }
         private async Task<string> GetHostEnvironment()
         {
-            string url = "http://localhost:5001/get_hostenv";
+            string url = $"{baseUrl}/get_hostenv?apiKey={apiKey}";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(url, null);
                 response.EnsureSuccessStatusCode();
 

@@ -1,23 +1,25 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Configuration;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Windows.Input;
 using System.Windows;
-using System.Data.SqlClient;
-
+using System.Windows.Input;
 
 namespace wpfTDX
 {
     public class PositionViewModel :INotifyPropertyChanged
     {
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName] string name = null)
         {
@@ -186,12 +188,13 @@ namespace wpfTDX
         /// <returns></returns>
         private async Task<string> GetFundsDataSync()
         {
-            string url = "http://localhost:5001/get_funds";
+            string url = $"{baseUrl}/get_funds";
 
 
             string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(url, null);
                 response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 
@@ -234,6 +237,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     fundname = _fundname,
@@ -243,7 +247,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = await client.PostAsync("http://localhost:5001/get_position", content);
+                HttpResponseMessage response = await client.PostAsync($"{baseUrl}/get_position", content);
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -307,6 +311,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     broker,
@@ -336,7 +341,7 @@ namespace wpfTDX
 
                 try
                 {
-                    HttpResponseMessage response = await client.PostAsync("http://localhost:5001/closeout_expired", content);
+                    HttpResponseMessage response = await client.PostAsync($"{baseUrl}/closeout_expired", content);
                     string jsonResponse = await response.Content.ReadAsStringAsync();
 
                     var responseDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);

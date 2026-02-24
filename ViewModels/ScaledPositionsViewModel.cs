@@ -10,11 +10,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
+using System.Configuration;
 
 namespace wpfTDX
 {
     public sealed class ScaledPositionsViewModel : INotifyPropertyChanged
     {
+
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string p = null)
         {
@@ -103,7 +105,8 @@ namespace wpfTDX
             if (string.IsNullOrWhiteSpace(needle)) return true;
             return (hay ?? string.Empty).IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
         }
-
+        private static readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private static readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         private bool FilterRow(object o)
         {
             var r = o as ScaledPositionsDataModel;
@@ -144,10 +147,11 @@ namespace wpfTDX
         private static async Task<ScaledPositionsDataModel[]> FetchScaledPositionsAsync()
         {
             var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
             try
             {
                 var content = new StringContent("{}", Encoding.UTF8, "application/json");
-                var response = await client.PostAsync("http://localhost:5001/get_scaled_positions", content);
+                var response = await client.PostAsync($"{baseUrl}/get_scaled_positions", content);
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();

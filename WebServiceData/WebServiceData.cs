@@ -12,29 +12,32 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Configuration;
 
 namespace wpfTDX
 {
     public class WebServiceData
     {
-        private readonly string _url = "http://localhost:5001/";
+        public readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        public readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         private static readonly HttpClient _client = new HttpClient();
 
         public WebServiceData()
         {
             if (_client.BaseAddress == null)
-                _client.BaseAddress = new Uri(_url);
+                _client.BaseAddress = new Uri(baseUrl);
             _client.Timeout = TimeSpan.FromMinutes(10);
         }
 
         public async Task<string> GetFundsDataASync()
         {
-            string fundsurl =  _url + "get_funds";
+            string fundsurl =  $"{baseUrl}/get_funds";
 
 
             string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(fundsurl, null);
                 response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 

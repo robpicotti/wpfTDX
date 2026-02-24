@@ -1,22 +1,23 @@
 ﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using System.Net.Http;
+using GalaSoft.MvvmLight.Command;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Data;
 using OfficeOpenXml;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Configuration;
+using System.Data;
 //using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using GalaSoft.MvvmLight.Command;
-using System.Collections.Specialized;
 
 
 namespace wpfTDX
@@ -25,6 +26,8 @@ namespace wpfTDX
     {
         private string _oneDrivePath;
         private string _excelpath;
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         //private string _excelpath = @"\\ad01-har.10dynamics.com\Ray_Share\Files\files_backup\";
 
         public ICommand SaveCommand { get; private set; }
@@ -410,6 +413,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     sqltext = sqltext                
@@ -418,7 +422,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/exec_sql", content).Result;
+                HttpResponseMessage response = client.PostAsync($"{baseUrl}/exec_sql", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -648,9 +652,10 @@ namespace wpfTDX
                 // Send the JSON payload to the Python web service
                 using (var client = new HttpClient())
                 {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                     var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-                    HttpResponseMessage response = client.PostAsync("http://localhost:5001/insert_table", content).Result;
+                    HttpResponseMessage response = client.PostAsync($"{baseUrl}/insert_table", content).Result;
                     response.EnsureSuccessStatusCode();
 
                     if (response.IsSuccessStatusCode)
@@ -699,9 +704,10 @@ namespace wpfTDX
                 // Send the JSON payload to the Python web service
                 using (var client = new HttpClient())
                 {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                     var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-                    HttpResponseMessage response = client.PostAsync("http://localhost:5001/insert_table", content).Result;
+                    HttpResponseMessage response = client.PostAsync($"{baseUrl}/insert_table", content).Result;
                     response.EnsureSuccessStatusCode();
 
                     if (response.IsSuccessStatusCode)
@@ -770,9 +776,10 @@ namespace wpfTDX
                     // Send the JSON payload to the Python web service
                     using (var client = new HttpClient())
                     {
+                        client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-                        HttpResponseMessage response = client.PostAsync("http://localhost:5001/insert_table", content).Result;
+                        HttpResponseMessage response = client.PostAsync($"{baseUrl}/insert_table", content).Result;
                         response.EnsureSuccessStatusCode();
 
                         if (response.IsSuccessStatusCode)
@@ -824,6 +831,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     table_name = "schedule_jobs2"
@@ -832,7 +840,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table", content).Result;
+                HttpResponseMessage response = client.PostAsync($"{baseUrl}/select_table", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -876,6 +884,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     table_name = "schedule_days"
@@ -884,7 +893,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table_all", content).Result;
+                HttpResponseMessage response = client.PostAsync($"{baseUrl}/select_table_all", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -929,6 +938,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     table_name = "schedule_frequencies"
@@ -937,7 +947,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table_all", content).Result;
+                HttpResponseMessage response = client.PostAsync($"{baseUrl}/select_table_all", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -982,6 +992,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     table_name = "schedule_jobs_parameters"
@@ -990,7 +1001,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table_all", content).Result;
+                HttpResponseMessage response = client.PostAsync($"{baseUrl}/select_table_all", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;
@@ -1021,6 +1032,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     table_name = "schedule_jobs_param_values"
@@ -1029,7 +1041,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = client.PostAsync("http://localhost:5001/select_table_all", content).Result;
+                HttpResponseMessage response = client.PostAsync($"{baseUrl}/select_table_all", content).Result;
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;

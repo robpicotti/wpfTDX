@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
         Loaded="MainWindow_Loaded"
-        Title="TDX 2.28" Height="1000" Width="1800">
+        Title="TDX 2.30" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 
@@ -60,7 +60,7 @@
                         <TextBlock Text="EMS" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_2" FontWeight="Bold" Margin="5 10 20 10"/>
                         <TextBlock Text="Jobs" x:Name="txbJobs" MouseLeftButtonDown="txbJobs_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
                         <TextBlock Text="Limits" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_12" FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
-                        <TextBlock Text="Metadata Changes" x:Name="txbMeta" MouseLeftButtonDown="txbMeta_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
+                        <!--<TextBlock Text="Metadata Changes" x:Name="txbMeta" MouseLeftButtonDown="txbMeta_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>-->
                         <TextBlock Text="MTM" x:Name="txbMtm" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"  FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
                         <TextBlock Text="NAV" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_5"  FontWeight="Bold" Margin="5 10 20 10"/>
                         <TextBlock Text="Orders archive" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_11"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>

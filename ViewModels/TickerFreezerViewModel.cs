@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Configuration;
 using System.Linq;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Windows.Input;
 using System.Windows;
+using System.Windows.Input;
 
 
 namespace wpfTDX
@@ -75,7 +76,19 @@ namespace wpfTDX
                 }
             }
         }
-
+        private string _lastRunTime;
+        public string LastRunTime
+        {
+            get => _lastRunTime;
+            set
+            {
+                if (_lastRunTime != value)
+                {
+                    _lastRunTime = value;
+                    OnPropertyChanged(nameof(LastRunTime));
+                }
+            }
+        }
         private TickerFreezerDataModel _selectedTicker;
         public TickerFreezerDataModel SelectedTicker
         {
@@ -228,6 +241,10 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(TickerFreezer));
             }
         }
+
+        private static string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private static string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
+
 
         public async Task FreezeFund()
         {
@@ -517,11 +534,11 @@ namespace wpfTDX
         }
         private string execute_sql(string tsql)
         {
-            string url = "http://localhost:5001/exec_sql";
 
-
+            string url = $"{baseUrl}/exec_sql";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     sqltext = tsql
@@ -541,10 +558,11 @@ namespace wpfTDX
         
         private async Task<string> GetTickerFreezer()
         {
-            string url = "http://localhost:5001/get_unresolved_tickerfreezer";
+            string url = $"{baseUrl}/get_unresolved_tickerfreezer";
             string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(url, null);
                 response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 
@@ -558,6 +576,8 @@ namespace wpfTDX
            
             try
             {
+                DateTime now = DateTime.UtcNow;
+                LastRunTime = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 string jsonResponse = await GetTickerFreezer();
                 // Parse the response as a JArray since it's a list of dictionaries
                 JArray tickerfreezer = JArray.Parse(jsonResponse);

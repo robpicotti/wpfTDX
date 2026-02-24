@@ -20,6 +20,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
+using System.Configuration;
 
 namespace wpfTDX
 {
@@ -28,6 +29,8 @@ namespace wpfTDX
     /// </summary>
     public partial class ucMtm : UserControl
     {
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         public SqlConnection gbl_conn;
         public DataTable dtAccounts;
         public string DEFAULT_FUND = "";
@@ -235,6 +238,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new
                 {
                     fundname = _fundname,
@@ -245,7 +249,7 @@ namespace wpfTDX
                 string jsonRequest = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
-                HttpResponseMessage response = await client.PostAsync("http://localhost:5000/pnl", content);
+                HttpResponseMessage response = await client.PostAsync($"{baseUrl}/pnl", content);
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = await response.Content.ReadAsStringAsync();
@@ -258,8 +262,9 @@ namespace wpfTDX
         {
             using (var client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 // Set the URL to your API endpoint
-                string url = "http://localhost:5000/select_table";
+                string url = $"{baseUrl}/select_table";
 
                 // Create the request body as a JSON object
                 var requestData = new

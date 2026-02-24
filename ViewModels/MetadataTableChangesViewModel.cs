@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows;
+using System.Configuration;
 namespace wpfTDX
 {
     public class MetadataTableChangesViewModel :INotifyPropertyChanged
@@ -29,7 +30,8 @@ namespace wpfTDX
         private DataTable _tadRollLogicTable;
         private DataTable _optRatioWaveTable;
         public ICommand RefreshCommand { get; } // Command for the Refresh button
-
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
 
         public DataTable AllocationsTable
         {
@@ -217,10 +219,11 @@ namespace wpfTDX
 
         private async Task<string> GetMetadataChanges()
         {
-            string url = "http://localhost:5001/metadata_table_changes";
+            string url = $"{baseUrl}/metadata_table_changes";
             string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(url, null);
                 response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 

@@ -1,18 +1,19 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Windows.Input;
 using System.Windows;
-using System.Data.SqlClient;
-using System.Data;
+using System.Windows.Input;
 
 namespace wpfTDX
 {
@@ -120,6 +121,8 @@ namespace wpfTDX
         {
             get => $"Executions - {NumExecutions}";
         }
+        private static string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private static string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         public EMSViewModel()
         {
 
@@ -176,12 +179,13 @@ namespace wpfTDX
         /// <returns></returns>
         private async Task<string> GetFundsDataSync()
         {
-            string url = "http://localhost:5001/get_funds";
+            string url = $"{baseUrl}/get_funds";
 
 
             string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(url, null);
                 response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 

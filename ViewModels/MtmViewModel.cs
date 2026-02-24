@@ -1,22 +1,25 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Configuration;
+using System.Data;
 using System.Linq;
+using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Windows.Input;
-using System.Data;
+using System.Configuration;
 
 namespace wpfTDX
 {
     public class MtmViewModel: INotifyPropertyChanged
     {
-        private string _runStatus = "Run";
+
+    private string _runStatus = "Run";
         public string RunStatus
         {
             get => _runStatus;
@@ -43,6 +46,7 @@ namespace wpfTDX
                 }
             }
         }
+
         private bool _isRunning;
         public bool IsRunning
         {
@@ -222,7 +226,9 @@ namespace wpfTDX
             }
         }
 
-
+        // Read from config (do this once, ideally)
+        private static string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private static string  baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         public MtmViewModel()
         {
             BuyAndHoldData = new ObservableCollection<MtmDataModel>();
@@ -304,12 +310,13 @@ namespace wpfTDX
         }
         public async Task<string> GetPreviousBusinessDay(DateTime date)
         {
-            string url = "http://localhost:5001/previous_business_day"; // Ensure correct API URL
+            string url = $"{baseUrl}/previous_business_day"; // Ensure correct API URL
 
             try
             {
                 using (HttpClient client = new HttpClient())
                 {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey); // Add API key to headers
                     // Prepare JSON request body
                     var requestBody = new
                     {
@@ -362,6 +369,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey); // Add API key to headers
                 var requestData = new
                 {
                     fundname = _fundname,
@@ -372,7 +380,7 @@ namespace wpfTDX
                 string jsonRequest = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
-                HttpResponseMessage response = await client.PostAsync("http://localhost:5001/pnl", content);
+                HttpResponseMessage response = await client.PostAsync($"{baseUrl}/pnl", content);
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = await response.Content.ReadAsStringAsync();
@@ -519,12 +527,13 @@ namespace wpfTDX
         /// <returns></returns>
         private async Task<string> GetFundsDataSync()
         {
-            string url = "http://localhost:5001/get_funds";
+            string url = $"{baseUrl}/get_funds";
 
 
             string jsonResponse = "";
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 HttpResponseMessage response = await client.PostAsync(url, null);
                 response.EnsureSuccessStatusCode(); // Ensures that the response was successful
 
@@ -538,6 +547,7 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey); // Add API key to headers
                 var requestData = new
                 {
                     fundname = _fundname,
@@ -550,7 +560,7 @@ namespace wpfTDX
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
                 // Make a synchronous HTTP POST request
-                HttpResponseMessage response = await client.PostAsync("http://localhost:5001/pnl", content);
+                HttpResponseMessage response = await client.PostAsync($"{baseUrl}/pnl", content);
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = response.Content.ReadAsStringAsync().Result;

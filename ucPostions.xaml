@@ -79,6 +79,7 @@
                             <DataGridTextColumn Header="position live t-1" Binding="{Binding PositionLiveTm1}" Width="*"/>
                             <DataGridTextColumn Header="position target" Binding="{Binding PositionTarget}" Width="*"/>
                             <DataGridTextColumn Header="position target raw" Binding="{Binding PositionTargetRaw}" Width="*"/>
+                            <DataGridTextColumn Header="position limit" Binding="{Binding PositionLimit, StringFormat={}{0:F1}}" Width="*"/>
                             <DataGridTextColumn Header="number of orders" Binding="{Binding NumOrders}" Width="*"/>
                             <DataGridTextColumn Header="price live" Binding="{Binding PriceLive}" Width="*"/>
                             <DataGridTextColumn Header="exchange currency" Binding="{Binding ExchangeCurrency}" Width="*" Visibility="Hidden"/>

@@ -18,6 +18,7 @@ using TDX;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Configuration;
 
 
 namespace wpfTDX
@@ -50,6 +51,8 @@ namespace wpfTDX
 
 
         }
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         private void LoadForm()
         {
             HeartBeats heartbeats = new HeartBeats(gbl_conn,this.HostEnvironment);
@@ -73,9 +76,10 @@ namespace wpfTDX
         {
             try
             {
-                string url = "http://localhost:5001/get_hostenv";
+                string url = $"{baseUrl}/get_hostenv?apiKey={apiKey}";
                 using (HttpClient client = new HttpClient())
                 {
+                    client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
                     HttpResponseMessage response = await client.PostAsync(url, null);
                     response.EnsureSuccessStatusCode();
 

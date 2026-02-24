@@ -103,6 +103,21 @@ namespace wpfTDX
                 }
             }
         }
+
+        private double _positionlimit;
+        [JsonProperty("position_limit")]
+        public double PositionLimit
+        {
+            get => _positionlimit;
+            set
+            {
+                if (_positionlimit != value)
+                {
+                    _positionlimit = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         private double _positionlivetm1;
         [JsonProperty("position_live_tm1")]
         public double PositionLiveTm1

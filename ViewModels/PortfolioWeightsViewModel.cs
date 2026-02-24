@@ -12,11 +12,14 @@ using System.Threading.Tasks;
 using System.Windows;   
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Configuration;
 
 namespace wpfTDX
 {
     public class PortfolioWeightsViewModel : INotifyPropertyChanged
     {
+        private readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string name = null)
         {
@@ -435,8 +438,9 @@ namespace wpfTDX
         {
             using (var client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
-                var resp = await client.PostAsync("http://localhost:5001/get_custom_portfolios", content);
+                var resp = await client.PostAsync($"{baseUrl}/get_custom_portfolios", content);
                 resp.EnsureSuccessStatusCode();
 
                 var json = await resp.Content.ReadAsStringAsync();
@@ -471,10 +475,11 @@ namespace wpfTDX
 
             using (var client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var payload = new { portfolioname = portfolioName };
                 var content = new StringContent(JsonConvert.SerializeObject(payload), System.Text.Encoding.UTF8, "application/json");
 
-                var resp = await client.PostAsync("http://localhost:5001/get_portfolio_weights", content);
+                var resp = await client.PostAsync($"{baseUrl}/get_portfolio_weights", content);
                 resp.EnsureSuccessStatusCode();
 
                 var jsonResponse = await resp.Content.ReadAsStringAsync();

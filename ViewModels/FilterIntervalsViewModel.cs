@@ -19,6 +19,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using TDX;
+using System.Configuration;
 using static System.Net.WebRequestMethods;
 
 namespace wpfTDX
@@ -585,11 +586,16 @@ namespace wpfTDX
         private Func<string, bool> _tickerPredicate = _ => true;
         private Func<string, bool> _groupPredicate = _ => true;
 
-
+        private static string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private static string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         private static readonly HttpClient _http = new HttpClient
         {
-            BaseAddress = new Uri("http://localhost:5001"),
-            Timeout = TimeSpan.FromSeconds(60)
+            BaseAddress = new Uri(baseUrl),
+            Timeout = TimeSpan.FromSeconds(60),
+            DefaultRequestHeaders =
+            {
+                { "X-Api-Key", apiKey }
+            }
         };
 
         SqlConnection SqlConn;
@@ -832,7 +838,8 @@ namespace wpfTDX
 
             using (var client = new HttpClient())
             {
-                var resp = await client.PostAsync("http://localhost:5001/get_strategynames",
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                var resp = await client.PostAsync($"{baseUrl}/get_strategynames",
                                                   new StringContent("{}", Encoding.UTF8, "application/json"));
                 resp.EnsureSuccessStatusCode();
                 var body = await resp.Content.ReadAsStringAsync();
@@ -865,8 +872,9 @@ namespace wpfTDX
 
             using (var client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var resp = await client.PostAsync(
-                    "http://localhost:5001/get_strategies_override",
+                     $"{baseUrl}/get_strategies_override",
                     new StringContent("{}", Encoding.UTF8, "application/json"));
                 resp.EnsureSuccessStatusCode();
 
@@ -943,8 +951,9 @@ namespace wpfTDX
 
             using (var client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var content = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
-                var resp = await client.PostAsync("http://localhost:5001/get_manual_trading_errors", content);
+                var resp = await client.PostAsync($"{baseUrl}/get_manual_trading_errors", content);
                 resp.EnsureSuccessStatusCode();
                 var json = await resp.Content.ReadAsStringAsync();
 
@@ -973,7 +982,8 @@ namespace wpfTDX
 
             using (var client = new HttpClient())
             {
-                var resp = await client.PostAsync("http://localhost:5001/get_unresolved_tickerfreezer",
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                var resp = await client.PostAsync($"{baseUrl}/get_unresolved_tickerfreezer",
                                                   new StringContent("{}", Encoding.UTF8, "application/json"));
                 resp.EnsureSuccessStatusCode();
                 var body = await resp.Content.ReadAsStringAsync();
@@ -1008,8 +1018,9 @@ namespace wpfTDX
             {
                 using (var client = new HttpClient())
                 {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                     var resp = await client.PostAsync(
-                        "http://localhost:5001/get_hostenv",
+                         $"{baseUrl}/get_hostenv",
                         new StringContent("{}", Encoding.UTF8, "application/json")
                     );
 
@@ -1120,11 +1131,12 @@ namespace wpfTDX
         {
             using (HttpClient client = new HttpClient())
             {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                 var requestData = new { }; // No payload needed if your endpoint accepts empty POST
                 string jsonRequest = JsonConvert.SerializeObject(requestData);
                 var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
 
-                HttpResponseMessage response = await client.PostAsync("http://localhost:5001/filtered_intervals", content);
+                HttpResponseMessage response = await client.PostAsync($"{baseUrl}/filtered_intervals", content);
                 response.EnsureSuccessStatusCode();
 
                 string jsonResponse = await response.Content.ReadAsStringAsync();
@@ -1149,9 +1161,9 @@ namespace wpfTDX
         public async Task LoadScaledPositionsAsync()
         {
             var client = new HttpClient();
-
+            client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
             var content = new StringContent("{}", Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("http://localhost:5001/get_scaled_positions", content);
+            var response = await client.PostAsync($"{baseUrl}/get_scaled_positions", content);
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
             var root = JObject.Parse(json);
@@ -1161,9 +1173,9 @@ namespace wpfTDX
         public async Task LoadTadPositionsDataAsync()
         {
             var client = new HttpClient();
-
+            client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
             var content = new StringContent("{}", Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("http://localhost:5001/filtered_intervals", content);
+            var response = await client.PostAsync( $"{baseUrl}/filtered_intervals", content);
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
@@ -1773,54 +1785,6 @@ namespace wpfTDX
                                    || string.Equals(Status, "failed", StringComparison.OrdinalIgnoreCase);
         }
 
-
-
-        //   public async Task<string> UpsertFilterIntervalsStartAsync(
-        //IEnumerable<FilterIntervalsUpsertRow> rows,
-        //IList<string> tickersToProcess = null)
-        //   {
-        //       // Build payload, include tickers only if provided
-        //       object payload;
-        //       if (tickersToProcess != null && tickersToProcess.Count > 0)
-        //       {
-        //           // Clean and dedupe tickers
-        //           var cleanTickers = tickersToProcess
-        //               .Where(t => !string.IsNullOrWhiteSpace(t))
-        //               .Select(t => t.Trim())
-        //               .Distinct(StringComparer.OrdinalIgnoreCase)
-        //               .ToList();
-
-        //           payload = new { rows = rows, tickernames = cleanTickers };
-        //       }
-        //       else
-        //       {
-        //           payload = new { rows = rows };
-        //       }
-
-        //       var json = JsonConvert.SerializeObject(payload);
-
-        //       using (var content = new StringContent(json, Encoding.UTF8, "application/json"))
-        //       using (var resp = await _http.PostAsync("/upsert_filter_intervals/start", content))
-        //       {
-        //           resp.EnsureSuccessStatusCode();
-        //           var body = await resp.Content.ReadAsStringAsync();
-
-        //           try
-        //           {
-        //               // If the server returns {"job_id": "xyz"}
-        //               var jo = JObject.Parse(body);
-        //               if (jo["job_id"] != null)
-        //                   return (string)jo["job_id"];
-        //           }
-        //           catch
-        //           {
-        //               // Otherwise it might be a plain string
-        //               return body.Trim('"', ' ', '\n', '\r');
-        //           }
-
-        //           return null;
-        //       }
-        //   }
 
         public async Task<string> UpsertFilterIntervalsStartAsync(
             IEnumerable<FilterIntervalsUpsertRow> rows,
@@ -3658,6 +3622,7 @@ namespace wpfTDX
 
                 using (var client = new HttpClient())
                 {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
                     var request = new
                     {
                         table_name = "tickers",
@@ -3668,7 +3633,7 @@ namespace wpfTDX
                         JsonConvert.SerializeObject(request),
                         Encoding.UTF8, "application/json");
 
-                    var resp = await client.PostAsync("http://localhost:5001/select_table", content);
+                    var resp = await client.PostAsync($"{baseUrl}/select_table", content);
                     resp.EnsureSuccessStatusCode();
 
                     var json = await resp.Content.ReadAsStringAsync();
