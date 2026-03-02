@@ -22,12 +22,17 @@ namespace wpfTDX
         public readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         private static readonly HttpClient _client = new HttpClient();
 
+
         public WebServiceData()
         {
             if (_client.BaseAddress == null)
+            {
                 _client.BaseAddress = new Uri(baseUrl);
-            _client.Timeout = TimeSpan.FromMinutes(10);
+                _client.Timeout = TimeSpan.FromMinutes(10);
+                _client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+            }
         }
+
 
         public async Task<string> GetFundsDataASync()
         {
