@@ -222,7 +222,7 @@ namespace wpfTDX
         private void MenuItem_Click_6(object sender, RoutedEventArgs e)
         {
             winTradeHistory winTH = new winTradeHistory(cboFundname.Text,TAD_ID,TICKERNAME, dtPickerPostionFrom.SelectedDate.Value,this.gbl_conn);
-            winTH.ShowDialog();
+            winTH.Show();
         }
 
         private void dtPickerPostionFrom_SelectedDateChanged(object sender, SelectionChangedEventArgs e)

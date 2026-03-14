@@ -176,44 +176,59 @@ namespace wpfTDX
             set { if (!object.ReferenceEquals(_portfolioWeights, value)) { _portfolioWeights = value; OnPropertyChanged(); } }
         }
 
+
+
+        private readonly HashSet<string> _removedOriginalTickers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         private async Task AddSelectedTickersAsync(System.Collections.IList selected)
         {
             if (string.IsNullOrWhiteSpace(SelectedPortfolioName)) return;
             if (selected == null || selected.Count == 0) return;
-
-            // Build a set of tickers already present on the right grid
-            var existing = new HashSet<string>(
-                PortfolioWeights.Where(r => r != null && !string.IsNullOrWhiteSpace(r.TickerName))
-                                .Select(r => r.TickerName),
-                StringComparer.OrdinalIgnoreCase);
 
             foreach (var obj in selected)
             {
                 var t = obj as TickerDataModel;
                 if (t == null || string.IsNullOrWhiteSpace(t.Tickername)) continue;
 
-                if (existing.Contains(t.Tickername))
-                    continue; // rule (2): don't add duplicates
+                // Check if this ticker already exists in the right-hand grid
+                var existingRow = PortfolioWeights.FirstOrDefault(r =>
+                    string.Equals(r.TickerName, t.Tickername, StringComparison.OrdinalIgnoreCase));
 
+                if (existingRow != null)
+                {
+                    if (existingRow.IsMarkedForRemoval)
+                    {
+                        // Restore it — undo the soft remove
+                        existingRow.IsMarkedForRemoval = false;
+                        existingRow.IsEdited = false;
+
+                        // Restore original weight
+                        double? originalWeight;
+                        if (_originalWeights.TryGetValue(existingRow.TickerName, out originalWeight))
+                            existingRow.Weight = originalWeight;
+
+                        _editedTickers.Remove(existingRow.TickerName);
+                    }
+                    // else it's a genuine duplicate — skip
+                    continue;
+                }
+
+                // Brand new row
                 var row = new PortfolioWeightsDataModel
                 {
                     PortfolioName = SelectedPortfolioName,
                     TickerName = t.Tickername,
-                    Weight = 1, // rule (1): new row, no weight yet
-                    RunTime = DateTime.UtcNow // you can overwrite at save time if needed
+                    Weight = 1,
+                    RunTime = DateTime.UtcNow
                 };
                 row.IsOriginal = false;
                 row.IsNew = true;
-                row.IsEdited = true;   // new row = unsaved change
+                row.IsEdited = true;
 
-                //PortfolioWeights.Add(row);
                 PortfolioWeights.Insert(0, row);
-
-                // Mark this ticker as newly added (not part of original DB set)
                 _newlyAddedTickers.Add(t.Tickername);
+                _originalWeights[t.Tickername] = null;
 
-                // Track changes for edits later
-                _originalWeights[t.Tickername] = null; // original was "no row", treat as null for revert logic
                 var npc = row as INotifyPropertyChanged;
                 if (npc != null) npc.PropertyChanged += OnWeightRowPropertyChanged;
             }
@@ -223,7 +238,6 @@ namespace wpfTDX
         {
             if (selectedRows == null || selectedRows.Count == 0) return;
 
-            // We’ll collect which items to actually remove (only those newly added in this session)
             var toRemove = new List<PortfolioWeightsDataModel>();
 
             foreach (var obj in selectedRows)
@@ -232,27 +246,25 @@ namespace wpfTDX
                 if (row == null) continue;
 
                 var key = row.TickerName ?? "";
+
                 if (_newlyAddedTickers.Contains(key))
                 {
-                    // Was added by user and not saved yet -> remove entirely
+                    // Added this session and not yet saved — remove entirely
                     toRemove.Add(row);
                     _newlyAddedTickers.Remove(key);
                     _editedTickers.Remove(key);
-                    _originalWeights.Remove(key); // original == none
+                    _originalWeights.Remove(key);
                     continue;
                 }
 
-                // If part of the original DB set -> soft remove = set weight to null
-                // If part of the original DB set -> soft remove = set weight to null
                 if (_originalTickers.Contains(key))
                 {
-                    row.Weight = null;   // triggers OnWeightRowPropertyChanged -> marks as edited
+                    // Original DB row — soft remove: flag it visually, set weight null
+                    row.Weight = null;
+                    row.IsMarkedForRemoval = true;
                 }
-
-
             }
 
-            // Remove newly-added ones after loop
             foreach (var r in toRemove)
             {
                 var npc = r as INotifyPropertyChanged;
@@ -261,80 +273,6 @@ namespace wpfTDX
             }
         }
 
-        //private async Task SaveChangesAsync()
-        //{
-        //    if (string.IsNullOrWhiteSpace(SelectedPortfolioName)) return;
-
-        //    // Build payload: NEW + EDITED (including soft-removed where Weight == null)
-        //    var payload = new List<PortfolioWeightsDataModel>();
-
-        //    // New rows
-        //    foreach (var key in _newlyAddedTickers)
-        //    {
-        //        var row = PortfolioWeights.FirstOrDefault(r => string.Equals(r.TickerName, key, StringComparison.OrdinalIgnoreCase));
-        //        if (row == null) continue;
-
-        //        payload.Add(new PortfolioWeightsDataModel
-        //        {
-        //            PortfolioName = SelectedPortfolioName,
-        //            RunTime = DateTime.UtcNow,
-        //            TickerName = row.TickerName,
-        //            Weight = row.Weight,             // null or value
-
-        //        });
-        //    }
-
-        //    // Edited rows (includes soft-removed = null)
-        //    foreach (var key in _editedTickers)
-        //    {
-        //        var row = PortfolioWeights.FirstOrDefault(r => string.Equals(r.TickerName, key, StringComparison.OrdinalIgnoreCase));
-        //        if (row == null) continue;
-
-        //        // Guard: if it’s also in newlyAdded, it’s already included above—skip duplicates
-        //        if (_newlyAddedTickers.Contains(key)) continue;
-
-        //        payload.Add(new PortfolioWeightsDataModel
-        //        {
-        //            PortfolioName = SelectedPortfolioName,
-        //            RunTime = DateTime.UtcNow,
-        //            TickerName = row.TickerName,
-        //            Weight = row.Weight            // could be null (soft remove)
-
-        //        });
-        //    }
-
-        //    if (payload.Count == 0) return; // nothing to save
-
-        //    try
-        //    {
-        //        await _wsd.SavePortfolioWeightsAsync(payload);
-
-        //        // On success, “commit” the new/edited sets into originals
-        //        foreach (var r in payload)
-        //        {
-        //            if (!_originalTickers.Contains(r.TickerName)) _originalTickers.Add(r.TickerName);
-        //            _originalWeights[r.TickerName] = r.Weight;
-        //            _newlyAddedTickers.Remove(r.TickerName);
-        //            _editedTickers.Remove(r.TickerName);
-
-        //            //// if you added flags:
-        //            //var row = PortfolioWeights.FirstOrDefault(x =>
-        //            //    string.Equals(x.TickerName, r.TickerName, StringComparison.OrdinalIgnoreCase));
-        //            //if (row != null) { row.IsNew = false; row.IsEdited = false; row.IsOriginal = true; }
-        //        }
-        //        // ✅ notify user
-        //        Application.Current.Dispatcher.Invoke(() =>
-        //            MessageBox.Show("Portfolio weights saved successfully.", "Saved",
-        //                            MessageBoxButton.OK, MessageBoxImage.Information));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine("Save failed: " + ex.Message);
-        //        Application.Current.Dispatcher.Invoke(() =>
-        //            MessageBox.Show("Save failed:\n" + ex.Message, "Error",
-        //                    MessageBoxButton.OK, MessageBoxImage.Error));
-        //    }
-        //}
         private async Task SaveChangesAsync()
         {
             if (string.IsNullOrWhiteSpace(SelectedPortfolioName)) return;

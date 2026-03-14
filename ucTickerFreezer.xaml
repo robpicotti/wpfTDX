@@ -123,11 +123,50 @@
                                 <DataGridTextColumn Header="TadId" Binding="{Binding Tadid}" />
                                 <DataGridTextColumn Header="TickerName" Binding="{Binding Tickername}" />
                                 <DataGridCheckBoxColumn Header="Override"
-                                 Binding="{Binding Override, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        Binding="{Binding Override, Mode=OneWay}"
+                                        IsReadOnly="True">
+                                                    <DataGridCheckBoxColumn.ElementStyle>
+                                                        <Style TargetType="CheckBox">
+                                                            <Setter Property="ToolTip"
+                                                                Value="Displays if a freeze has been overridden (you cannot edit this)." />
+                                                        </Style>
+                                                    </DataGridCheckBoxColumn.ElementStyle>
+                                </DataGridCheckBoxColumn>
                                 <DataGridCheckBoxColumn Header="ForceOverride"
-                                 Binding="{Binding ForceOverride, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                Binding="{Binding ForceOverride, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+
+                                                            <DataGridCheckBoxColumn.ElementStyle>
+                                                                <Style TargetType="CheckBox">
+                                                                    <Setter Property="ToolTip"
+                                            Value="Force an override regardless of existing freeze rule." />
+                                        </Style>
+                                    </DataGridCheckBoxColumn.ElementStyle>
+
+                                    <DataGridCheckBoxColumn.EditingElementStyle>
+                                        <Style TargetType="CheckBox">
+                                            <Setter Property="ToolTip"
+                                                Value="Force an override regardless of existing freeze rule." />
+                                        </Style>
+                                    </DataGridCheckBoxColumn.EditingElementStyle>
+
+                                </DataGridCheckBoxColumn>
                                 <DataGridCheckBoxColumn Header="Thaw"
-                                 Binding="{Binding Thaw, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        Binding="{Binding Thaw, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <DataGridCheckBoxColumn.ElementStyle>
+                                        <Style TargetType="CheckBox">
+                                            <!-- this helps the checkbox take focus immediately -->
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridCheckBoxColumn.ElementStyle>
+
+                                    <DataGridCheckBoxColumn.EditingElementStyle>
+                                        <Style TargetType="CheckBox">
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridCheckBoxColumn.EditingElementStyle>
+                                </DataGridCheckBoxColumn>
                                 <DataGridTextColumn Header="ErrorCode" Binding="{Binding Errorcode}" />
                                 <DataGridTextColumn Header="Error" Binding="{Binding Errorstring}" />
                                 <DataGridTextColumn Header="FreezeExpiration" Binding="{Binding FreezeExpiration}" />

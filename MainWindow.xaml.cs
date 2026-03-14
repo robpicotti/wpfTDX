@@ -76,37 +76,78 @@ namespace wpfTDX
 
         //NEW CODE TO OPEN UP SEPERATE WINDOWS
         private readonly Dictionary<Guid, Window> _openToolWindows = new Dictionary<Guid, Window>();
+       
         private readonly Dictionary<Guid, Delegate> _removeHandlers = new Dictionary<Guid, Delegate>();
+
         private void OpenToolWindow(string title, UserControl control)
         {
-            if (control == null)
-                return;
+            if (control == null) return;
 
             Guid windowId = Guid.NewGuid();
 
-            Window wnd = new Window();
-            wnd.Title = title;
-            wnd.Width = 1600;
-            wnd.Height = 900;
-            wnd.Content = control;
-            wnd.Owner = this;
-            wnd.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            var wnd = new Window
+            {
+                Title = title,
+                Width = 1600,
+                Height = 900,
+                Content = control,
+
+                // Make it a normal independent window
+                Owner = null,
+                ShowInTaskbar = true,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+
+                // Force "normal window" behavior
+                Topmost = false,
+                ShowActivated = true,
+                WindowStyle = WindowStyle.SingleBorderWindow
+            };
 
             _openToolWindows[windowId] = wnd;
 
-            // Hook RemoveControlRequested if it exists
             TryWireRemoveRequestedToClose(windowId, control, wnd);
 
-            wnd.Closed += delegate (object sender, EventArgs e)
+            wnd.Closed += (s, e) =>
             {
                 TryUnwireRemoveRequested(windowId, control);
-
-                if (_openToolWindows.ContainsKey(windowId))
-                    _openToolWindows.Remove(windowId);
+                _openToolWindows.Remove(windowId);
             };
 
             wnd.Show();
+            wnd.Activate(); // initial activation
         }
+
+        //private void OpenToolWindow(string title, UserControl control)
+        //{
+        //    if (control == null)
+        //        return;
+
+        //    Guid windowId = Guid.NewGuid();
+
+        //    Window wnd = new Window();
+        //    wnd.Title = title;
+        //    wnd.Width = 1600;
+        //    wnd.Height = 900;
+        //    wnd.Content = control;
+        //    //wnd.Owner = this;
+        //    wnd.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+
+        //    _openToolWindows[windowId] = wnd;
+
+        //    // Hook RemoveControlRequested if it exists
+        //    TryWireRemoveRequestedToClose(windowId, control, wnd);
+
+        //    wnd.Closed += delegate (object sender, EventArgs e)
+        //    {
+        //        TryUnwireRemoveRequested(windowId, control);
+
+        //        if (_openToolWindows.ContainsKey(windowId))
+        //            _openToolWindows.Remove(windowId);
+        //    };
+
+        //    wnd.Show();
+        //}
+
         private void TryWireRemoveRequestedToClose(Guid windowId, UserControl control, Window wnd)
         {
             if (control == null || wnd == null)
@@ -148,6 +189,7 @@ namespace wpfTDX
         public MainWindow()
         {
             InitializeComponent();
+            BringMainWindowToFront();
             LoadForm();
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
@@ -164,7 +206,18 @@ namespace wpfTDX
             }; 
             
         }
+        private void BringMainWindowToFront()
+        {
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
 
+            Activate();
+            Focus();
+
+            // Z-order "kick" that works even when other windows fight focus
+            Topmost = true;
+            Topmost = false;
+        }
         private async void cboServer_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try

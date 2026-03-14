@@ -4,75 +4,296 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
-        Title="Position and Trade History" Height="450" Width="800">
-    <StackPanel Margin="2">
-        <Border BorderBrush="Black" Background="Beige"  BorderThickness="1" Padding="5" Margin="5">
+        Title="Trade History"
+        Height="1050"
+        Width="1500"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top filter panel -->
+        <Border Grid.Row="0"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,8">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="10*"/>
-                    <ColumnDefinition Width="10*"/>
-                    <ColumnDefinition Width="10*"/>
-                    <ColumnDefinition Width="12*"/>
-                    <ColumnDefinition Width="12*"/>
-                    <ColumnDefinition Width="8*"/>
-                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Margin="5">
-                    <TextBlock Text="fundname" FontWeight="Bold" Margin="5 1"/>
-                    <TextBox x:Name="txtFundName" IsEnabled="False" Margin="5 1"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Margin="5">
-                    <TextBlock Text="tad id" FontWeight="Bold" Margin="5 1"/>
-                    <TextBox x:Name="txtTadId" IsEnabled="False" Margin="5 1"/>
-                </StackPanel>
-                <StackPanel Grid.Column="2" Margin="5">
-                    <TextBlock Text="tickername" FontWeight="Bold" Margin="5 1"/>
-                    <TextBox x:Name="txtTickerName" IsEnabled="False" Margin="5 1"/>
-                </StackPanel>
-                <StackPanel Grid.Column="3" Margin="5">
-                    <TextBlock Text="start date" FontWeight="Bold" Margin="5 -1"></TextBlock>
-                    <DatePicker x:Name="dtPickerPostionFrom" Margin="5"></DatePicker>
-                </StackPanel>
-                <StackPanel Grid.Column="4" Margin="5">
-                    <TextBlock Text="end date" FontWeight="Bold" Margin="5 -1"></TextBlock>
-                    <DatePicker x:Name="dtPickerPostionTo" Margin="5"></DatePicker>
-                </StackPanel>
-                <StackPanel Grid.Column="5" Margin="5">
-                    <Button x:Name="cmdRun" Margin="5 18 5 5" Content="Run" Click="cmdRun_Click"></Button>
+
+                <TextBlock Grid.Column="0"
+                           Text="Fund"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           Margin="0,0,6,0"/>
+                <TextBox x:Name="txtFundName"
+                         Grid.Column="1"
+                         Margin="0,0,10,0"
+                         IsReadOnly="True"
+                         Text="{Binding FundName}"/>
+
+                <TextBlock Grid.Column="2"
+                           Text="Tad Id"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           Margin="0,0,6,0"/>
+                <ComboBox x:Name="cboTadId"
+                          Grid.Column="3"
+                          Margin="0,0,10,0"
+                          ItemsSource="{Binding TadIds}"
+                          SelectedItem="{Binding SelectedTadItem, Mode=TwoWay}"
+                          DisplayMemberPath="DisplayText"
+                          SelectionChanged="cboTadId_SelectionChanged"/>
+
+                <TextBlock Grid.Column="4"
+                           Text="Ticker"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           Margin="0,0,6,0"/>
+                <TextBox x:Name="txtTickerName"
+                         Grid.Column="5"
+                         Margin="0,0,10,0"
+                         IsReadOnly="True"
+                         Text="{Binding TickerName}"/>
+
+                <!--<TextBlock Grid.Column="6"
+                           Text="From"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           Margin="0,0,6,0"/>
+                <DatePicker x:Name="dtPickerPostionFrom"
+                            Grid.Column="7"
+                            Margin="0,0,10,0"/>
+
+                <TextBlock Grid.Column="8"
+                           Text="To"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           Margin="0,0,6,0"/>
+                <DatePicker x:Name="dtPickerPostionTo"
+                            Grid.Column="9"
+                            Margin="0,0,10,0"/>
+
+                <Button x:Name="cmdRun"
+                        Grid.Column="10"
+                        Content="Run"
+                        Width="100"
+                        FontWeight="Bold"
+                        Click="cmdRun_Click"/>-->
+
+                <StackPanel Grid.Column="11"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="10,0,0,0">
+                    <ProgressBar Width="160"
+                                 Height="14"
+                                 IsIndeterminate="True"
+                                 Margin="0,0,8,0"
+                                 Visibility="{Binding IsExecuting, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <TextBlock Text="Loading..."
+                               VerticalAlignment="Center"
+                               FontWeight="Bold"
+                               Foreground="DarkBlue"
+                               Visibility="{Binding IsExecuting, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </StackPanel>
             </Grid>
         </Border>
-        <Border BorderBrush="Black" BorderThickness="1"  Padding="5" Margin="5">
-            <StackPanel>
-                <TextBlock Text="Net Position" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
-                <lvc:CartesianChart x:Name="MyChart" Margin="10" Height="300" >
-                    <lvc:CartesianChart.AxisX>
-                        <lvc:Axis Title="Execution Date" Labels="{Binding XLabels}" LabelsRotation="15">
-                            <lvc:Axis.Separator>
-                                <!--<lvc:Separator IsEnabled="False"/>-->
-                                <lvc:Separator StrokeThickness="2" StrokeDashArray="2" Stroke="Black"/>
-                            </lvc:Axis.Separator>
-                        </lvc:Axis>
-                    </lvc:CartesianChart.AxisX>
-                    <lvc:CartesianChart.AxisY>
-                        <lvc:Axis Title="Net Position">
-                            <lvc:Axis.Separator>
-                                <lvc:Separator StrokeThickness="2" StrokeDashArray="2" Stroke="Black"/>
-                            </lvc:Axis.Separator>
+        <!-- runtime -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,0,8">
+            <TextBlock Text="Last runtime: "
+                       FontWeight="Bold"
+                       Margin="0,0,4,0"/>
+            <TextBlock Text="{Binding LastRunTime}"
+                       Foreground="DarkBlue"
+                       FontWeight="Bold"/>
+        </StackPanel>
 
+        <!-- metric selector -->
+        <Border Grid.Row="2"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Chart series:"
+                           FontWeight="Bold"
+                           VerticalAlignment="Top"
+                           Margin="0,0,10,0"/>
 
-                        </lvc:Axis>
-                    </lvc:CartesianChart.AxisY>
-
-                    <!--<lvc:CartesianChart.DataTooltip>
-                        <lvc:DefaultTooltip SelectionMode="SharedYValues" />
-                    </lvc:CartesianChart.DataTooltip>-->
-                </lvc:CartesianChart>
+                <ItemsControl ItemsSource="{Binding ChartMetrics}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Content="{Binding DisplayName}"
+                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                      Margin="0,0,14,4"
+                                      Checked="ChartMetricCheckBox_Changed"
+                                      Unchecked="ChartMetricCheckBox_Changed"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
         </Border>
-    </StackPanel>
+
+        <!-- Chart -->
+        <Border Grid.Row="3"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,8">
+            <Grid>
+                <lvc:CartesianChart x:Name="MyChart"
+                                    LegendLocation="Right"
+                                    Hoverable="True"
+                                    DataTooltip="{x:Null}">
+                    <lvc:CartesianChart.AxisX>
+                        <lvc:Axis Title="Runtime"
+                                  LabelsRotation="45"/>
+                    </lvc:CartesianChart.AxisX>
+                    <lvc:CartesianChart.AxisY>
+                        <lvc:Axis Title="Value"/>
+                    </lvc:CartesianChart.AxisY>
+                </lvc:CartesianChart>
+            </Grid>
+        </Border>
+
+        <!-- Target positions grid -->
+        <Border Grid.Row="4"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="Target Positions"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Margin="0,0,0,8"/>
+
+                <DataGrid Grid.Row="1"
+                          x:Name="dgTargetPositions"
+                          ItemsSource="{Binding TargetPositions}"
+                          SelectedItem="{Binding SelectedTargetPosition, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Runtime" Binding="{Binding Runtime}" Width="120"/>
+                        <DataGridTextColumn Header="Fund" Binding="{Binding FundName}" Width="90"/>
+                        <DataGridTextColumn Header="Subaccount" Binding="{Binding SubaccountName}" Width="90"/>
+                        <DataGridTextColumn Header="TadId" Binding="{Binding TadId}" Width="85"/>
+                        <DataGridTextColumn Header="Tickername" Binding="{Binding TickerName}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Last Price" Binding="{Binding LastPrice, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Pos Limit" Binding="{Binding PositionLimit, StringFormat={}{0:N1}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Pos Target" Binding="{Binding PositionTarget, StringFormat={}{0:N1}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Dep" Binding="{Binding Deployment, StringFormat={}{0:N2}}" Width="50"/>
+                        <DataGridTextColumn Header="Dep TAD" Binding="{Binding DeploymentTad, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Roll %" Binding="{Binding RollPercent, StringFormat={}{0:P1}}" Width="50"/>
+                        <DataGridTextColumn Header="Scaled Target" Binding="{Binding ScaledTarget, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Scaled %" Binding="{Binding ScaledPercent, StringFormat={}{0:P1}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="VaR Daily" Binding="{Binding VarDaily, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="VaR" Binding="{Binding Var, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Scale" Binding="{Binding Scale, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Weight" Binding="{Binding Weight, StringFormat={}{0:P2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Capital" Binding="{Binding Capital, StringFormat={}{0:N0}}" Width="80"/>
+                        <DataGridTextColumn Header="VaR Target" Binding="{Binding VarTarget, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="VaR Allocated" Binding="{Binding VarAllocated, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Var Limit" Binding="{Binding VarLimit, StringFormat={}{0:N2}}" Width="80"/>
+                        <DataGridTextColumn Header="Pos Limit Raw" Binding="{Binding PositionLimitRaw, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="Pos Target Raw" Binding="{Binding PositionTargetRaw, StringFormat={}{0:N2}}" Width="SizeToHeader"/>
+                        <DataGridTextColumn Header="NewPositionId" Binding="{Binding NewpositionId}" Width="150"/>
+                        
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <!-- Live positions grid -->
+        <Border Grid.Row="5"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Padding="8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="Live Positions"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Margin="0,0,0,8"/>
+
+                <DataGrid Grid.Row="1"
+                          x:Name="dgLivePositions"
+                          ItemsSource="{Binding LivePositions}"
+                          SelectedItem="{Binding SelectedLivePosition, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Runtime" Binding="{Binding RunTime}" Width="140"/>
+                        <DataGridTextColumn Header="Fund" Binding="{Binding FundName}" Width="120"/>
+                        <DataGridTextColumn Header="Subaccount" Binding="{Binding SubaccountName}" Width="120"/>
+                        <DataGridTextColumn Header="TadId" Binding="{Binding TadId}" Width="120"/>
+                        <DataGridTextColumn Header="Tickername" Binding="{Binding TickerName}" Width="100"/>
+                        <DataGridTextColumn Header="Last Price" Binding="{Binding LastPrice, StringFormat={}{0:N2}}" Width="90"/>
+                        <DataGridTextColumn Header="Pos Limit" Binding="{Binding PositionLimit, StringFormat={}{0:N1}}" Width="100"/>
+                        <DataGridTextColumn Header="Pos Live" Binding="{Binding PositionLive, StringFormat={}{0:N1}}" Width="100"/>
+                        <DataGridTextColumn Header="Pos Target" Binding="{Binding PositionTarget, StringFormat={}{0:N1}}" Width="110"/>
+                        <DataGridTextColumn Header="Dep" Binding="{Binding Deployment, StringFormat={}{0:N2}}" Width="90"/>
+                        <DataGridTextColumn Header="Dep TAD" Binding="{Binding DeploymentTad, StringFormat={}{0:N2}}" Width="110"/>
+                        
+                        <DataGridTextColumn Header="Scaled %" Binding="{Binding ScaledPercent, StringFormat={}{0:P1}}" Width="90"/>
+                        <DataGridTextColumn Header="Pos Target Raw" Binding="{Binding PositionTargetRaw, StringFormat={}{0:N2}}" Width="120"/>
+                        <DataGridTextColumn Header="Valid" Binding="{Binding Valid}" Width="80"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

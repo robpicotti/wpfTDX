@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
+using System.Data.SqlClient;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using LiveCharts;
 using LiveCharts.Wpf;
 using TDX;
@@ -14,43 +11,102 @@ namespace wpfTDX
 {
     public partial class winTradeHistory : Window
     {
-        string FundName;
-        string Tad_id;
-        string TickerName;
-        DateTime PositionDate;
-        public SeriesCollection SeriesCollection { get; set; }
-        public List<string> XLabels { get; set; }
-        SqlConnection gbl_conn;
+        private readonly SqlConnection gbl_conn;
+        private readonly TradeHistoryViewModel _vm;
+
+        // -------------------------------------------------------
+        // Edit colours and thickness here
+        // -------------------------------------------------------
+        private class SeriesStyle
+        {
+            public System.Windows.Media.Brush Stroke { get; set; }
+            public double StrokeThickness { get; set; }
+        }
+
+        private static readonly Dictionary<string, SeriesStyle> _seriesStyles =
+            new Dictionary<string, SeriesStyle>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "position_live",       new SeriesStyle { Stroke = System.Windows.Media.Brushes.Black,       StrokeThickness = 6 } },
+            { "position_limit",      new SeriesStyle { Stroke = System.Windows.Media.Brushes.Red,         StrokeThickness = 2 } },
+            { "position_target",     new SeriesStyle { Stroke = System.Windows.Media.Brushes.LimeGreen,   StrokeThickness = 2 } },
+            { "deployment",          new SeriesStyle { Stroke = System.Windows.Media.Brushes.DodgerBlue,  StrokeThickness = 2 } },
+            { "deployment_tad",      new SeriesStyle { Stroke = System.Windows.Media.Brushes.DeepSkyBlue, StrokeThickness = 2 } },
+            { "position_target_raw", new SeriesStyle { Stroke = System.Windows.Media.Brushes.Orange,      StrokeThickness = 2 } },
+            { "scaled_percent",      new SeriesStyle { Stroke = System.Windows.Media.Brushes.Magenta,     StrokeThickness = 2 } },
+
+        };
+
+        private static readonly SeriesStyle _defaultStyle =
+            new SeriesStyle { Stroke = System.Windows.Media.Brushes.Gray, StrokeThickness = 2 };
+        // -------------------------------------------------------
+
+        private static readonly HashSet<string> _percentMetrics = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "scaled_percent", "deployment", "deployment_tad"
+        };
+
+        private static readonly HashSet<string> _limitMetrics = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "position_limit"
+        };
 
         public winTradeHistory(string fundname, string tad_id, string tickername, DateTime positiondate, SqlConnection conn)
         {
             InitializeComponent();
-            this.FundName = fundname;
-            this.Tad_id = tad_id;
-            this.TickerName = tickername;
-            this.PositionDate = positiondate;
-            this.gbl_conn = conn;
+
+            gbl_conn = conn;
+            _vm = new TradeHistoryViewModel(conn);
+            DataContext = _vm;
+
+            _vm.FundName = fundname;
+            _vm.TadId = tad_id;
+            _vm.TickerName = tickername;
+            _vm.PositionDateFrom = positiondate;
+            _vm.PositionDateTo = positiondate;
+
             loadForm();
         }
 
-        private void loadForm()
-        {
-            txtFundName.Text = this.FundName;
-            txtTadId.Text = this.Tad_id;
-            txtTickerName.Text = this.TickerName;
-            dtPickerPostionFrom.SelectedDate = this.PositionDate;
-            dtPickerPostionTo.SelectedDate = this.PositionDate;
-        }
-
-        private void cmdRun_Click(object sender, RoutedEventArgs e)
+        private async void loadForm()
         {
             try
             {
-                DateTime startDate = dtPickerPostionFrom.SelectedDate.Value;
-                DateTime endDate = dtPickerPostionTo.SelectedDate.Value.AddDays(1).AddMilliseconds(-1);
-                Position posn = new Position("", this.gbl_conn);
-                DataTable dtRun = posn.get_daily_positions(this.FundName, this.Tad_id, this.TickerName, startDate, endDate);
-                LoadNetPositionChartData(dtRun,endDate);
+                txtFundName.Text = _vm.FundName;
+
+                await _vm.LoadTadIdsAsync();
+
+                if (!string.IsNullOrWhiteSpace(_vm.TadId))
+                {
+                    TadIdItem selected = _vm.TadIds.FirstOrDefault(x =>
+                        string.Equals(x.TadId, _vm.TadId, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(x.TickerName, _vm.TickerName, StringComparison.OrdinalIgnoreCase));
+
+                    if (selected == null)
+                        selected = _vm.TadIds.FirstOrDefault(x =>
+                            string.Equals(x.TadId, _vm.TadId, StringComparison.OrdinalIgnoreCase));
+
+                    if (selected != null)
+                    {
+                        _vm.SelectedTadItem = selected;
+                        cboTadId.SelectedItem = selected;
+                    }
+                }
+
+                await _vm.LoadAllDataAsync();
+                RebuildChart();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Trade history load", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void cmdRun_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await _vm.LoadAllDataAsync();
+                RebuildChart();
             }
             catch (Exception ex)
             {
@@ -58,178 +114,269 @@ namespace wpfTDX
             }
         }
 
-        private void LoadNetPositionChartData(DataTable dataTable, DateTime endDate)
+        private async void cboTadId_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            // Initialize SeriesCollection
-            SeriesCollection = new SeriesCollection
+            try
             {
-                new LineSeries
+                if (!IsLoaded) return;
+                if (_vm == null) return;
+                if (_vm.SelectedTadItem == null) return;
+
+                await _vm.LoadAllDataAsync();
+                RebuildChart();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "TadId change error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ChartMetricCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            RebuildChart();
+        }
+
+        private string BuildLabel(ChartPoint point, List<LivePositionsDataModel> src)
+        {
+            int idx = (int)Math.Round(point.X);
+            bool? valid = idx >= 0 && idx < src.Count ? src[idx].Valid : null;
+            string validStr = valid == null ? "Unknown" : valid.Value ? "Valid" : "Invalid";
+            return $"{point.Y:N2}  |  {validStr}";
+        }
+
+        private void RebuildChart()
+        {
+            if (MyChart == null) return;
+
+            MyChart.Series = new SeriesCollection();
+            MyChart.AxisX = new AxesCollection();
+            MyChart.AxisY = new AxesCollection();
+
+            MyChart.DisableAnimations = true;
+            MyChart.AnimationsSpeed = TimeSpan.Zero;
+            MyChart.Hoverable = true;
+
+            var source = _vm.LivePositions
+                .Where(x => x.RunTime != default(DateTime))
+                .OrderBy(x => x.RunTime)
+                .ToList();
+
+
+            var labels = source
+                .Select(x => x.RunTime.ToString("dd-MMM-yy") + Environment.NewLine + x.RunTime.ToString("HH:mm:ss"))
+                .ToList();
+
+            var axisX = new LiveCharts.Wpf.Axis
+            {
+                Title = "Runtime",
+                LabelsRotation = 0,
+                Labels = labels,
+                FontSize = 14,
+                Foreground = System.Windows.Media.Brushes.Black,
+                LabelFormatter = val =>
                 {
-                    Title = "Net Position",
-                    Values = new ChartValues<double>(),
-                    PointGeometry = DefaultGeometries.Circle,
-                    PointGeometrySize = 2
+                    int i = (int)Math.Round(val);
+                    return i >= 0 && i < labels.Count ? labels[i] : "";
                 }
             };
 
-            // Initialize XLabels
-            XLabels = new List<string>();
 
-            // Calculate min and max dates
-            DateTime minDate = DateTime.MaxValue;
-            DateTime maxDate = endDate;//DateTime.MinValue;
-
-            foreach (DataRow row in dataTable.Rows)
+            var axisYValue = new LiveCharts.Wpf.Axis
             {
-                DateTime date;
-                if (DateTime.TryParse(row["execution_date"].ToString(), out date))
+                Title = "Value",
+                FontSize = 14,
+                Foreground = System.Windows.Media.Brushes.Black,
+                Sections = new SectionsCollection(),
+                Position = AxisPosition.LeftBottom
+            };
+
+            var axisYPercent = new LiveCharts.Wpf.Axis
+            {
+                Title = "%",
+                Sections = new SectionsCollection(),
+                Position = AxisPosition.RightTop,
+                LabelFormatter = val => val.ToString("N2")
+            };
+
+            // Validity shading
+            axisX.Sections = new SectionsCollection();
+            for (int i = 0; i < source.Count; i++)
+            {
+                bool? valid = source[i].Valid;
+                if (valid == true) continue;
+
+                System.Windows.Media.Color bandColor = valid == false
+                    ? System.Windows.Media.Color.FromArgb(60, 220, 50, 50)
+                    : System.Windows.Media.Color.FromArgb(60, 220, 150, 0);
+
+                axisX.Sections.Add(new AxisSection
                 {
-                    if (date < minDate)
-                        minDate = date;
-                }
+                    Value = i - 0.5,
+                    SectionWidth = 1,
+                    Fill = new System.Windows.Media.SolidColorBrush(bandColor)
+                });
             }
 
-            // Ensure valid min and max dates were found
-            if (minDate == DateTime.MaxValue || maxDate == DateTime.MinValue)
+            MyChart.AxisX.Add(axisX);
+            MyChart.AxisY.Add(axisYValue);
+
+            MyChart.DataTooltip = new DefaultTooltip { SelectionMode = TooltipSelectionMode.SharedXValues };
+            MyChart.DataTooltip.Background = System.Windows.Media.Brushes.Transparent;
+
+            if (source.Count == 0)
             {
-                MessageBox.Show("No valid dates found in the execution_date column.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                axisYValue.MinValue = 0;
+                axisYValue.MaxValue = 1;
                 return;
             }
 
-            // Fill forward missing dates
-            DataTable filledDataTable = FillForwardDataTable(dataTable, minDate, maxDate);
+            var checkedMetrics = _vm.CheckedChartMetrics.ToList();
+            if (checkedMetrics.Count == 0) return;
 
-            double minValue = double.MaxValue;
-            double maxValue = double.MinValue;
+            bool hasPercent = checkedMetrics.Any(m => _percentMetrics.Contains(m.Key));
+            if (hasPercent)
+                MyChart.AxisY.Add(axisYPercent);
 
-            foreach (DataRow row in filledDataTable.Rows)
+            var valueAxisData = new List<double>();
+            var percentAxisData = new List<double>();
+            var capturedSource = source;
+
+            foreach (var metric in checkedMetrics)
             {
-                string executionDate = row["execution_date"].ToString();
-                XLabels.Add(executionDate);
+                bool isPercent = _percentMetrics.Contains(metric.Key);
+                bool isLimit = _limitMetrics.Contains(metric.Key);
+                var values = new ChartValues<double>();
 
-                if (double.TryParse(row["latest_net_position"].ToString(), out double netPosn))
+                SeriesStyle style = _seriesStyles.ContainsKey(metric.Key)
+                    ? _seriesStyles[metric.Key]
+                    : _defaultStyle;
+
+                // Forward-fill nulls
+                double lastKnown = 0.0;
+                foreach (var row in source)
                 {
-                    SeriesCollection[0].Values.Add(netPosn);
-                    if (netPosn < minValue) minValue = netPosn;
-                    if (netPosn > maxValue) maxValue = netPosn;
+                    double? raw = GetMetricValue(row, metric.Key);
+                    if (raw.HasValue) lastKnown = raw.Value;
+                    double v = raw ?? lastKnown;
+                    values.Add(v);
+                    if (isPercent) percentAxisData.Add(v);
+                    else valueAxisData.Add(v);
+                }
+
+                System.Windows.Media.DoubleCollection dash =
+                    isPercent ? new System.Windows.Media.DoubleCollection { 4, 2 } :
+                    isLimit ? new System.Windows.Media.DoubleCollection { 12, 4 } :
+                                null;
+
+                // All series use LineSeries + LineSmoothness=0 — StepLineSeries applies
+                // directional colouring to up/down segments which overrides the Stroke we set
+                MyChart.Series.Add(new LineSeries
+                {
+                    Title = metric.DisplayName,
+                    Values = values,
+                    PointGeometry = null,
+                    Stroke = style.Stroke,
+                    StrokeThickness = style.StrokeThickness,
+                    LineSmoothness = 0,
+                    Fill = System.Windows.Media.Brushes.Transparent,
+                    ScalesYAt = (isPercent && hasPercent) ? 1 : 0,
+                    StrokeDashArray = dash,
+                    LabelPoint = lp => BuildLabel(lp, capturedSource)
+                });
+
+                // Auto-mirror position_limit as short
+                if (metric.Key == "position_limit")
+                {
+                    var shortValues = new ChartValues<double>(values.Select(v => -v));
+                    valueAxisData.AddRange(shortValues);
+
+                    MyChart.Series.Add(new LineSeries
+                    {
+                        Title = "Position Limit (Short)",
+                        Values = shortValues,
+                        PointGeometry = null,
+                        Stroke = style.Stroke,
+                        StrokeThickness = style.StrokeThickness,
+                        LineSmoothness = 0,
+                        Fill = System.Windows.Media.Brushes.Transparent,
+                        ScalesYAt = 0,
+                        StrokeDashArray = dash,
+                        LabelPoint = lp => BuildLabel(lp, capturedSource)
+                    });
                 }
             }
 
-            // Adjust minValue and maxValue to add some padding
-            double padding = (maxValue - minValue) * 0.1; // 10% padding
-            minValue -= padding;
-            maxValue += padding;
-            // Ensure zero is included in the axis range
-            if (minValue > 0) minValue = 0;
-            if (maxValue < 0) maxValue = 0;
+            ConfigureAxis(axisYValue, valueAxisData);
+            if (hasPercent)
+                ConfigureAxis(axisYPercent, percentAxisData);
+        }
 
-            // Calculate the step size dynamically
-            double range = maxValue - minValue;
-            double stepSize = CalculateStepSize(range);
-
-            // Set dynamic min and max values for Y-axis
-            MyChart.AxisY[0].MinValue = minValue;
-            MyChart.AxisY[0].MaxValue = maxValue;
-
-            // Set up zero line as bold
-            MyChart.AxisY[0].Separator = new LiveCharts.Wpf.Separator
+        private void ConfigureAxis(LiveCharts.Wpf.Axis axis, List<double> values)
+        {
+            if (values.Count == 0)
             {
-                Step = stepSize, // Adjust step to fit your data range
+                axis.MinValue = 0;
+                axis.MaxValue = 1;
+                return;
+            }
+
+            double minVal = values.Min();
+            double maxVal = values.Max();
+
+            double padding = (maxVal - minVal) * 0.1;
+            if (Math.Abs(padding) < 0.0001) padding = 1;
+
+            minVal -= padding;
+            maxVal += padding;
+
+            if (minVal > 0) minVal = 0;
+            if (maxVal < 0) maxVal = 0;
+
+            axis.MinValue = minVal;
+            axis.MaxValue = maxVal;
+            axis.Separator = new LiveCharts.Wpf.Separator
+            {
+                Step = CalculateStepSize(maxVal - minVal),
                 StrokeThickness = 1,
-                StrokeDashArray = new DoubleCollection { 2, 2 },
-                Stroke = Brushes.Gray
+                StrokeDashArray = new System.Windows.Media.DoubleCollection { 2, 2 },
+                Stroke = System.Windows.Media.Brushes.Gray
             };
 
-            // Add AxisSection for bold zero line
-            MyChart.AxisY[0].Sections.Add(new AxisSection
+            axis.Sections.Add(new AxisSection
             {
                 Value = 0,
-                Stroke = Brushes.Black,
+                Stroke = System.Windows.Media.Brushes.Black,
                 Label = "0",
                 StrokeThickness = 2
             });
-
-
-            MyChart.Series = SeriesCollection;
-            MyChart.AxisX[0].Labels = XLabels;
-
         }
+
+        private double? GetMetricValue(LivePositionsDataModel row, string key)
+        {
+            if (row == null) return null;
+
+            switch (key)
+            {
+                case "position_live": return row.PositionLive;
+                case "position_limit": return row.PositionLimit;
+                case "position_target": return row.PositionTarget;
+                case "deployment": return row.Deployment;
+                case "deployment_tad": return row.DeploymentTad;
+                case "position_target_raw": return row.PositionTargetRaw;
+                case "scaled_percent": return row.ScaledPercent;
+                default: return null;
+            }
+        }
+
         private double CalculateStepSize(double range)
         {
-            // Determine a reasonable step size that avoids cramped axis labels and uses whole numbers
+            if (range <= 0) return 1;
+
             double step = Math.Pow(10, Math.Floor(Math.Log10(range)));
             if (range / step > 10) step *= 2;
             if (range / step > 10) step *= 5;
             return step;
-        }
-        private DataTable FillForwardDataTable(DataTable originalDataTable, DateTime minDate, DateTime maxDate)
-        {
-            DataTable filledDataTable = new DataTable();
-            foreach (DataColumn column in originalDataTable.Columns)
-            {
-                filledDataTable.Columns.Add(column.ColumnName, column.DataType);
-            }
-
-            List<DateTime> allDates = new List<DateTime>();
-            for (DateTime date = minDate.Date; date <= maxDate.Date; date = date.AddDays(1))
-            {
-                allDates.Add(date);
-            }
-
-            foreach (DateTime date in allDates)
-            {
-                DataRow[] rowsForDate = originalDataTable.Select($"execution_date = #{date:MM/dd/yyyy}#");
-                if (rowsForDate.Length > 0)
-                {
-                    foreach (DataRow row in rowsForDate)
-                    {
-                        filledDataTable.ImportRow(row);
-                    }
-                }
-                else
-                {
-                    DataRow newRow = filledDataTable.NewRow();
-                    newRow["execution_date"] = date;
-                    foreach (DataColumn column in filledDataTable.Columns)
-                    {
-                        if (column.ColumnName != "execution_date")
-                        {
-                            newRow[column.ColumnName] = DBNull.Value;
-                        }
-                    }
-                    filledDataTable.Rows.Add(newRow);
-                }
-            }
-
-            filledDataTable.DefaultView.Sort = "execution_date ASC";
-            filledDataTable = filledDataTable.DefaultView.ToTable();
-
-            foreach (DataColumn column in filledDataTable.Columns)
-            {
-                if (column.ColumnName != "execution_date")
-                {
-                    object lastValue = DBNull.Value;
-                    foreach (DataRow row in filledDataTable.Rows)
-                    {
-                        if (row[column] != DBNull.Value)
-                        {
-                            lastValue = row[column];
-                        }
-                        else
-                        {
-                            row[column] = lastValue;
-                        }
-                    }
-                }
-            }
-
-            return filledDataTable;
-        }
-
-        private IEnumerable<DateTime> EachDay(DateTime from, DateTime thru)
-        {
-            for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
-                yield return day;
         }
     }
 }

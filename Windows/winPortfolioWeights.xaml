@@ -9,27 +9,12 @@
         Title="Manage Portfolio Weights"
         Height="640" Width="980">
 
-    <!--
-      Assumptions for your ViewModel (bind as DataContext):
-        - string TickerFilter
-        - ObservableCollection<string> Tickers                // raw list from DB
-        - ICollectionView FilteredTickers                     // view over Tickers filtered by TickerFilter
-        - ObservableCollection<string> AvailablePortfolios    // e.g., portfolio names
-        - string SelectedPortfolio
-        - ObservableCollection<PortfolioWeightItem> PortfolioWeights
-              // PortfolioWeightItem has: string PortfolioName, string TickerName, decimal/double Weight
-        - ICommand AddSelectedTickersCommand                  // parameter: selected tickers (IList)
-        - ICommand RemoveSelectedWeightsCommand               // parameter: selected rows (IList)
-    -->
-
     <Window.Resources>
-        <!-- Optional: simple Watermark for empty TextBox -->
         <Style TargetType="TextBox" x:Key="SearchBoxStyle">
             <Setter Property="Padding" Value="6"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
-        <!-- Style for validation visuals (Weight >= 0 handled in model via IDataErrorInfo/INotifyDataErrorInfo) -->
         <Style TargetType="Control" x:Key="ValidationStyle">
             <Style.Triggers>
                 <Trigger Property="Validation.HasError" Value="True">
@@ -40,22 +25,19 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Nice compact header for DataGrid columns -->
         <Style TargetType="DataGridColumnHeader" x:Key="GridHeaderStyle">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="6,4"/>
         </Style>
+
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- top filters -->
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <!-- status bar -->
-            <!-- main content -->
         </Grid.RowDefinitions>
 
         <!-- Top filter row -->
@@ -79,15 +61,12 @@
             <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <TextBlock Text="Portfolio:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <ComboBox Width="240"
-          ItemsSource="{Binding PortfolioData}"
-          DisplayMemberPath="BenchmarkName"
-          SelectedValuePath="BenchmarkName"
-          SelectedValue="{Binding SelectedPortfolioName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-          SelectedIndex="-1"
-          IsSynchronizedWithCurrentItem="False"/>
-
-
-
+                          ItemsSource="{Binding PortfolioData}"
+                          DisplayMemberPath="BenchmarkName"
+                          SelectedValuePath="BenchmarkName"
+                          SelectedValue="{Binding SelectedPortfolioName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedIndex="-1"
+                          IsSynchronizedWithCurrentItem="False"/>
             </StackPanel>
         </Grid>
 
@@ -95,45 +74,40 @@
         <Grid Grid.Row="1" Margin="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2.2*"/>
-                <!-- left: tickers -->
                 <ColumnDefinition Width="Auto"/>
-                <!-- middle: buttons -->
                 <ColumnDefinition Width="3.2*"/>
-                <!-- right: portfolio weights -->
             </Grid.ColumnDefinitions>
 
             <!-- Left: Tickers list -->
             <GroupBox Grid.Column="0" Header="Tickers" Margin="0,0,12,0">
                 <DockPanel>
-                    <!-- Optional count -->
                     <TextBlock DockPanel.Dock="Bottom" Margin="6,4,6,6" Opacity="0.7"
                                Text="{Binding FilteredTickers.ItemCount, StringFormat='Items: {0}'}"/>
                     <ListBox x:Name="TickersList"
                              ItemsSource="{Binding FilteredTickers}"
                              DisplayMemberPath="Tickername"
                              SelectionMode="Extended"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                        <!-- If your tickers are strings, this is enough. If objects, set DisplayMemberPath -->
-                    </ListBox>
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
                 </DockPanel>
             </GroupBox>
 
             <!-- Middle: Add/Remove buttons -->
             <StackPanel Grid.Column="1" Margin="0,0,12,0" VerticalAlignment="Center">
                 <Button Content="Add →"
-            Padding="10,6"
-            Margin="0,0,0,8"
-            Command="{Binding AddSelectedTickersCommand}"
-            CommandParameter="{Binding ElementName=TickersList, Path=SelectedItems}"/>
+                        Padding="10,6"
+                        Margin="0,0,0,8"
+                        Command="{Binding AddSelectedTickersCommand}"
+                        CommandParameter="{Binding ElementName=TickersList, Path=SelectedItems}"/>
                 <Button Content="← Remove"
-            Padding="10,6"
-            Margin="0,0,0,8"
-            Command="{Binding RemoveSelectedWeightsCommand}"
-            CommandParameter="{Binding ElementName=WeightsGrid, Path=SelectedItems}"/>
+                        Padding="10,6"
+                        Margin="0,0,0,8"
+                        Command="{Binding RemoveSelectedWeightsCommand}"
+                        CommandParameter="{Binding ElementName=WeightsGrid, Path=SelectedItems}"/>
                 <Separator Margin="0,8"/>
-                <Button Content="Save" 
-            Padding="10,6"
-            Command="{Binding SaveChangesCommand}" IsEnabled="{Binding IsNotBusy}"/>
+                <Button Content="Save"
+                        Padding="10,6"
+                        Command="{Binding SaveChangesCommand}"
+                        IsEnabled="{Binding IsNotBusy}"/>
             </StackPanel>
 
             <!-- Right: Portfolio weights -->
@@ -148,66 +122,66 @@
                           Margin="0"
                           ColumnHeaderStyle="{StaticResource GridHeaderStyle}">
                     <DataGrid.Columns>
-        
-                            <!-- Status flag column -->
-                            <DataGridTemplateColumn Header="" Width="34" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <!-- Green circle for NEW -->
-                                            <Ellipse Width="14" Height="14" Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="LimeGreen">
-                                                <Ellipse.Style>
-                                                    <Style TargetType="Ellipse">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsNew}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Ellipse.Style>
-                                            </Ellipse>
 
-                                            <!-- Red circle for EDITED (existing row changed/soft-removed) -->
-                                            <Ellipse Width="14" Height="14" Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Fill="Crimson">
-                                                <Ellipse.Style>
-                                                    <Style TargetType="Ellipse">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <!-- Show red when edited AND NOT new (new stays green) -->
-                                                            <MultiDataTrigger>
-                                                                <MultiDataTrigger.Conditions>
-                                                                    <Condition Binding="{Binding IsEdited}" Value="True"/>
-                                                                    <Condition Binding="{Binding IsNew}" Value="False"/>
-                                                                </MultiDataTrigger.Conditions>
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </MultiDataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Ellipse.Style>
-                                            </Ellipse>
-                                        </Grid>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <!-- PortfolioName (readonly) -->
-                        <!--<DataGridTextColumn Header="Portfolio"
-                                            IsReadOnly="True"
-                                            Binding="{Binding PortfolioName}" Width="*"/>-->
+                        <!-- Status dot column -->
+                        <DataGridTemplateColumn Header="" Width="34" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <!-- Green dot — newly added this session -->
+                                        <Ellipse Width="14" Height="14" Margin="2"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"
+                                                 Fill="LimeGreen">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsNew}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+
+                                        <!-- Red dot — flagged for removal -->
+                                        <Ellipse Width="14" Height="14" Margin="2"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"
+                                                 Fill="Crimson">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMarkedForRemoval}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <!-- TickerName (readonly) -->
                         <DataGridTextColumn Header="Tickername"
                                             IsReadOnly="True"
-                                            Binding="{Binding TickerName}" Width="*"/>
-                        <!-- Weight (editable, >= 0) -->
+                                            Binding="{Binding TickerName}"
+                                            Width="*"/>
+
+                        <!-- Weight (editable) -->
                         <DataGridTextColumn Header="Weight" Width="1.2*">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="Weight"
-                 Mode="TwoWay"
-                 UpdateSourceTrigger="LostFocus"
-                 ValidatesOnDataErrors="True"
-                 NotifyOnValidationError="True"
-                 ConverterCulture="{x:Static gl:CultureInfo.InvariantCulture}"
-                 StringFormat="0.########"/>
+                                         Mode="TwoWay"
+                                         UpdateSourceTrigger="LostFocus"
+                                         ValidatesOnDataErrors="True"
+                                         NotifyOnValidationError="True"
+                                         ConverterCulture="{x:Static gl:CultureInfo.InvariantCulture}"
+                                         StringFormat="0.########"/>
                             </DataGridTextColumn.Binding>
 
                             <DataGridTextColumn.ElementStyle>
@@ -227,16 +201,18 @@
                 </DataGrid>
             </GroupBox>
         </Grid>
+
+        <!-- Status bar -->
         <StatusBar Grid.Row="2">
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <ProgressBar Width="150"
-                         Height="14"
-                         IsIndeterminate="True"
-                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                 Height="14"
+                                 IsIndeterminate="True"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <TextBlock Margin="8,0,0,0"
-                       VerticalAlignment="Center"
-                       Text="{Binding StatusMessage}" />
+                               VerticalAlignment="Center"
+                               Text="{Binding StatusMessage}"/>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>

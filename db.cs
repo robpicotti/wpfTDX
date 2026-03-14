@@ -232,31 +232,19 @@ namespace TDX
         public DataTable execSQL(string sql, SqlConnection conn)
         {
             DataTable dt = new DataTable();
-            if ((conn != null) )
+
+            if (conn != null)
             {
-                using (var cmd = new SqlCommand(sql, conn))
+                using (SqlConnection localConn = new SqlConnection(conn.ConnectionString))
+                using (SqlCommand cmd = new SqlCommand(sql, localConn))
+                using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                 {
                     cmd.CommandType = CommandType.Text;
-                    // Ensure any existing SqlDataReader is closed before executing a new query
-                    if (conn.State == ConnectionState.Open)
-                    {
-                        conn.Close();
-                    }
-                    if (conn.State != ConnectionState.Open)
-                    {
-                        conn.Open();
-                    }
-
-                    //// Open the connection explicitly before executing the query
-                    //conn.Open();
-
-                    using (var da = new SqlDataAdapter(cmd))
-                    {
-                        da.Fill(dt);
-                    }
+                    localConn.Open();
+                    da.Fill(dt);
                 }
-                //if (conn != null) { conn.Close(); }
             }
+
             return dt;
         }
         /// <summary>
