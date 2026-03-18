@@ -118,6 +118,7 @@
     <Compile Include="Classes\RangeValidationRule.cs" />
     <Compile Include="Classes\ScaledPositionsInsertRow.cs" />
     <Compile Include="DataModels\LivePositionsDataModel.cs" />
+    <Compile Include="DataModels\ProcessRunDataModel.cs" />
     <Compile Include="DataModels\PortfolioDataModel.cs" />
     <Compile Include="DataModels\ExecutionsDataModel.cs" />
     <Compile Include="DataModels\FilterIntervalsDataModel.cs" />
@@ -207,6 +208,7 @@
     <Compile Include="ViewModels\SubaccountViewModel.cs" />
     <Compile Include="ViewModels\TickerFreezerViewModel.cs" />
     <Compile Include="ViewModels\TradeHistoryViewModel.cs" />
+    <Compile Include="ViewModels\ProcessMonitorViewModel.cs" />
     <Compile Include="WebServiceData\WebServiceData.cs" />
     <Compile Include="Windows\ToolHostWindow.xaml.cs">
       <DependentUpon>ToolHostWindow.xaml</DependentUpon>
@@ -219,6 +221,9 @@
     </Compile>
     <Compile Include="Windows\winScaledPositions.xaml.cs">
       <DependentUpon>winScaledPositions.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\winProcessMonitor.xaml.cs">
+      <DependentUpon>winProcessMonitor.xaml</DependentUpon>
     </Compile>
     <Compile Include="winFilterIntervals.xaml.cs">
       <DependentUpon>winFilterIntervals.xaml</DependentUpon>
@@ -333,6 +338,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\winScaledPositions.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\winProcessMonitor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

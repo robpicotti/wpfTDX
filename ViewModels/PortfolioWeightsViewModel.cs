@@ -272,52 +272,29 @@ namespace wpfTDX
                 PortfolioWeights.Remove(r);
             }
         }
-
         private async Task SaveChangesAsync()
         {
             if (string.IsNullOrWhiteSpace(SelectedPortfolioName)) return;
 
-            // Build payload: NEW + EDITED (including soft-removed where Weight == null)
-            var payload = new List<PortfolioWeightsDataModel>();
-
-            // New rows
-            foreach (var key in _newlyAddedTickers)
-            {
-                var row = PortfolioWeights.FirstOrDefault(r =>
-                    string.Equals(r.TickerName, key, StringComparison.OrdinalIgnoreCase));
-                if (row == null) continue;
-
-                payload.Add(new PortfolioWeightsDataModel
+            // Payload = ALL rows with a valid (non-null, non-NaN) weight
+            // This means: existing tickers kept + new tickers added, minus anything marked for removal
+            var payload = PortfolioWeights
+                .Where(r => r != null && !string.IsNullOrWhiteSpace(r.TickerName))
+                .Where(r => (r.Weight.HasValue && !double.IsNaN(r.Weight.Value)) // valid weight
+                         || r.IsMarkedForRemoval)                                 // OR flagged for removal (sends null)
+                .Select(r => new PortfolioWeightsDataModel
                 {
                     PortfolioName = SelectedPortfolioName,
                     RunTime = DateTime.UtcNow,
-                    TickerName = row.TickerName,
-                    Weight = row.Weight, // null or value
-                });
-            }
+                    TickerName = r.TickerName,
+                    Weight = r.IsMarkedForRemoval ? null : r.Weight        // explicit null for removed
+                })
+                .ToList();
 
-            // Edited rows (includes soft-removed = null)
-            foreach (var key in _editedTickers)
-            {
-                var row = PortfolioWeights.FirstOrDefault(r =>
-                    string.Equals(r.TickerName, key, StringComparison.OrdinalIgnoreCase));
-                if (row == null) continue;
-
-                // If it’s also new, we already included it above
-                if (_newlyAddedTickers.Contains(key)) continue;
-
-                payload.Add(new PortfolioWeightsDataModel
-                {
-                    PortfolioName = SelectedPortfolioName,
-                    RunTime = DateTime.UtcNow,
-                    TickerName = row.TickerName,
-                    Weight = row.Weight, // could be null (soft remove)
-                });
-            }
 
             if (payload.Count == 0)
             {
-                StatusMessage = "No changes to save.";
+                StatusMessage = "No valid weights to save.";
                 return;
             }
 
@@ -326,32 +303,40 @@ namespace wpfTDX
                 IsBusy = true;
                 StatusMessage = "Saving portfolio weights...";
 
-                await _wsd.SavePortfolioWeightsAsync(payload);  // 🔁 this calls your Python webservice
+                await _wsd.SavePortfolioWeightsAsync(payload);
 
-                // On success, “commit” the new/edited sets into originals
-                foreach (var r in payload)
+                // Clear tracking sets
+                _originalTickers.Clear();
+                _originalWeights.Clear();
+                _newlyAddedTickers.Clear();
+                _editedTickers.Clear();
+
+                // Remove soft-deleted rows from UI, reset flags on kept rows
+                foreach (var row in PortfolioWeights.ToList())
                 {
-                    if (!_originalTickers.Contains(r.TickerName))
-                        _originalTickers.Add(r.TickerName);
+                    if (row == null) continue;
 
-                    _originalWeights[r.TickerName] = r.Weight;
-                    _newlyAddedTickers.Remove(r.TickerName);
-                    _editedTickers.Remove(r.TickerName);
+                    bool isValid = row.Weight.HasValue && !double.IsNaN(row.Weight.Value);
 
-                    // If you want to clear flags:
-                    var row = PortfolioWeights.FirstOrDefault(x =>
-                        string.Equals(x.TickerName, r.TickerName, StringComparison.OrdinalIgnoreCase));
-
-                    if (row != null)
+                    if (!isValid || row.IsMarkedForRemoval)
                     {
-                        row.IsNew = false;
-                        row.IsEdited = false;
-                        row.IsOriginal = true;
+                        var npc = row as INotifyPropertyChanged;
+                        if (npc != null) npc.PropertyChanged -= OnWeightRowPropertyChanged;
+                        PortfolioWeights.Remove(row);
+                        continue;
                     }
+
+                    // Commit this row as the new original state
+                    row.IsNew = false;
+                    row.IsEdited = false;
+                    row.IsMarkedForRemoval = false;
+                    row.IsOriginal = true;
+
+                    _originalTickers.Add(row.TickerName);
+                    _originalWeights[row.TickerName] = row.Weight;
                 }
 
                 StatusMessage = "Portfolio weights saved successfully.";
-
                 Application.Current.Dispatcher.Invoke(() =>
                     MessageBox.Show("Portfolio weights saved successfully.", "Saved",
                                     MessageBoxButton.OK, MessageBoxImage.Information));
@@ -360,16 +345,113 @@ namespace wpfTDX
             {
                 System.Diagnostics.Debug.WriteLine("Save failed: " + ex.Message);
                 StatusMessage = "Error saving portfolio weights: " + ex.Message;
-
                 Application.Current.Dispatcher.Invoke(() =>
                     MessageBox.Show("Save failed:\n" + ex.Message, "Error",
                                     MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
-                IsBusy = false;  // ✅ Progress bar will hide, Save re-enables
+                IsBusy = false;
             }
         }
+
+        //private async Task SaveChangesAsync()
+        //{
+        //    if (string.IsNullOrWhiteSpace(SelectedPortfolioName)) return;
+
+        //    // Build payload: NEW + EDITED (including soft-removed where Weight == null)
+        //    var payload = new List<PortfolioWeightsDataModel>();
+
+        //    // New rows
+        //    foreach (var key in _newlyAddedTickers)
+        //    {
+        //        var row = PortfolioWeights.FirstOrDefault(r =>
+        //            string.Equals(r.TickerName, key, StringComparison.OrdinalIgnoreCase));
+        //        if (row == null) continue;
+
+        //        payload.Add(new PortfolioWeightsDataModel
+        //        {
+        //            PortfolioName = SelectedPortfolioName,
+        //            RunTime = DateTime.UtcNow,
+        //            TickerName = row.TickerName,
+        //            Weight = row.Weight, // null or value
+        //        });
+        //    }
+
+        //    // Edited rows (includes soft-removed = null)
+        //    foreach (var key in _editedTickers)
+        //    {
+        //        var row = PortfolioWeights.FirstOrDefault(r =>
+        //            string.Equals(r.TickerName, key, StringComparison.OrdinalIgnoreCase));
+        //        if (row == null) continue;
+
+        //        // If it’s also new, we already included it above
+        //        if (_newlyAddedTickers.Contains(key)) continue;
+
+        //        payload.Add(new PortfolioWeightsDataModel
+        //        {
+        //            PortfolioName = SelectedPortfolioName,
+        //            RunTime = DateTime.UtcNow,
+        //            TickerName = row.TickerName,
+        //            Weight = row.Weight, // could be null (soft remove)
+        //        });
+        //    }
+
+        //    if (payload.Count == 0)
+        //    {
+        //        StatusMessage = "No changes to save.";
+        //        return;
+        //    }
+
+        //    try
+        //    {
+        //        IsBusy = true;
+        //        StatusMessage = "Saving portfolio weights...";
+
+        //        await _wsd.SavePortfolioWeightsAsync(payload);  // 🔁 this calls your Python webservice
+
+        //        // On success, “commit” the new/edited sets into originals
+        //        foreach (var r in payload)
+        //        {
+        //            if (!_originalTickers.Contains(r.TickerName))
+        //                _originalTickers.Add(r.TickerName);
+
+        //            _originalWeights[r.TickerName] = r.Weight;
+        //            _newlyAddedTickers.Remove(r.TickerName);
+        //            _editedTickers.Remove(r.TickerName);
+
+        //            // If you want to clear flags:
+        //            var row = PortfolioWeights.FirstOrDefault(x =>
+        //                string.Equals(x.TickerName, r.TickerName, StringComparison.OrdinalIgnoreCase));
+
+        //            if (row != null)
+        //            {
+        //                row.IsNew = false;
+        //                row.IsEdited = false;
+        //                row.IsOriginal = true;
+        //            }
+        //        }
+
+        //        StatusMessage = "Portfolio weights saved successfully.";
+
+        //        Application.Current.Dispatcher.Invoke(() =>
+        //            MessageBox.Show("Portfolio weights saved successfully.", "Saved",
+        //                            MessageBoxButton.OK, MessageBoxImage.Information));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("Save failed: " + ex.Message);
+        //        StatusMessage = "Error saving portfolio weights: " + ex.Message;
+
+        //        Application.Current.Dispatcher.Invoke(() =>
+        //            MessageBox.Show("Save failed:\n" + ex.Message, "Error",
+        //                            MessageBoxButton.OK, MessageBoxImage.Error));
+        //    }
+        //    finally
+        //    {
+        //        IsBusy = false;  // ✅ Progress bar will hide, Save re-enables
+        //    }
+        //}
 
         // === Load portfolios (same simple pattern) ===
         public async Task GetPortfolioData()

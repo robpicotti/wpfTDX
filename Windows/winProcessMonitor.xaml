@@ -1,0 +1,69 @@
+<Window x:Class="wpfTDX.winProcessMonitor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        mc:Ignorable="d"
+        Title="Process Monitor"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Filter bar -->
+        <Border Grid.Row="0"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="13"/>
+                <DatePicker x:Name="dpFrom"
+                            Width="130"
+                            VerticalAlignment="Center"
+                            Margin="0,0,16,0"
+                            FontSize="13"/>
+
+                <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="13"/>
+                <DatePicker x:Name="dpTo"
+                            Width="130"
+                            VerticalAlignment="Center"
+                            Margin="0,0,16,0"
+                            FontSize="13"/>
+
+                <Button x:Name="cmdRefresh"
+                        Content="Refresh"
+                        Width="80"
+                        Height="28"
+                        Click="cmdRefresh_Click"
+                        FontSize="13"
+                        Margin="0,0,8,0"/>
+
+                <Button x:Name="cmdDiagnose"
+                        Content="Diagnose"
+                        Width="80"
+                        Height="28"
+                        Click="cmdDiagnose_Click"
+                        FontSize="13"
+                        Margin="0,0,16,0"
+                        ToolTip="Show sample log rows to verify SQL patterns"/>
+
+                <TextBlock x:Name="txtStatus"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Foreground="Gray"/>
+
+            </StackPanel>
+        </Border>
+
+        <!-- Dynamic chart container — populated in code-behind -->
+        <Grid x:Name="chartsContainer" Grid.Row="1"/>
+
+    </Grid>
+</Window>

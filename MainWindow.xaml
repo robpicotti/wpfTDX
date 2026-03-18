@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:wpfTDX"
         mc:Ignorable="d"
         Loaded="MainWindow_Loaded"
-        Title="TDX 2.48" Height="1000" Width="1800">
+        Title="TDX 2.51" Height="1000" Width="1800">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="2">
 
@@ -70,6 +70,8 @@
                         <TextBlock Text="Positions" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_1" FontSize="15" FontWeight="Bold" Margin="10 10 20 10"/>
                         <TextBlock Text="Scaled Posns" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_14"  FontSize="15" FontWeight="Bold" Margin="5 10 20 10" />
                         <TextBlock Text="Slippage" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_6"  FontWeight="Bold" Margin="5 10 20 10"/>
+                        <TextBlock Text="Process Timings" FontSize="15" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_ProcessMonitor" FontWeight="Bold" Margin="5 10 20 10" Cursor="Hand"/>
+
                         <!--<TextBlock Text="Ticker Freezer" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown_3" FontSize="15" FontWeight="Bold" Margin="5 10 20 10"/>-->
 
                     </WrapPanel>

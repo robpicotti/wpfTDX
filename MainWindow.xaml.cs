@@ -1160,6 +1160,11 @@ namespace wpfTDX
             if (!EnsureSqlOrShowError()) return;
             OpenCommFeeAdjustmentsWindow();
         }
+        private void TextBlock_MouseLeftButtonDown_ProcessMonitor(object sender, MouseButtonEventArgs e)
+        {
+            if (!EnsureSqlOrShowError()) return;
+            OpenProcessMonitor();
+        }
 
         private void TextBlock_MouseLeftButtonDown_10(object sender, MouseButtonEventArgs e)
         {
@@ -1234,6 +1239,12 @@ namespace wpfTDX
         {
             winPortfolioWeights winPortfolioWeights = new winPortfolioWeights(this.sql_conn);
             winPortfolioWeights.Show();
+        }
+
+        public void OpenProcessMonitor()
+        {
+            winProcessMonitor win = new winProcessMonitor(this.sql_conn);
+            win.Show();
         }
 
 
