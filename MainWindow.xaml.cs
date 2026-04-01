@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -15,6 +16,7 @@ using System.Windows.Shapes;
 using System.Data.SqlClient;
 using System.Data;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using TDX;
@@ -27,6 +29,24 @@ namespace wpfTDX
     /// </summary>
     public partial class MainWindow : Window
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private static void BringToFront(Window window)
+        {
+            window.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                new Action(() =>
+                {
+                    var hwnd = new WindowInteropHelper(window).Handle;
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        SetForegroundWindow(hwnd);
+                        window.Activate();
+                        window.Focus();
+                    }
+                }));
+        }
         public string filepath_2 = @"\\ad01-har.10dynamics.com\Ray_Share\Files\TDX\tdx.txt";
         public string filepath = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\OneDrive - 10dynamics\IT Drive\TDX\tdx.txt");
                                                                         //C:\\Users\\Rob\\OneDrive - 10dynamics\\TDX\\
@@ -114,7 +134,7 @@ namespace wpfTDX
             };
 
             wnd.Show();
-            wnd.Activate(); // initial activation
+            BringToFront(wnd);
         }
 
         //private void OpenToolWindow(string title, UserControl control)
@@ -1227,24 +1247,28 @@ namespace wpfTDX
         {
             winFilterIntervals winFilterIntervals = new winFilterIntervals(this.sql_conn);
             winFilterIntervals.Show();
+            BringToFront(winFilterIntervals);
         }
 
         private void TextBlock_MouseLeftButtonDown_14(object sender, MouseButtonEventArgs e)
         {
             winScaledPositions winScaledPositions = new winScaledPositions();
             winScaledPositions.Show();
+            BringToFront(winScaledPositions);
         }
 
         private void TextBlock_MouseLeftButtonDown_15(object sender, MouseButtonEventArgs e)
         {
             winPortfolioWeights winPortfolioWeights = new winPortfolioWeights(this.sql_conn);
             winPortfolioWeights.Show();
+            BringToFront(winPortfolioWeights);
         }
 
         public void OpenProcessMonitor()
         {
             winProcessMonitor win = new winProcessMonitor(this.sql_conn);
             win.Show();
+            BringToFront(win);
         }
 
 

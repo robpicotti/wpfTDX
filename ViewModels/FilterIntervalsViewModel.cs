@@ -390,6 +390,18 @@ namespace wpfTDX
         // strategies list for the ComboBox
         public ObservableCollection<string> StrategyNames { get; } = new ObservableCollection<string>();
 
+        // min_intvl options for the dropdown — "default" + all trading intervals from t1 upwards
+        public ObservableCollection<string> MinIntvlOptions { get; } = new ObservableCollection<string>(new[]
+        {
+            "default",
+            "t1", "t2", "t3", "t4", "t5", "t8",
+            "v2", "v3",
+            "n2", "n3", "n4",
+            "y1", "y2", "y3",
+            "h2", "h3", "h4", "h6", "h12", "h16",
+            "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
+        });
+
         // manual-freeze definition rows (error_code + freeze_level) pulled from "errors" (manual=1)
         private sealed class ManualFreezeDef
         {
@@ -917,6 +929,7 @@ namespace wpfTDX
                         StrategyNameBaseDaily = (o.Value<string>("strategyname_base_daily") ?? "").Trim(),
 
                         Watchlist = o["watchlist"]?.ToObject<bool?>(),
+                        ContinuousUpdate = o["continuous_update"]?.ToObject<bool?>(),
                         KeepUpdated = o["keep_updated"]?.ToObject<bool?>(),
                         CalcTrades = o["calc_trades"]?.ToObject<bool?>(),
                         TakePosition = o["take_position"]?.ToObject<bool?>(),
@@ -1214,6 +1227,20 @@ namespace wpfTDX
                     model.PositionBaseY1 = row.Value<float?>("position_base_y1");
                     model.PositionBaseH1 = row.Value<float?>("position_base_h1");
                     model.PositionBaseD1 = row.Value<float?>("position_base_d1");
+                    model.PositionBaseT1 = row.Value<float?>("position_base_t1");
+                    model.PositionBaseV1 = row.Value<float?>("position_base_v1");
+                    model.PositionBaseN1 = row.Value<float?>("position_base_n1");
+                    model.PositionT1 = row.Value<float?>("position_t1");
+                    model.PositionT2 = row.Value<float?>("position_t2");
+                    model.PositionT3 = row.Value<float?>("position_t3");
+                    model.PositionT4 = row.Value<float?>("position_t4");
+                    model.PositionT5 = row.Value<float?>("position_t5");
+                    model.PositionT8 = row.Value<float?>("position_t8");
+                    model.PositionV2 = row.Value<float?>("position_v2");
+                    model.PositionV3 = row.Value<float?>("position_v3");
+                    model.PositionN2 = row.Value<float?>("position_n2");
+                    model.PositionN3 = row.Value<float?>("position_n3");
+                    model.PositionN4 = row.Value<float?>("position_n4");
                     model.PositionY1 = row.Value<float?>("position_y1");
                     model.PositionY2 = row.Value<float?>("position_y2");
                     model.PositionY3 = row.Value<float?>("position_y3");
@@ -1481,6 +1508,20 @@ namespace wpfTDX
                     BaseY1 = fi?.BaseY1,
                     BaseH1 = fi?.BaseH1,
                     BaseD1 = fi?.BaseD1,
+                    BaseT1 = fi?.BaseT1,
+                    BaseV1 = fi?.BaseV1,
+                    BaseN1 = fi?.BaseN1,
+                    T1 = fi?.T1,
+                    T2 = fi?.T2,
+                    T3 = fi?.T3,
+                    T4 = fi?.T4,
+                    T5 = fi?.T5,
+                    T8 = fi?.T8,
+                    V2 = fi?.V2,
+                    V3 = fi?.V3,
+                    N2 = fi?.N2,
+                    N3 = fi?.N3,
+                    N4 = fi?.N4,
                     y1 = fi?.Y1,
                     y2 = fi?.Y2,
                     y3 = fi?.Y3,
@@ -1504,6 +1545,20 @@ namespace wpfTDX
                     PositionBaseY1 = tp.PositionBaseY1,
                     PositionBaseH1 = tp.PositionBaseH1,
                     PositionBaseD1 = tp.PositionBaseD1,
+                    PositionBaseT1 = tp.PositionBaseT1,
+                    PositionBaseV1 = tp.PositionBaseV1,
+                    PositionBaseN1 = tp.PositionBaseN1,
+                    PositionT1 = tp.PositionT1,
+                    PositionT2 = tp.PositionT2,
+                    PositionT3 = tp.PositionT3,
+                    PositionT4 = tp.PositionT4,
+                    PositionT5 = tp.PositionT5,
+                    PositionT8 = tp.PositionT8,
+                    PositionV2 = tp.PositionV2,
+                    PositionV3 = tp.PositionV3,
+                    PositionN2 = tp.PositionN2,
+                    PositionN3 = tp.PositionN3,
+                    PositionN4 = tp.PositionN4,
                     PositionY1 = tp.PositionY1,
                     PositionY2 = tp.PositionY2,
                     PositionY3 = tp.PositionY3,
@@ -1625,6 +1680,20 @@ namespace wpfTDX
                     BaseY1 = fiOnly.BaseY1,
                     BaseH1 = fiOnly.BaseH1,
                     BaseD1 = fiOnly.BaseD1,
+                    BaseT1 = fiOnly.BaseT1,
+                    BaseV1 = fiOnly.BaseV1,
+                    BaseN1 = fiOnly.BaseN1,
+                    T1 = fiOnly.T1,
+                    T2 = fiOnly.T2,
+                    T3 = fiOnly.T3,
+                    T4 = fiOnly.T4,
+                    T5 = fiOnly.T5,
+                    T8 = fiOnly.T8,
+                    V2 = fiOnly.V2,
+                    V3 = fiOnly.V3,
+                    N2 = fiOnly.N2,
+                    N3 = fiOnly.N3,
+                    N4 = fiOnly.N4,
                     y1 = fiOnly.Y1,
                     y2 = fiOnly.Y2,
                     y3 = fiOnly.Y3,
@@ -2270,7 +2339,351 @@ namespace wpfTDX
                     }
                 }
             }
-            
+
+            // ── new base intervals (data only, not shown in UI) ──
+            public bool? OriginalBaseT1 { get; private set; }
+            private bool? _baseT1;
+            public bool? BaseT1 { get => _baseT1; set { if (_baseT1 != value) { _baseT1 = value; OnPropertyChanged(); } } }
+            public bool BaseT1HasChanged => _isInitialized && _baseT1 != OriginalBaseT1;
+            private float? _positionBaseT1;
+            public float? PositionBaseT1 { get => _positionBaseT1; set { if (_positionBaseT1 != value) { _positionBaseT1 = value; OnPropertyChanged(); } } }
+
+            public bool? OriginalBaseV1 { get; private set; }
+            private bool? _baseV1;
+            public bool? BaseV1 { get => _baseV1; set { if (_baseV1 != value) { _baseV1 = value; OnPropertyChanged(); } } }
+            public bool BaseV1HasChanged => _isInitialized && _baseV1 != OriginalBaseV1;
+            private float? _positionBaseV1;
+            public float? PositionBaseV1 { get => _positionBaseV1; set { if (_positionBaseV1 != value) { _positionBaseV1 = value; OnPropertyChanged(); } } }
+
+            public bool? OriginalBaseN1 { get; private set; }
+            private bool? _baseN1;
+            public bool? BaseN1 { get => _baseN1; set { if (_baseN1 != value) { _baseN1 = value; OnPropertyChanged(); } } }
+            public bool BaseN1HasChanged => _isInitialized && _baseN1 != OriginalBaseN1;
+            private float? _positionBaseN1;
+            public float? PositionBaseN1 { get => _positionBaseN1; set { if (_positionBaseN1 != value) { _positionBaseN1 = value; OnPropertyChanged(); } } }
+
+            // ── new short-term trading intervals ──
+            public bool? OriginalT1 { get; private set; }
+            private bool? _t1;
+            public bool? T1
+            {
+                get => _t1;
+                set
+                {
+                    if (_t1 != value)
+                    {
+                        _t1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(T1HasChanged));
+                        OnPropertyChanged(nameof(T1Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool T1HasChanged => _isInitialized && _t1 != OriginalT1;
+            private float? _positionT1;
+            public float? PositionT1
+            {
+                get => _positionT1;
+                set { if (_positionT1 != value) { _positionT1 = value; OnPropertyChanged(); OnPropertyChanged(nameof(T1Brush)); } }
+            }
+
+            public bool? OriginalT2 { get; private set; }
+            private bool? _t2;
+            public bool? T2
+            {
+                get => _t2;
+                set
+                {
+                    if (_t2 != value)
+                    {
+                        _t2 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(T2HasChanged));
+                        OnPropertyChanged(nameof(T2Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool T2HasChanged => _isInitialized && _t2 != OriginalT2;
+            private float? _positionT2;
+            public float? PositionT2
+            {
+                get => _positionT2;
+                set { if (_positionT2 != value) { _positionT2 = value; OnPropertyChanged(); OnPropertyChanged(nameof(T2Brush)); } }
+            }
+
+            public bool? OriginalT3 { get; private set; }
+            private bool? _t3;
+            public bool? T3
+            {
+                get => _t3;
+                set
+                {
+                    if (_t3 != value)
+                    {
+                        _t3 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(T3HasChanged));
+                        OnPropertyChanged(nameof(T3Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool T3HasChanged => _isInitialized && _t3 != OriginalT3;
+            private float? _positionT3;
+            public float? PositionT3
+            {
+                get => _positionT3;
+                set { if (_positionT3 != value) { _positionT3 = value; OnPropertyChanged(); OnPropertyChanged(nameof(T3Brush)); } }
+            }
+
+            public bool? OriginalT4 { get; private set; }
+            private bool? _t4;
+            public bool? T4
+            {
+                get => _t4;
+                set
+                {
+                    if (_t4 != value)
+                    {
+                        _t4 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(T4HasChanged));
+                        OnPropertyChanged(nameof(T4Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool T4HasChanged => _isInitialized && _t4 != OriginalT4;
+            private float? _positionT4;
+            public float? PositionT4
+            {
+                get => _positionT4;
+                set { if (_positionT4 != value) { _positionT4 = value; OnPropertyChanged(); OnPropertyChanged(nameof(T4Brush)); } }
+            }
+
+            public bool? OriginalT5 { get; private set; }
+            private bool? _t5;
+            public bool? T5
+            {
+                get => _t5;
+                set
+                {
+                    if (_t5 != value)
+                    {
+                        _t5 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(T5HasChanged));
+                        OnPropertyChanged(nameof(T5Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool T5HasChanged => _isInitialized && _t5 != OriginalT5;
+            private float? _positionT5;
+            public float? PositionT5
+            {
+                get => _positionT5;
+                set { if (_positionT5 != value) { _positionT5 = value; OnPropertyChanged(); OnPropertyChanged(nameof(T5Brush)); } }
+            }
+
+            public bool? OriginalT8 { get; private set; }
+            private bool? _t8;
+            public bool? T8
+            {
+                get => _t8;
+                set
+                {
+                    if (_t8 != value)
+                    {
+                        _t8 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(T8HasChanged));
+                        OnPropertyChanged(nameof(T8Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool T8HasChanged => _isInitialized && _t8 != OriginalT8;
+            private float? _positionT8;
+            public float? PositionT8
+            {
+                get => _positionT8;
+                set { if (_positionT8 != value) { _positionT8 = value; OnPropertyChanged(); OnPropertyChanged(nameof(T8Brush)); } }
+            }
+
+            public bool? OriginalV2 { get; private set; }
+            private bool? _v2;
+            public bool? V2
+            {
+                get => _v2;
+                set
+                {
+                    if (_v2 != value)
+                    {
+                        _v2 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(V2HasChanged));
+                        OnPropertyChanged(nameof(V2Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool V2HasChanged => _isInitialized && _v2 != OriginalV2;
+            private float? _positionV2;
+            public float? PositionV2
+            {
+                get => _positionV2;
+                set { if (_positionV2 != value) { _positionV2 = value; OnPropertyChanged(); OnPropertyChanged(nameof(V2Brush)); } }
+            }
+
+            public bool? OriginalV3 { get; private set; }
+            private bool? _v3;
+            public bool? V3
+            {
+                get => _v3;
+                set
+                {
+                    if (_v3 != value)
+                    {
+                        _v3 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(V3HasChanged));
+                        OnPropertyChanged(nameof(V3Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool V3HasChanged => _isInitialized && _v3 != OriginalV3;
+            private float? _positionV3;
+            public float? PositionV3
+            {
+                get => _positionV3;
+                set { if (_positionV3 != value) { _positionV3 = value; OnPropertyChanged(); OnPropertyChanged(nameof(V3Brush)); } }
+            }
+
+            public bool? OriginalN2 { get; private set; }
+            private bool? _n2;
+            public bool? N2
+            {
+                get => _n2;
+                set
+                {
+                    if (_n2 != value)
+                    {
+                        _n2 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(N2HasChanged));
+                        OnPropertyChanged(nameof(N2Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool N2HasChanged => _isInitialized && _n2 != OriginalN2;
+            private float? _positionN2;
+            public float? PositionN2
+            {
+                get => _positionN2;
+                set { if (_positionN2 != value) { _positionN2 = value; OnPropertyChanged(); OnPropertyChanged(nameof(N2Brush)); } }
+            }
+
+            public bool? OriginalN3 { get; private set; }
+            private bool? _n3;
+            public bool? N3
+            {
+                get => _n3;
+                set
+                {
+                    if (_n3 != value)
+                    {
+                        _n3 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(N3HasChanged));
+                        OnPropertyChanged(nameof(N3Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool N3HasChanged => _isInitialized && _n3 != OriginalN3;
+            private float? _positionN3;
+            public float? PositionN3
+            {
+                get => _positionN3;
+                set { if (_positionN3 != value) { _positionN3 = value; OnPropertyChanged(); OnPropertyChanged(nameof(N3Brush)); } }
+            }
+
+            public bool? OriginalN4 { get; private set; }
+            private bool? _n4;
+            public bool? N4
+            {
+                get => _n4;
+                set
+                {
+                    if (_n4 != value)
+                    {
+                        _n4 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(N4HasChanged));
+                        OnPropertyChanged(nameof(N4Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool N4HasChanged => _isInitialized && _n4 != OriginalN4;
+            private float? _positionN4;
+            public float? PositionN4
+            {
+                get => _positionN4;
+                set { if (_positionN4 != value) { _positionN4 = value; OnPropertyChanged(); OnPropertyChanged(nameof(N4Brush)); } }
+            }
+
+            // ── min_intvl (from strategies_override.min_update_freq) ──
+            public string OriginalMinIntvl { get; private set; }
+            private string _minIntvl = "default";
+            public string MinIntvl
+            {
+                get => _minIntvl;
+                set
+                {
+                    if (_minIntvl != value)
+                    {
+                        _minIntvl = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(MinIntvlHasChanged));
+                    }
+                }
+            }
+            public bool MinIntvlHasChanged => _isInitialized && _minIntvl != OriginalMinIntvl;
+
+            // ── cont_upd (from strategies_override.continuous_update) ──
+            public bool? OriginalContUpd { get; private set; }
+            private bool? _contUpd = false;
+            public bool? ContUpd
+            {
+                get => _contUpd;
+                set
+                {
+                    if (_contUpd != value)
+                    {
+                        _contUpd = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(ContUpdHasChanged));
+                    }
+                }
+            }
+            public bool ContUpdHasChanged => _isInitialized && _contUpd != OriginalContUpd;
 
             public bool? OriginalY1 { get; private set; }
             private bool? _y1;
@@ -2962,6 +3375,17 @@ namespace wpfTDX
             public Brush BaseY1Brush => ComputeFlagPosBrush(BaseY1, PositionBaseY1);
             public Brush BaseH1Brush => ComputeFlagPosBrush(BaseH1, PositionBaseH1);
             public Brush BaseD1Brush => ComputeFlagPosBrush(BaseD1, PositionBaseD1);
+            public Brush T1Brush => ComputeFlagPosBrush(T1, PositionT1);
+            public Brush T2Brush => ComputeFlagPosBrush(T2, PositionT2);
+            public Brush T3Brush => ComputeFlagPosBrush(T3, PositionT3);
+            public Brush T4Brush => ComputeFlagPosBrush(T4, PositionT4);
+            public Brush T5Brush => ComputeFlagPosBrush(T5, PositionT5);
+            public Brush T8Brush => ComputeFlagPosBrush(T8, PositionT8);
+            public Brush V2Brush => ComputeFlagPosBrush(V2, PositionV2);
+            public Brush V3Brush => ComputeFlagPosBrush(V3, PositionV3);
+            public Brush N2Brush => ComputeFlagPosBrush(N2, PositionN2);
+            public Brush N3Brush => ComputeFlagPosBrush(N3, PositionN3);
+            public Brush N4Brush => ComputeFlagPosBrush(N4, PositionN4);
             public Brush Y1Brush => ComputeFlagPosBrush(y1, PositionY1);
             public Brush Y2Brush => ComputeFlagPosBrush(y2, PositionY2);
             public Brush Y3Brush => ComputeFlagPosBrush(y3, PositionY3);
@@ -3065,6 +3489,20 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(OriginalStrategyName));
                 OnPropertyChanged(nameof(StrategyName));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
+
+                // min_intvl from min_update_freq
+                var minIntvlBaseline = so?.MinUpdateFreq ?? "default";
+                OriginalMinIntvl = minIntvlBaseline;
+                MinIntvl = minIntvlBaseline;
+                OnPropertyChanged(nameof(MinIntvl));
+                OnPropertyChanged(nameof(MinIntvlHasChanged));
+
+                // cont_upd from continuous_update
+                var contUpdBaseline = so?.ContinuousUpdate ?? false;
+                OriginalContUpd = contUpdBaseline;
+                ContUpd = contUpdBaseline;
+                OnPropertyChanged(nameof(ContUpd));
+                OnPropertyChanged(nameof(ContUpdHasChanged));
             }
 
             // Build the payload row for /strategies_override insert when StrategyName changed
@@ -3073,9 +3511,8 @@ namespace wpfTDX
                 // choose env from current override else fall back to a VM-wide default
                 var env = StrategyOverride?.Env ?? envDefault;
 
-                // business rule: if strategyname != "default" then min_* = "y1", else "default"
-                bool isNonDefault = !string.Equals(StrategyName, "default", StringComparison.OrdinalIgnoreCase);
-                string minVal = isNonDefault ? "y1" : "default";
+                // all three freq columns get the same value as min_intvl
+                string minVal = this.MinIntvl ?? "default";
 
                 return new
                 {
@@ -3089,13 +3526,14 @@ namespace wpfTDX
                     enable = StrategyOverride?.Enable ?? true,
                     sort_key = StrategyOverride?.SortKey ?? 0,
                     watchlist = StrategyOverride?.Watchlist,
+                    continuous_update = this.ContUpd ?? StrategyOverride?.ContinuousUpdate ?? true,
                     keep_updated = StrategyOverride?.KeepUpdated ?? true,
                     calc_trades = StrategyOverride?.CalcTrades ?? true,
                     take_position = StrategyOverride?.TakePosition ?? true,
                     strategyname_base = StrategyOverride?.StrategyNameBase ?? "default",
                     strategyname_base_daily = StrategyOverride?.StrategyNameBaseDaily ?? "default",
 
-                    // your frequency rule
+                    // all three freq columns = min_intvl value
                     min_update_freq = minVal,
                     min_chart_freq = minVal,
                     min_pos_freq = minVal,
@@ -3116,6 +3554,22 @@ namespace wpfTDX
                 OriginalBaseY1 = src.OriginalBaseY1;
                 OriginalBaseH1 = src.OriginalBaseH1;
                 OriginalBaseD1 = src.OriginalBaseD1;
+                OriginalBaseT1 = src.OriginalBaseT1;
+                OriginalBaseV1 = src.OriginalBaseV1;
+                OriginalBaseN1 = src.OriginalBaseN1;
+                OriginalT1 = src.OriginalT1;
+                OriginalT2 = src.OriginalT2;
+                OriginalT3 = src.OriginalT3;
+                OriginalT4 = src.OriginalT4;
+                OriginalT5 = src.OriginalT5;
+                OriginalT8 = src.OriginalT8;
+                OriginalV2 = src.OriginalV2;
+                OriginalV3 = src.OriginalV3;
+                OriginalN2 = src.OriginalN2;
+                OriginalN3 = src.OriginalN3;
+                OriginalN4 = src.OriginalN4;
+                OriginalMinIntvl = src.OriginalMinIntvl;
+                OriginalContUpd = src.OriginalContUpd;
 
                 OriginalY1 = src.OriginalY1;
                 OriginalY2 = src.OriginalY2;
@@ -3152,6 +3606,19 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(BaseY1HasChanged));
                 OnPropertyChanged(nameof(BaseH1HasChanged));
                 OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(T1HasChanged));
+                OnPropertyChanged(nameof(T2HasChanged));
+                OnPropertyChanged(nameof(T3HasChanged));
+                OnPropertyChanged(nameof(T4HasChanged));
+                OnPropertyChanged(nameof(T5HasChanged));
+                OnPropertyChanged(nameof(T8HasChanged));
+                OnPropertyChanged(nameof(V2HasChanged));
+                OnPropertyChanged(nameof(V3HasChanged));
+                OnPropertyChanged(nameof(N2HasChanged));
+                OnPropertyChanged(nameof(N3HasChanged));
+                OnPropertyChanged(nameof(N4HasChanged));
+                OnPropertyChanged(nameof(MinIntvlHasChanged));
+                OnPropertyChanged(nameof(ContUpdHasChanged));
                 OnPropertyChanged(nameof(Y1HasChanged));
                 OnPropertyChanged(nameof(Y2HasChanged));
                 OnPropertyChanged(nameof(Y3HasChanged));
@@ -3184,6 +3651,18 @@ namespace wpfTDX
                 if (BaseH1 == true) c++;
                 if (BaseD1 == true) c++;
 
+                if (T1 == true) c++;
+                if (T2 == true) c++;
+                if (T3 == true) c++;
+                if (T4 == true) c++;
+                if (T5 == true) c++;
+                if (T8 == true) c++;
+                if (V2 == true) c++;
+                if (V3 == true) c++;
+                if (N2 == true) c++;
+                if (N3 == true) c++;
+                if (N4 == true) c++;
+
                 if (y1 == true) c++;
                 if (y2 == true) c++;
                 if (y3 == true) c++;
@@ -3214,6 +3693,18 @@ namespace wpfTDX
                 if (OriginalBaseY1 == false) c++;
                 if (OriginalBaseH1 == false) c++;
                 if (OriginalBaseD1 == false) c++;
+
+                if (OriginalT1 == false) c++;
+                if (OriginalT2 == false) c++;
+                if (OriginalT3 == false) c++;
+                if (OriginalT4 == false) c++;
+                if (OriginalT5 == false) c++;
+                if (OriginalT8 == false) c++;
+                if (OriginalV2 == false) c++;
+                if (OriginalV3 == false) c++;
+                if (OriginalN2 == false) c++;
+                if (OriginalN3 == false) c++;
+                if (OriginalN4 == false) c++;
 
                 if (OriginalY1 == false) c++;
                 if (OriginalY2 == false) c++;
@@ -3252,6 +3743,17 @@ namespace wpfTDX
                 CountIfFiltered(BaseY1, PositionBaseY1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseH1, PositionBaseH1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(T1, PositionT1, ref c, excludeZeroPositions);
+                CountIfFiltered(T2, PositionT2, ref c, excludeZeroPositions);
+                CountIfFiltered(T3, PositionT3, ref c, excludeZeroPositions);
+                CountIfFiltered(T4, PositionT4, ref c, excludeZeroPositions);
+                CountIfFiltered(T5, PositionT5, ref c, excludeZeroPositions);
+                CountIfFiltered(T8, PositionT8, ref c, excludeZeroPositions);
+                CountIfFiltered(V2, PositionV2, ref c, excludeZeroPositions);
+                CountIfFiltered(V3, PositionV3, ref c, excludeZeroPositions);
+                CountIfFiltered(N2, PositionN2, ref c, excludeZeroPositions);
+                CountIfFiltered(N3, PositionN3, ref c, excludeZeroPositions);
+                CountIfFiltered(N4, PositionN4, ref c, excludeZeroPositions);
                 CountIfFiltered(y1, PositionY1, ref c, excludeZeroPositions);
                 CountIfFiltered(y2, PositionY2, ref c, excludeZeroPositions);
                 CountIfFiltered(y3, PositionY3, ref c, excludeZeroPositions);
@@ -3279,6 +3781,17 @@ namespace wpfTDX
                 CountIfFiltered(OriginalBaseY1, PositionBaseY1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseH1, PositionBaseH1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalT1, PositionT1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalT2, PositionT2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalT3, PositionT3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalT4, PositionT4, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalT5, PositionT5, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalT8, PositionT8, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalV2, PositionV2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalV3, PositionV3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalN2, PositionN2, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalN3, PositionN3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalN4, PositionN4, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalY1, PositionY1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalY2, PositionY2, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalY3, PositionY3, ref c, excludeZeroPositions);
@@ -3335,6 +3848,9 @@ namespace wpfTDX
                 RescaleHasChanged
                 || LongOnlyHasChanged || ShortOnlyHasChanged || BuyOnlyHasChanged || SellOnlyHasChanged || AllIntervalsHasChanged
                 || BaseY1HasChanged || BaseH1HasChanged || BaseD1HasChanged
+                || BaseT1HasChanged || BaseV1HasChanged || BaseN1HasChanged
+                || T1HasChanged || T2HasChanged || T3HasChanged || T4HasChanged || T5HasChanged || T8HasChanged
+                || V2HasChanged || V3HasChanged || N2HasChanged || N3HasChanged || N4HasChanged
                 || Y1HasChanged || Y2HasChanged || Y3HasChanged
                 || H2HasChanged || H3HasChanged || H4HasChanged /* no H5 on purpose */
                 || H6HasChanged || H12HasChanged || H16HasChanged || H36HasChanged
@@ -3373,6 +3889,20 @@ namespace wpfTDX
                 AddIfNotFiltered(BaseY1, PositionBaseY1,BuyOnly,SellOnly, ref sum); // if you expose PositionBaseH1 as H1's "H1" bucket (optional)
                 AddIfNotFiltered(BaseH1, PositionBaseH1, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(BaseD1, PositionBaseD1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(BaseT1, PositionBaseT1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(BaseV1, PositionBaseV1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(BaseN1, PositionBaseN1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(T1, PositionT1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(T2, PositionT2, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(T3, PositionT3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(T4, PositionT4, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(T5, PositionT5, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(T8, PositionT8, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(V2, PositionV2, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(V3, PositionV3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(N2, PositionN2, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(N3, PositionN3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(N4, PositionN4, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(y1, PositionY1, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(y2, PositionY2, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(y3, PositionY3, BuyOnly, SellOnly, ref sum);
@@ -3467,6 +3997,22 @@ namespace wpfTDX
                 OriginalD1 = _D1;
                 OriginalBaseH1 = _baseH1;
                 OriginalBaseD1 = _baseD1;
+                OriginalBaseT1 = _baseT1;
+                OriginalBaseV1 = _baseV1;
+                OriginalBaseN1 = _baseN1;
+                OriginalT1 = _t1;
+                OriginalT2 = _t2;
+                OriginalT3 = _t3;
+                OriginalT4 = _t4;
+                OriginalT5 = _t5;
+                OriginalT8 = _t8;
+                OriginalV2 = _v2;
+                OriginalV3 = _v3;
+                OriginalN2 = _n2;
+                OriginalN3 = _n3;
+                OriginalN4 = _n4;
+                OriginalMinIntvl = _minIntvl;
+                OriginalContUpd = _contUpd;
                 OriginalY1 = _y1;
                 OriginalY2 = _y2;
                 OriginalY3 = _y3;
@@ -3505,6 +4051,19 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(D1HasChanged));
                 OnPropertyChanged(nameof(BaseH1HasChanged));
                 OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(T1HasChanged));
+                OnPropertyChanged(nameof(T2HasChanged));
+                OnPropertyChanged(nameof(T3HasChanged));
+                OnPropertyChanged(nameof(T4HasChanged));
+                OnPropertyChanged(nameof(T5HasChanged));
+                OnPropertyChanged(nameof(T8HasChanged));
+                OnPropertyChanged(nameof(V2HasChanged));
+                OnPropertyChanged(nameof(V3HasChanged));
+                OnPropertyChanged(nameof(N2HasChanged));
+                OnPropertyChanged(nameof(N3HasChanged));
+                OnPropertyChanged(nameof(N4HasChanged));
+                OnPropertyChanged(nameof(MinIntvlHasChanged));
+                OnPropertyChanged(nameof(ContUpdHasChanged));
                 OnPropertyChanged(nameof(Y1HasChanged));
                 OnPropertyChanged(nameof(Y2HasChanged));
                 OnPropertyChanged(nameof(Y3HasChanged));
@@ -3524,8 +4083,6 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W2HasChanged));
                 OnPropertyChanged(nameof(ManualHasChanged));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
-
-                // (repeat for others)
             }
 
             private static bool PickForSave(bool? current, bool? original, bool hasChanged, bool defaultValue = false)
@@ -3567,6 +4124,21 @@ namespace wpfTDX
                     BaseY1 = PickForSave(this.BaseY1, this.OriginalBaseY1, this.BaseY1HasChanged),
                     BaseH1 = PickForSave(this.BaseH1, this.OriginalBaseH1, this.BaseH1HasChanged),
                     BaseD1 = PickForSave(this.BaseD1, this.OriginalBaseD1, this.BaseD1HasChanged),
+                    BaseT1 = PickForSave(this.BaseT1, this.OriginalBaseT1, this.BaseT1HasChanged),
+                    BaseV1 = PickForSave(this.BaseV1, this.OriginalBaseV1, this.BaseV1HasChanged),
+                    BaseN1 = PickForSave(this.BaseN1, this.OriginalBaseN1, this.BaseN1HasChanged),
+
+                    T1 = PickForSave(this.T1, this.OriginalT1, this.T1HasChanged),
+                    T2 = PickForSave(this.T2, this.OriginalT2, this.T2HasChanged),
+                    T3 = PickForSave(this.T3, this.OriginalT3, this.T3HasChanged),
+                    T4 = PickForSave(this.T4, this.OriginalT4, this.T4HasChanged),
+                    T5 = PickForSave(this.T5, this.OriginalT5, this.T5HasChanged),
+                    T8 = PickForSave(this.T8, this.OriginalT8, this.T8HasChanged),
+                    V2 = PickForSave(this.V2, this.OriginalV2, this.V2HasChanged),
+                    V3 = PickForSave(this.V3, this.OriginalV3, this.V3HasChanged),
+                    N2 = PickForSave(this.N2, this.OriginalN2, this.N2HasChanged),
+                    N3 = PickForSave(this.N3, this.OriginalN3, this.N3HasChanged),
+                    N4 = PickForSave(this.N4, this.OriginalN4, this.N4HasChanged),
 
                     Y1 = PickForSave(this.y1, this.OriginalY1, this.Y1HasChanged),
                     Y2 = PickForSave(this.y2, this.OriginalY2, this.Y2HasChanged),
@@ -3742,6 +4314,19 @@ namespace wpfTDX
                 // IMPORTANT: baseline should remain false
                 AllIntervals = false,
 
+                // short-term intervals default to true for new tickers
+                T1 = true,
+                T2 = true,
+                T3 = true,
+                T4 = true,
+                T5 = true,
+                T8 = true,
+                V2 = true,
+                V3 = true,
+                N2 = true,
+                N3 = true,
+                N4 = true,
+
                 y1 = false,
                 y2 = false,
                 y3 = false,
@@ -3760,6 +4345,22 @@ namespace wpfTDX
                 W1 = false,
                 W2 = false,
 
+                // cont_upd defaults to false for new tickers
+                ContUpd = false,
+                // min_intvl defaults to "default"
+                MinIntvl = "default",
+
+                PositionT1 = 0f,
+                PositionT2 = 0f,
+                PositionT3 = 0f,
+                PositionT4 = 0f,
+                PositionT5 = 0f,
+                PositionT8 = 0f,
+                PositionV2 = 0f,
+                PositionV3 = 0f,
+                PositionN2 = 0f,
+                PositionN3 = 0f,
+                PositionN4 = 0f,
                 PositionY1 = 0f,
                 PositionY2 = 0f,
                 PositionY3 = 0f,

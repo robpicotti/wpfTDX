@@ -200,6 +200,104 @@ namespace wpfTDX
                 }
             }
         }
+        private bool? _base_t1;
+        [JsonProperty("base_t1")]
+        public bool? BaseT1
+        {
+            get { return _base_t1; }
+            set { if (_base_t1 != value) { _base_t1 = value; OnPropertyChanged(); } }
+        }
+        private bool? _base_v1;
+        [JsonProperty("base_v1")]
+        public bool? BaseV1
+        {
+            get { return _base_v1; }
+            set { if (_base_v1 != value) { _base_v1 = value; OnPropertyChanged(); } }
+        }
+        private bool? _base_n1;
+        [JsonProperty("base_n1")]
+        public bool? BaseN1
+        {
+            get { return _base_n1; }
+            set { if (_base_n1 != value) { _base_n1 = value; OnPropertyChanged(); } }
+        }
+        private bool? _t1;
+        [JsonProperty("t1")]
+        public bool? T1
+        {
+            get { return _t1; }
+            set { if (_t1 != value) { _t1 = value; OnPropertyChanged(); } }
+        }
+        private bool? _t2;
+        [JsonProperty("t2")]
+        public bool? T2
+        {
+            get { return _t2; }
+            set { if (_t2 != value) { _t2 = value; OnPropertyChanged(); } }
+        }
+        private bool? _t3;
+        [JsonProperty("t3")]
+        public bool? T3
+        {
+            get { return _t3; }
+            set { if (_t3 != value) { _t3 = value; OnPropertyChanged(); } }
+        }
+        private bool? _t4;
+        [JsonProperty("t4")]
+        public bool? T4
+        {
+            get { return _t4; }
+            set { if (_t4 != value) { _t4 = value; OnPropertyChanged(); } }
+        }
+        private bool? _t5;
+        [JsonProperty("t5")]
+        public bool? T5
+        {
+            get { return _t5; }
+            set { if (_t5 != value) { _t5 = value; OnPropertyChanged(); } }
+        }
+        private bool? _t8;
+        [JsonProperty("t8")]
+        public bool? T8
+        {
+            get { return _t8; }
+            set { if (_t8 != value) { _t8 = value; OnPropertyChanged(); } }
+        }
+        private bool? _v2;
+        [JsonProperty("v2")]
+        public bool? V2
+        {
+            get { return _v2; }
+            set { if (_v2 != value) { _v2 = value; OnPropertyChanged(); } }
+        }
+        private bool? _v3;
+        [JsonProperty("v3")]
+        public bool? V3
+        {
+            get { return _v3; }
+            set { if (_v3 != value) { _v3 = value; OnPropertyChanged(); } }
+        }
+        private bool? _n2;
+        [JsonProperty("n2")]
+        public bool? N2
+        {
+            get { return _n2; }
+            set { if (_n2 != value) { _n2 = value; OnPropertyChanged(); } }
+        }
+        private bool? _n3;
+        [JsonProperty("n3")]
+        public bool? N3
+        {
+            get { return _n3; }
+            set { if (_n3 != value) { _n3 = value; OnPropertyChanged(); } }
+        }
+        private bool? _n4;
+        [JsonProperty("n4")]
+        public bool? N4
+        {
+            get { return _n4; }
+            set { if (_n4 != value) { _n4 = value; OnPropertyChanged(); } }
+        }
         private bool? _y1;
         [JsonProperty("y1")]
         public bool? Y1

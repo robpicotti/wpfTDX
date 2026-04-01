@@ -185,6 +185,20 @@ namespace wpfTDX
                 }
             }
         }
+        private bool? _continuousupdate;
+        [JsonProperty("continuous_update")]
+        public bool? ContinuousUpdate
+        {
+            get => _continuousupdate;
+            set
+            {
+                if (_continuousupdate != value)
+                {
+                    _continuousupdate = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         private string _minupdatefreq;
         [JsonProperty("min_update_freq")]
         public string MinUpdateFreq

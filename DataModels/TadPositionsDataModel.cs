@@ -147,6 +147,104 @@ namespace wpfTDX
                 }
             }
         }
+        private float _view_position_base_t1;
+        [JsonProperty("view_position_base_t1")]
+        public float ViewPositionBaseT1
+        {
+            get => _view_position_base_t1;
+            set { if (value != _view_position_base_t1) { _view_position_base_t1 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_base_v1;
+        [JsonProperty("view_position_base_v1")]
+        public float ViewPositionBaseV1
+        {
+            get => _view_position_base_v1;
+            set { if (value != _view_position_base_v1) { _view_position_base_v1 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_base_n1;
+        [JsonProperty("view_position_base_n1")]
+        public float ViewPositionBaseN1
+        {
+            get => _view_position_base_n1;
+            set { if (value != _view_position_base_n1) { _view_position_base_n1 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_t1;
+        [JsonProperty("view_position_t1")]
+        public float ViewPositionT1
+        {
+            get => _view_position_t1;
+            set { if (value != _view_position_t1) { _view_position_t1 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_t2;
+        [JsonProperty("view_position_t2")]
+        public float ViewPositionT2
+        {
+            get => _view_position_t2;
+            set { if (value != _view_position_t2) { _view_position_t2 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_t3;
+        [JsonProperty("view_position_t3")]
+        public float ViewPositionT3
+        {
+            get => _view_position_t3;
+            set { if (value != _view_position_t3) { _view_position_t3 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_t4;
+        [JsonProperty("view_position_t4")]
+        public float ViewPositionT4
+        {
+            get => _view_position_t4;
+            set { if (value != _view_position_t4) { _view_position_t4 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_t5;
+        [JsonProperty("view_position_t5")]
+        public float ViewPositionT5
+        {
+            get => _view_position_t5;
+            set { if (value != _view_position_t5) { _view_position_t5 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_t8;
+        [JsonProperty("view_position_t8")]
+        public float ViewPositionT8
+        {
+            get => _view_position_t8;
+            set { if (value != _view_position_t8) { _view_position_t8 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_v2;
+        [JsonProperty("view_position_v2")]
+        public float ViewPositionV2
+        {
+            get => _view_position_v2;
+            set { if (value != _view_position_v2) { _view_position_v2 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_v3;
+        [JsonProperty("view_position_v3")]
+        public float ViewPositionV3
+        {
+            get => _view_position_v3;
+            set { if (value != _view_position_v3) { _view_position_v3 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_n2;
+        [JsonProperty("view_position_n2")]
+        public float ViewPositionN2
+        {
+            get => _view_position_n2;
+            set { if (value != _view_position_n2) { _view_position_n2 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_n3;
+        [JsonProperty("view_position_n3")]
+        public float ViewPositionN3
+        {
+            get => _view_position_n3;
+            set { if (value != _view_position_n3) { _view_position_n3 = value; OnPropertyChanged(); } }
+        }
+        private float _view_position_n4;
+        [JsonProperty("view_position_n4")]
+        public float ViewPositionN4
+        {
+            get => _view_position_n4;
+            set { if (value != _view_position_n4) { _view_position_n4 = value; OnPropertyChanged(); } }
+        }
         private float _view_position_y1;
         [JsonProperty("view_position_y1")]
         public float ViewPositionY1
@@ -482,6 +580,104 @@ namespace wpfTDX
                     OnPropertyChanged(nameof(PositionBaseD1));
                 }
             }
+        }
+        private float? _position_base_t1;
+        [JsonProperty("position_base_t1")]
+        public float? PositionBaseT1
+        {
+            get => _position_base_t1;
+            set { if (value != _position_base_t1) { _position_base_t1 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_base_v1;
+        [JsonProperty("position_base_v1")]
+        public float? PositionBaseV1
+        {
+            get => _position_base_v1;
+            set { if (value != _position_base_v1) { _position_base_v1 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_base_n1;
+        [JsonProperty("position_base_n1")]
+        public float? PositionBaseN1
+        {
+            get => _position_base_n1;
+            set { if (value != _position_base_n1) { _position_base_n1 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_t1;
+        [JsonProperty("position_t1")]
+        public float? PositionT1
+        {
+            get => _position_t1;
+            set { if (value != _position_t1) { _position_t1 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_t2;
+        [JsonProperty("position_t2")]
+        public float? PositionT2
+        {
+            get => _position_t2;
+            set { if (value != _position_t2) { _position_t2 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_t3;
+        [JsonProperty("position_t3")]
+        public float? PositionT3
+        {
+            get => _position_t3;
+            set { if (value != _position_t3) { _position_t3 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_t4;
+        [JsonProperty("position_t4")]
+        public float? PositionT4
+        {
+            get => _position_t4;
+            set { if (value != _position_t4) { _position_t4 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_t5;
+        [JsonProperty("position_t5")]
+        public float? PositionT5
+        {
+            get => _position_t5;
+            set { if (value != _position_t5) { _position_t5 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_t8;
+        [JsonProperty("position_t8")]
+        public float? PositionT8
+        {
+            get => _position_t8;
+            set { if (value != _position_t8) { _position_t8 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_v2;
+        [JsonProperty("position_v2")]
+        public float? PositionV2
+        {
+            get => _position_v2;
+            set { if (value != _position_v2) { _position_v2 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_v3;
+        [JsonProperty("position_v3")]
+        public float? PositionV3
+        {
+            get => _position_v3;
+            set { if (value != _position_v3) { _position_v3 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_n2;
+        [JsonProperty("position_n2")]
+        public float? PositionN2
+        {
+            get => _position_n2;
+            set { if (value != _position_n2) { _position_n2 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_n3;
+        [JsonProperty("position_n3")]
+        public float? PositionN3
+        {
+            get => _position_n3;
+            set { if (value != _position_n3) { _position_n3 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_n4;
+        [JsonProperty("position_n4")]
+        public float? PositionN4
+        {
+            get => _position_n4;
+            set { if (value != _position_n4) { _position_n4 = value; OnPropertyChanged(); } }
         }
         private float? _position_y1;
         [JsonProperty("position_y1")]
@@ -821,6 +1017,104 @@ namespace wpfTDX
                     OnPropertyChanged(nameof(FilterPositionBaseD1));
                 }
             }
+        }
+        private float _filter_position_base_t1;
+        [JsonProperty("filter_position_base_t1")]
+        public float FilterPositionBaseT1
+        {
+            get => _filter_position_base_t1;
+            set { if (value != _filter_position_base_t1) { _filter_position_base_t1 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_base_v1;
+        [JsonProperty("filter_position_base_v1")]
+        public float FilterPositionBaseV1
+        {
+            get => _filter_position_base_v1;
+            set { if (value != _filter_position_base_v1) { _filter_position_base_v1 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_base_n1;
+        [JsonProperty("filter_position_base_n1")]
+        public float FilterPositionBaseN1
+        {
+            get => _filter_position_base_n1;
+            set { if (value != _filter_position_base_n1) { _filter_position_base_n1 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_t1;
+        [JsonProperty("filter_position_t1")]
+        public float FilterPositionT1
+        {
+            get => _filter_position_t1;
+            set { if (value != _filter_position_t1) { _filter_position_t1 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_t2;
+        [JsonProperty("filter_position_t2")]
+        public float FilterPositionT2
+        {
+            get => _filter_position_t2;
+            set { if (value != _filter_position_t2) { _filter_position_t2 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_t3;
+        [JsonProperty("filter_position_t3")]
+        public float FilterPositionT3
+        {
+            get => _filter_position_t3;
+            set { if (value != _filter_position_t3) { _filter_position_t3 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_t4;
+        [JsonProperty("filter_position_t4")]
+        public float FilterPositionT4
+        {
+            get => _filter_position_t4;
+            set { if (value != _filter_position_t4) { _filter_position_t4 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_t5;
+        [JsonProperty("filter_position_t5")]
+        public float FilterPositionT5
+        {
+            get => _filter_position_t5;
+            set { if (value != _filter_position_t5) { _filter_position_t5 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_t8;
+        [JsonProperty("filter_position_t8")]
+        public float FilterPositionT8
+        {
+            get => _filter_position_t8;
+            set { if (value != _filter_position_t8) { _filter_position_t8 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_v2;
+        [JsonProperty("filter_position_v2")]
+        public float FilterPositionV2
+        {
+            get => _filter_position_v2;
+            set { if (value != _filter_position_v2) { _filter_position_v2 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_v3;
+        [JsonProperty("filter_position_v3")]
+        public float FilterPositionV3
+        {
+            get => _filter_position_v3;
+            set { if (value != _filter_position_v3) { _filter_position_v3 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_n2;
+        [JsonProperty("filter_position_n2")]
+        public float FilterPositionN2
+        {
+            get => _filter_position_n2;
+            set { if (value != _filter_position_n2) { _filter_position_n2 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_n3;
+        [JsonProperty("filter_position_n3")]
+        public float FilterPositionN3
+        {
+            get => _filter_position_n3;
+            set { if (value != _filter_position_n3) { _filter_position_n3 = value; OnPropertyChanged(); } }
+        }
+        private float _filter_position_n4;
+        [JsonProperty("filter_position_n4")]
+        public float FilterPositionN4
+        {
+            get => _filter_position_n4;
+            set { if (value != _filter_position_n4) { _filter_position_n4 = value; OnPropertyChanged(); } }
         }
         private float _filter_position_y1;
         [JsonProperty("filter_position_y1")]

@@ -21,6 +21,20 @@ namespace wpfTDX
         [JsonProperty("base_y1")] public bool? BaseY1 { get; set; }
         [JsonProperty("base_h1")] public bool? BaseH1 { get; set; }
         [JsonProperty("base_D1")] public bool? BaseD1 { get; set; }
+        [JsonProperty("base_t1")] public bool? BaseT1 { get; set; }
+        [JsonProperty("base_v1")] public bool? BaseV1 { get; set; }
+        [JsonProperty("base_n1")] public bool? BaseN1 { get; set; }
+        [JsonProperty("t1")] public bool? T1 { get; set; }
+        [JsonProperty("t2")] public bool? T2 { get; set; }
+        [JsonProperty("t3")] public bool? T3 { get; set; }
+        [JsonProperty("t4")] public bool? T4 { get; set; }
+        [JsonProperty("t5")] public bool? T5 { get; set; }
+        [JsonProperty("t8")] public bool? T8 { get; set; }
+        [JsonProperty("v2")] public bool? V2 { get; set; }
+        [JsonProperty("v3")] public bool? V3 { get; set; }
+        [JsonProperty("n2")] public bool? N2 { get; set; }
+        [JsonProperty("n3")] public bool? N3 { get; set; }
+        [JsonProperty("n4")] public bool? N4 { get; set; }
         [JsonProperty("y1")] public bool? Y1 { get; set; }
         [JsonProperty("y2")] public bool? Y2 { get; set; }
         [JsonProperty("y3")] public bool? Y3 { get; set; }

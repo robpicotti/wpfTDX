@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -73,9 +74,20 @@ namespace wpfTDX
             {
                 // Get monitored process names from the heartbeats table for this environment
                 var heartbeats = new TDX.HeartBeats(_sqlConn, hostEnvironment);
-                MonitoredProcesses = heartbeats.ListHeartBeats
+                var allProcesses = heartbeats.ListHeartBeats
                     .Select(b => b.process_name)
                     .ToList();
+
+                var prefixes = (ConfigurationManager.AppSettings["ProcessMonitorPrefixes"] ?? "")
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Trim())
+                    .Where(p => p.Length > 0)
+                    .ToList();
+
+                MonitoredProcesses = prefixes.Count > 0
+                    ? allProcesses.Where(n => prefixes.Any(p =>
+                        n.StartsWith(p, StringComparison.OrdinalIgnoreCase))).ToList()
+                    : allProcesses;
 
                 string startStr = DateFrom.Date.ToString("yyyy-MM-dd");
                 string endStr   = DateTo.Date.AddDays(1).ToString("yyyy-MM-dd");
@@ -174,12 +186,17 @@ dur AS (
         CAST(SUBSTRING(log, days_pos + 9, 2) AS INT)                        AS m,
         CAST(SUBSTRING(log, days_pos + 12, 2) AS INT)                       AS s,
         CASE
-            WHEN avg_pos > 0 THEN
+            WHEN avg_pos > 0
+                 AND CHARINDEX(' per ticker', log, avg_pos) > avg_pos + 19
+                 AND SUBSTRING(log, avg_pos + 19,
+                     CHARINDEX(' per ticker', log, avg_pos) - avg_pos - 19) NOT IN ('nan', 'inf', '-inf')
+            THEN
                 CAST(SUBSTRING(log, avg_pos + 19,
                     CHARINDEX(' per ticker', log, avg_pos) - avg_pos - 19) AS FLOAT)
             ELSE NULL
         END AS avg_per_ticker
     FROM raw
+    WHERE took_pos > 0 AND days_pos > 0
 )
 SELECT
     DATEADD(SECOND, -(d * 86400 + h * 3600 + m * 60 + s), end_time) AS start_time,

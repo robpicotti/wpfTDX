@@ -211,7 +211,7 @@
             <DataGrid.Columns>
 
                 <!-- Ticker (read-only) -->
-                <DataGridTextColumn Header="tickername"
+                <DataGridTextColumn Header="ticker"
                                     Binding="{Binding Tickername}"
                                     IsReadOnly="True" />
 
@@ -275,6 +275,26 @@
                         </Style>
                     </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
+                <!-- cont_upd (toggle via double-click) -->
+                <DataGridTextColumn Header="c_upd" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="ContUpd" Converter="{StaticResource BoolToStringConverter}"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ContUpdHasChanged}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="BorderBrush" Value="Black"/>
+                                    <Setter Property="BorderThickness" Value="3"/>
+                                    <Setter Property="Background" Value="Yellow"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
                 <!-- MANUAL  -->
                 <DataGridTextColumn Header="manual" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
@@ -403,7 +423,7 @@
                 </DataGridTextColumn>
 
                 <!-- LongOnly -->
-                <DataGridTextColumn Header="LO_only"
+                <DataGridTextColumn Header="LO"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -443,7 +463,7 @@
                 </DataGridTextColumn>
 
                 <!-- ShortOnly -->
-                <DataGridTextColumn Header="SO_only"
+                <DataGridTextColumn Header="SO"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -483,7 +503,7 @@
                 </DataGridTextColumn>
 
                 <!-- BuyOnly -->
-                <DataGridTextColumn Header="buy_only"
+                <DataGridTextColumn Header="byO"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -523,7 +543,7 @@
                 </DataGridTextColumn>
 
                 <!-- SellOnly -->
-                <DataGridTextColumn Header="sell_only"
+                <DataGridTextColumn Header="slO"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -604,160 +624,282 @@
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
-                <!-- base_y1 -->
-                <DataGridTextColumn Header="b_y1"
-                IsReadOnly="True"
-                                        >
+                <!-- min_intvl (ComboBox dropdown) -->
+                <DataGridTemplateColumn Header="m_int" Width="45">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding MinIntvl}" VerticalAlignment="Center" Padding="2">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding MinIntvlHasChanged}" Value="True">
+                                                <Setter Property="Background" Value="Khaki"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox IsEditable="False"
+                                      ItemsSource="{Binding DataContext.MinIntvlOptions,
+                                                            RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                      SelectedItem="{Binding MinIntvl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      MinWidth="80">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding MinIntvlHasChanged}" Value="True">
+                                                <Setter Property="Background" Value="Khaki"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- t1 -->
+                <DataGridTextColumn Header="t1" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
-                            <Binding Path="BaseY1"/>
-                            <Binding Path="PositionBaseY1" />
+                            <Binding Path="T1"/><Binding Path="PositionT1"/>
                         </MultiBinding>
                     </DataGridTextColumn.Binding>
-                    <!-- Use ElementStyle so the TextBlock can have Background bound once -->
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Background" Value="{Binding BaseY1Brush}"/>
+                            <Setter Property="Background" Value="{Binding T1Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
-                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True">
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Style.Triggers><DataTrigger Binding="{Binding T1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
-                            <!-- your normal border -->
-                            <Setter Property="BorderThickness" Value="0.5"/>
-                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
-
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True">
-                                    <!-- highlight when changed -->
-                                    <Setter Property="BorderBrush" Value="Black"/>
-                                    <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
-                <!-- base_h1 -->
-                <DataGridTextColumn Header="b_h1"
-                    IsReadOnly="True"
-                                        >
+                <!-- t2 -->
+                <DataGridTextColumn Header="t2" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
-                            <Binding Path="BaseH1" />
-                            <Binding Path="PositionBaseH1" />
+                            <Binding Path="T2"/><Binding Path="PositionT2"/>
                         </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Background" Value="{Binding BaseH1Brush}"/>
+                            <Setter Property="Background" Value="{Binding T2Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
-                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True">
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Style.Triggers><DataTrigger Binding="{Binding T2HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
-                            <!-- your normal border -->
-                            <Setter Property="BorderThickness" Value="0.5"/>
-                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
-
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True">
-                                    <!-- highlight when changed -->
-                                    <Setter Property="BorderBrush" Value="Black"/>
-                                    <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T2HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
-                <!-- base_d1 -->
-                <DataGridTextColumn Header="b_d1"
-                    IsReadOnly="True"
-                                        >
+                <!-- t3 -->
+                <DataGridTextColumn Header="t3" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
-                            <Binding Path="BaseD1" />
-                            <Binding Path="PositionBaseD1"/>
+                            <Binding Path="T3"/><Binding Path="PositionT3"/>
                         </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Background" Value="{Binding BaseD1Brush}"/>
+                            <Setter Property="Background" Value="{Binding T3Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
-                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True">
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Style.Triggers><DataTrigger Binding="{Binding T3HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
-                            <!-- your normal border -->
-                            <Setter Property="BorderThickness" Value="0.5"/>
-                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
-
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True">
-                                    <!-- highlight when changed -->
-                                    <Setter Property="BorderBrush" Value="Black"/>
-                                    <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T3HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
-                <!-- y1 -->
-                <DataGridTextColumn Header="y1"
-                    IsReadOnly="True"
-                                        >
+                <!-- t4 -->
+                <DataGridTextColumn Header="t4" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
-
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
-                            <Binding Path="y1" />
-                            <Binding Path="PositionY1"/>
+                            <Binding Path="T4"/><Binding Path="PositionT4"/>
                         </MultiBinding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Background" Value="{Binding Y1Brush}"/>
+                            <Setter Property="Background" Value="{Binding T4Brush}"/>
                             <Setter Property="FontWeight" Value="Normal"/>
-                            <!-- keep only 'changed' emphasis; drop FontSize/Italic (they force re-measure) -->
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Y1HasChanged}" Value="True">
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                            <Style.Triggers><DataTrigger Binding="{Binding T4HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
-                            <!-- your normal border -->
-                            <Setter Property="BorderThickness" Value="0.5"/>
-                            <Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T4HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Y1HasChanged}" Value="True">
-                                    <!-- highlight when changed -->
-                                    <Setter Property="BorderBrush" Value="Black"/>
-                                    <Setter Property="BorderThickness" Value="3"/>
-                                </DataTrigger>
-                            </Style.Triggers>
+                <!-- t5 -->
+                <DataGridTextColumn Header="t5" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="T5"/><Binding Path="PositionT5"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding T5Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T5HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T5HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- t8 -->
+                <DataGridTextColumn Header="t8" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="T8"/><Binding Path="PositionT8"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding T8Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T8HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding T8HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- v2 -->
+                <DataGridTextColumn Header="v2" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="V2"/><Binding Path="PositionV2"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding V2Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V2HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V2HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- v3 -->
+                <DataGridTextColumn Header="v3" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="V3"/><Binding Path="PositionV3"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding V3Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V3HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V3HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- n2 -->
+                <DataGridTextColumn Header="n2" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="N2"/><Binding Path="PositionN2"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding N2Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding N2HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding N2HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- n3 -->
+                <DataGridTextColumn Header="n3" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="N3"/><Binding Path="PositionN3"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding N3Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding N3HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding N3HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- n4 -->
+                <DataGridTextColumn Header="n4" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="N4"/><Binding Path="PositionN4"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding N4Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding N4HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding N4HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
@@ -1384,7 +1526,7 @@
                 </DataGridTextColumn>
 
 
-                <DataGridTextColumn Header="trades"
+                <DataGridTextColumn Header="trd"
                                     Binding="{Binding NumTrades}"
                                     IsReadOnly="True">
                     <DataGridTextColumn.ElementStyle>
@@ -1440,7 +1582,7 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="filt_dep" IsReadOnly="True">
+                <DataGridTextColumn Header="f_dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="FilteredDeployment"
                      StringFormat="{}{0:P1}"
@@ -1498,7 +1640,7 @@
                 </DataGridTextColumn>
 
                 <!-- scaled deployment -->
-                <DataGridTextColumn Header="scaled_dep" IsReadOnly="True">
+                <DataGridTextColumn Header="s_dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="ScaledDeployment"
                      StringFormat="{}{0:P1}"

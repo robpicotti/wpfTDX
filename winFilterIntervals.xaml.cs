@@ -141,10 +141,21 @@ namespace wpfTDX
                 case "sell_only": flagProp = "SellOnly"; return true;
                 case "filt_intvls": flagProp = "AllIntervals"; return true;
 
-                // base_* timeframes
-                case "base_y1": flagProp = "BaseY1"; posProp = "PositionBaseY1"; return true;
-                case "base_h1": flagProp = "BaseH1"; posProp = "PositionBaseH1"; return true;
-                case "base_d1": flagProp = "BaseD1"; posProp = "PositionBaseD1"; return true;
+                // cont_upd toggle (no Position* guard)
+                case "c_upd": flagProp = "ContUpd"; return true;
+
+                // short-term intervals
+                case "t1": flagProp = "T1"; posProp = "PositionT1"; return true;
+                case "t2": flagProp = "T2"; posProp = "PositionT2"; return true;
+                case "t3": flagProp = "T3"; posProp = "PositionT3"; return true;
+                case "t4": flagProp = "T4"; posProp = "PositionT4"; return true;
+                case "t5": flagProp = "T5"; posProp = "PositionT5"; return true;
+                case "t8": flagProp = "T8"; posProp = "PositionT8"; return true;
+                case "v2": flagProp = "V2"; posProp = "PositionV2"; return true;
+                case "v3": flagProp = "V3"; posProp = "PositionV3"; return true;
+                case "n2": flagProp = "N2"; posProp = "PositionN2"; return true;
+                case "n3": flagProp = "N3"; posProp = "PositionN3"; return true;
+                case "n4": flagProp = "N4"; posProp = "PositionN4"; return true;
 
                 // y* timeframes
                 case "y1": flagProp = "y1"; posProp = "PositionY1"; return true;
@@ -285,8 +296,10 @@ namespace wpfTDX
             // Soft delete
             row.IsDeleted = true;
 
-            //set strategies override strategyname  = "default"
+            //set strategies override to defaults
             row.StrategyName = "default";
+            row.ContUpd = false;
+            row.MinIntvl = "default";
 
             // Refresh UI to hide it immediately
             _viewModel.MergedRowsView?.Refresh();
@@ -439,7 +452,7 @@ namespace wpfTDX
                 .ToList();
 
                 var affectedStrategyTickers = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged)            // strategy override changed
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged)
                     .Select(r => r.Tickername)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -481,16 +494,18 @@ namespace wpfTDX
 
                 var nowUtc = DateTime.UtcNow;
 
-                //make sure the strategy name is default for deleted rows. fail safe
+                //make sure deleted rows reset strategies_override to defaults. fail safe
                 foreach (var r in vm.MergedRows.Where(r => r.IsDeleted))
                 {
                     r.StrategyName = "default";
+                    r.ContUpd = false;
+                    r.MinIntvl = "default";
                 }
 
 
 
                 var strategyOverridesPayload = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged)
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged)
                     .Select(r => r.ToStrategyOverrideInsertModel(nowUtc,vm.HostEnv))  // your helper
                     .ToList();
 
