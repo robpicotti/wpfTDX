@@ -452,7 +452,7 @@ namespace wpfTDX
                 .ToList();
 
                 var affectedStrategyTickers = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged)
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged)
                     .Select(r => r.Tickername)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();

@@ -290,6 +290,14 @@
                                     <Setter Property="BorderThickness" Value="3"/>
                                     <Setter Property="Background" Value="Yellow"/>
                                 </DataTrigger>
+                                <!-- Green when ContUpd is True and not changed -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding ContUpd}" Value="True"/>
+                                        <Condition Binding="{Binding ContUpdHasChanged}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="PaleGreen"/>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
