@@ -79,7 +79,8 @@ namespace TDX
         {
             gbl_conn = conn;
             DataTable dtHB = new DataTable();
-            Table tbl = new Table("heartbeats", conn, "WHERE monitored =1 and env='" + this.HostEnvironment + "'", null, "runtime,process_name");
+            string currentHost = System.Environment.MachineName;
+            Table tbl = new Table("heartbeats", conn, "WHERE monitored =1 and env='" + this.HostEnvironment + "' and hostname='" + currentHost + "'", null, "runtime,process_name");
             dtHB = tbl.table_data;
             return dtHB;
         }
