@@ -61,6 +61,32 @@ namespace wpfTDX
             await _viewModel.LoadFilterIntervalsDataAsync();
             await _viewModel.LoadTadPositionsDataAsync();
             await _viewModel.RebuildMerged();
+            UpdateIntervalColumnVisibility();
+        }
+
+        /// <summary>
+        /// Hides interval columns that are below the minimum p_int across all rows.
+        /// </summary>
+        private void UpdateIntervalColumnVisibility()
+        {
+            var minInterval = _viewModel.GetMinVisibleInterval();
+            var order = FilterIntervalsViewModel.IntervalOrder;
+            int minIdx = Array.FindIndex(order, i => string.Equals(i, minInterval, StringComparison.OrdinalIgnoreCase));
+            if (minIdx < 0) minIdx = 0;
+
+            foreach (var col in FilterGrid.Columns)
+            {
+                var header = col.Header as string;
+                if (header == null) continue;
+
+                // find this column in the interval order
+                int colIdx = Array.FindIndex(order, i => string.Equals(i, header, StringComparison.OrdinalIgnoreCase));
+                if (colIdx < 0) continue; // not an interval column, leave visible
+
+                col.Visibility = colIdx >= minIdx
+                    ? System.Windows.Visibility.Visible
+                    : System.Windows.Visibility.Collapsed;
+            }
         }
         private async Task RunWithBusy(Func<Task> work)
         {
@@ -135,14 +161,14 @@ namespace wpfTDX
                 // top-level booleans (no Position* guard)
                 case "rescale": flagProp = "Rescale"; return true;
                 case "manual": flagProp = "Manual"; return true;
-                case "lo_only": flagProp = "LongOnly"; return true;
-                case "so_only": flagProp = "ShortOnly"; return true;
-                case "buy_only": flagProp = "BuyOnly"; return true;
-                case "sell_only": flagProp = "SellOnly"; return true;
+                case "lo_only": case "lo": flagProp = "LongOnly"; return true;
+                case "so_only": case "so": flagProp = "ShortOnly"; return true;
+                case "buy_only": case "byo": flagProp = "BuyOnly"; return true;
+                case "sell_only": case "slo": flagProp = "SellOnly"; return true;
                 case "filt_intvls": flagProp = "AllIntervals"; return true;
 
                 // cont_upd toggle (no Position* guard)
-                case "c_upd": flagProp = "ContUpd"; return true;
+                case "c_upd": case "c__upd": flagProp = "ContUpd"; return true;
 
                 // short-term intervals
                 case "t1": flagProp = "T1"; posProp = "PositionT1"; return true;
@@ -240,6 +266,7 @@ namespace wpfTDX
                     await _viewModel.LoadTadPositionsDataAsync();
                     await _viewModel.RebuildMerged(preserveUserFiFlags: true);
                 });
+                UpdateIntervalColumnVisibility();
             }
             catch (Exception ex)
             {
@@ -257,6 +284,7 @@ namespace wpfTDX
                     await _viewModel.LoadFilterIntervalsDataAsync();
                     await _viewModel.RebuildMerged(preserveUserFiFlags: false);
                 });
+                UpdateIntervalColumnVisibility();
             }
             catch (Exception ex)
             {
@@ -300,6 +328,7 @@ namespace wpfTDX
             row.StrategyName = "default";
             row.ContUpd = false;
             row.MinIntvl = "default";
+            row.PosIntvl = "default";
 
             // Refresh UI to hide it immediately
             _viewModel.MergedRowsView?.Refresh();
@@ -452,7 +481,7 @@ namespace wpfTDX
                 .ToList();
 
                 var affectedStrategyTickers = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged)
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged)
                     .Select(r => r.Tickername)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -500,12 +529,13 @@ namespace wpfTDX
                     r.StrategyName = "default";
                     r.ContUpd = false;
                     r.MinIntvl = "default";
+                    r.PosIntvl = "default";
                 }
 
 
 
                 var strategyOverridesPayload = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged)
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged)
                     .Select(r => r.ToStrategyOverrideInsertModel(nowUtc,vm.HostEnv))  // your helper
                     .ToList();
 

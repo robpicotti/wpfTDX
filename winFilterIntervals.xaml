@@ -276,7 +276,13 @@
                     </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
                 <!-- cont_upd (toggle via double-click) -->
-                <DataGridTextColumn Header="c_upd" IsReadOnly="True">
+                <DataGridTextColumn Header="c__upd" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ToolTip" Value="When enabled, ticker will be part of a group processed every 5 minutes"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="ContUpd" Converter="{StaticResource BoolToStringConverter}"/>
                     </DataGridTextColumn.Binding>
@@ -633,7 +639,13 @@
                 </DataGridTextColumn>
 
                 <!-- min_intvl (ComboBox dropdown) -->
-                <DataGridTemplateColumn Header="m_int" Width="45">
+                <DataGridTemplateColumn Header="m__int" Width="45">
+                    <DataGridTemplateColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ToolTip" Value="Minimum interval set for charting"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </Style>
+                    </DataGridTemplateColumn.HeaderStyle>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding MinIntvl}" VerticalAlignment="Center" Padding="2">
@@ -655,11 +667,55 @@
                                       ItemsSource="{Binding DataContext.MinIntvlOptions,
                                                             RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                       SelectedItem="{Binding MinIntvl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      MinWidth="80">
+                                      >
                                 <ComboBox.Style>
                                     <Style TargetType="ComboBox">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding MinIntvlHasChanged}" Value="True">
+                                                <Setter Property="Background" Value="Khaki"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- pos_intvl (ComboBox dropdown) — only editable when c_upd is True -->
+                <DataGridTemplateColumn Header="p__int" Width="45">
+                    <DataGridTemplateColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ToolTip" Value="Minimum interval for position taking (requires c_upd enabled)"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </Style>
+                    </DataGridTemplateColumn.HeaderStyle>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding PosIntvl}" VerticalAlignment="Center" Padding="2">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PosIntvlHasChanged}" Value="True">
+                                                <Setter Property="Background" Value="Khaki"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox IsEditable="False"
+                                      ItemsSource="{Binding DataContext.PosIntvlOptions,
+                                                            RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                      SelectedItem="{Binding PosIntvl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      >
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PosIntvlHasChanged}" Value="True">
                                                 <Setter Property="Background" Value="Khaki"/>
                                             </DataTrigger>
                                         </Style.Triggers>

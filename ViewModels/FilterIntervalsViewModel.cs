@@ -402,6 +402,60 @@ namespace wpfTDX
             "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
         });
 
+        // p_int options for the dropdown — "default" + all trading intervals
+        public ObservableCollection<string> PosIntvlOptions { get; } = new ObservableCollection<string>(new[]
+        {
+            "default",
+            "t1", "t2", "t3", "t4", "t5", "t8",
+            "v2", "v3",
+            "n2", "n3", "n4",
+            "y2", "y3",
+            "h2", "h3", "h4", "h6", "h12", "h16",
+            "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
+        });
+
+        // ordered list of interval column headers for visibility calculation
+        public static readonly string[] IntervalOrder = new[]
+        {
+            "t1", "t2", "t3", "t4", "t5", "t8",
+            "v2", "v3", "n2", "n3", "n4",
+            "y2", "y3",
+            "h2", "h3", "h4", "h6", "h12", "h16",
+            "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
+        };
+
+        /// <summary>
+        /// Returns the minimum visible interval based on the lowest p_int across all rows.
+        /// If all are "default", returns "n3".
+        /// </summary>
+        public string GetMinVisibleInterval()
+        {
+            string minInterval = null;
+            int minIndex = int.MaxValue;
+
+            foreach (var row in MergedRows)
+            {
+                var val = row.PosIntvl;
+                if (string.IsNullOrEmpty(val) || string.Equals(val, "default", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                int idx = Array.FindIndex(IntervalOrder, i => string.Equals(i, val, StringComparison.OrdinalIgnoreCase));
+                if (idx >= 0 && idx < minIndex)
+                {
+                    minIndex = idx;
+                    minInterval = IntervalOrder[idx];
+                }
+            }
+
+            // if no non-default p_int found, default minimum is n3
+            if (minInterval == null)
+            {
+                int n3Idx = Array.FindIndex(IntervalOrder, i => i == "n3");
+                return IntervalOrder[n3Idx];
+            }
+            return minInterval;
+        }
+
         // manual-freeze definition rows (error_code + freeze_level) pulled from "errors" (manual=1)
         private sealed class ManualFreezeDef
         {
@@ -2685,6 +2739,24 @@ namespace wpfTDX
             }
             public bool ContUpdHasChanged => _isInitialized && _contUpd != OriginalContUpd;
 
+            // ── pos_intvl (from strategies_override.min_pos_freq) ──
+            public string OriginalPosIntvl { get; private set; }
+            private string _posIntvl = "default";
+            public string PosIntvl
+            {
+                get => _posIntvl;
+                set
+                {
+                    if (_posIntvl != value)
+                    {
+                        _posIntvl = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(PosIntvlHasChanged));
+                    }
+                }
+            }
+            public bool PosIntvlHasChanged => _isInitialized && _posIntvl != OriginalPosIntvl;
+
             public bool? OriginalY1 { get; private set; }
             private bool? _y1;
             public bool? y1
@@ -3503,6 +3575,13 @@ namespace wpfTDX
                 ContUpd = contUpdBaseline;
                 OnPropertyChanged(nameof(ContUpd));
                 OnPropertyChanged(nameof(ContUpdHasChanged));
+
+                // pos_intvl from min_pos_freq
+                var posIntvlBaseline = so?.MinPosFreq ?? "default";
+                OriginalPosIntvl = posIntvlBaseline;
+                PosIntvl = posIntvlBaseline;
+                OnPropertyChanged(nameof(PosIntvl));
+                OnPropertyChanged(nameof(PosIntvlHasChanged));
             }
 
             // Build the payload row for /strategies_override insert when StrategyName changed
@@ -3511,8 +3590,8 @@ namespace wpfTDX
                 // choose env from current override else fall back to a VM-wide default
                 var env = StrategyOverride?.Env ?? envDefault;
 
-                // all three freq columns get the same value as min_intvl
                 string minVal = this.MinIntvl ?? "default";
+                string minPosVal = this.PosIntvl ?? "default";
 
                 return new
                 {
@@ -3526,17 +3605,16 @@ namespace wpfTDX
                     enable = StrategyOverride?.Enable ?? true,
                     sort_key = StrategyOverride?.SortKey ?? 0,
                     watchlist = StrategyOverride?.Watchlist,
-                    continuous_update = this.ContUpd ?? StrategyOverride?.ContinuousUpdate ?? true,
+                    continuous_update = this.ContUpd ?? StrategyOverride?.ContinuousUpdate ?? false,
                     keep_updated = StrategyOverride?.KeepUpdated ?? true,
                     calc_trades = StrategyOverride?.CalcTrades ?? true,
                     take_position = StrategyOverride?.TakePosition ?? true,
                     strategyname_base = StrategyOverride?.StrategyNameBase ?? "default",
                     strategyname_base_daily = StrategyOverride?.StrategyNameBaseDaily ?? "default",
 
-                    // all three freq columns = min_intvl value
                     min_update_freq = minVal,
                     min_chart_freq = minVal,
-                    min_pos_freq = minVal,
+                    min_pos_freq = minPosVal,
                 };
             }
 
@@ -3570,6 +3648,7 @@ namespace wpfTDX
                 OriginalN4 = src.OriginalN4;
                 OriginalMinIntvl = src.OriginalMinIntvl;
                 OriginalContUpd = src.OriginalContUpd;
+                OriginalPosIntvl = src.OriginalPosIntvl;
 
                 OriginalY1 = src.OriginalY1;
                 OriginalY2 = src.OriginalY2;
@@ -3619,6 +3698,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(N4HasChanged));
                 OnPropertyChanged(nameof(MinIntvlHasChanged));
                 OnPropertyChanged(nameof(ContUpdHasChanged));
+                OnPropertyChanged(nameof(PosIntvlHasChanged));
                 OnPropertyChanged(nameof(Y1HasChanged));
                 OnPropertyChanged(nameof(Y2HasChanged));
                 OnPropertyChanged(nameof(Y3HasChanged));
@@ -4013,6 +4093,7 @@ namespace wpfTDX
                 OriginalN4 = _n4;
                 OriginalMinIntvl = _minIntvl;
                 OriginalContUpd = _contUpd;
+                OriginalPosIntvl = _posIntvl;
                 OriginalY1 = _y1;
                 OriginalY2 = _y2;
                 OriginalY3 = _y3;
@@ -4064,6 +4145,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(N4HasChanged));
                 OnPropertyChanged(nameof(MinIntvlHasChanged));
                 OnPropertyChanged(nameof(ContUpdHasChanged));
+                OnPropertyChanged(nameof(PosIntvlHasChanged));
                 OnPropertyChanged(nameof(Y1HasChanged));
                 OnPropertyChanged(nameof(Y2HasChanged));
                 OnPropertyChanged(nameof(Y3HasChanged));
@@ -4349,6 +4431,7 @@ namespace wpfTDX
                 ContUpd = false,
                 // min_intvl defaults to "default"
                 MinIntvl = "default",
+                PosIntvl = "default",
 
                 PositionT1 = 0f,
                 PositionT2 = 0f,

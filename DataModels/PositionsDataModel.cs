@@ -104,9 +104,9 @@ namespace wpfTDX
             }
         }
 
-        private double _positionlimit;
+        private double? _positionlimit;
         [JsonProperty("position_limit")]
-        public double PositionLimit
+        public double? PositionLimit
         {
             get => _positionlimit;
             set

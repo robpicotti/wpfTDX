@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 
@@ -45,8 +46,38 @@ namespace wpfTDX
                 {
                     _tickerfreezer = value;
                     OnPropertyChanged(nameof(TickerFreezer));
+                    // rebuild the filtered view whenever the collection changes
+                    _tickerFreezerView = CollectionViewSource.GetDefaultView(_tickerfreezer);
+                    if (_tickerFreezerView != null)
+                        _tickerFreezerView.Filter = TickerFreezerFilter;
+                    OnPropertyChanged(nameof(TickerFreezerView));
                 }
             }
+        }
+
+        private ICollectionView _tickerFreezerView;
+        public ICollectionView TickerFreezerView => _tickerFreezerView;
+
+        private bool _showManual = false;
+        public bool ShowManual
+        {
+            get => _showManual;
+            set
+            {
+                if (_showManual != value)
+                {
+                    _showManual = value;
+                    OnPropertyChanged();
+                    _tickerFreezerView?.Refresh();
+                }
+            }
+        }
+
+        private bool TickerFreezerFilter(object item)
+        {
+            if (_showManual) return true;
+            var row = item as TickerFreezerDataModel;
+            return row == null || row.Errorcode != 2009;
         }
 
         private ObservableCollection<FundsDataModel> _fundsData { get; set; }
