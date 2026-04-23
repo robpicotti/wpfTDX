@@ -598,7 +598,7 @@
                 </DataGridTextColumn>
 
                 <!-- all_intervals -->
-                <DataGridTextColumn Header="filt_intvls"
+                <DataGridTextColumn Header="filt_all"
        
                     IsReadOnly="True"
                                         >
@@ -1690,7 +1690,7 @@
                 </DataGridTextColumn>
 
                 <!-- new_deploy -->
-                <DataGridTextColumn Header="new_dep" IsReadOnly="True">
+                <DataGridTextColumn Header="n_dep" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewDeployment" StringFormat="{}{0:P1}" TargetNullValue="0" FallbackValue="0"/>
                     </DataGridTextColumn.Binding>

@@ -261,12 +261,15 @@ namespace wpfTDX
         {
             try
             {
+                StatusTextBlock.Text = "Reloading positions...";
+                _viewModel.ClearJobStatus();
                 await RunWithBusy(async () =>
                 {
                     await _viewModel.LoadTadPositionsDataAsync();
                     await _viewModel.RebuildMerged(preserveUserFiFlags: true);
                 });
                 UpdateIntervalColumnVisibility();
+                StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
             }
             catch (Exception ex)
             {
@@ -279,12 +282,15 @@ namespace wpfTDX
         {
             try
             {
+                StatusTextBlock.Text = "Reloading filters...";
+                _viewModel.ClearJobStatus();
                 await RunWithBusy(async () =>
                 {
                     await _viewModel.LoadFilterIntervalsDataAsync();
                     await _viewModel.RebuildMerged(preserveUserFiFlags: false);
                 });
                 UpdateIntervalColumnVisibility();
+                StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
             }
             catch (Exception ex)
             {
@@ -297,7 +303,10 @@ namespace wpfTDX
         {
             try
             {
+                StatusTextBlock.Text = "Reloading...";
+                _viewModel.ClearJobStatus();
                 await RunWithBusy(LoadAllAsync);
+                StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
             }
             catch (Exception ex)
             {
@@ -481,7 +490,7 @@ namespace wpfTDX
                 .ToList();
 
                 var affectedStrategyTickers = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged)
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged || r.NeedsNewOverride)
                     .Select(r => r.Tickername)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -535,7 +544,7 @@ namespace wpfTDX
 
 
                 var strategyOverridesPayload = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged)
+                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged || r.NeedsNewOverride)
                     .Select(r => r.ToStrategyOverrideInsertModel(nowUtc,vm.HostEnv))  // your helper
                     .ToList();
 

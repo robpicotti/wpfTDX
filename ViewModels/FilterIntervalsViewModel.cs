@@ -1533,7 +1533,8 @@ namespace wpfTDX
             if (preserveUserFiFlags)
                 previous = MergedRows.ToDictionary(r => r.Tickername, r => r, StringComparer.OrdinalIgnoreCase);
 
-            MergedRows.Clear();
+            // Build into a temporary list to avoid per-row UI updates
+            var tempRows = new List<MergedTickerRow>();
 
             var fiByTicker = (FilterIntervalsData ?? new ObservableCollection<FilterIntervalsDataModel>())
                 .GroupBy(x => x.TickerName, StringComparer.OrdinalIgnoreCase)
@@ -1710,7 +1711,7 @@ namespace wpfTDX
                 row.RecalcNewDeployment();
                 row.ReCalcScaledDeployment();
 
-                MergedRows.Add(row);
+                tempRows.Add(row);
             }
 
             // ---- SECOND LOOP: FI-only rows (no TAD position) ----
@@ -1809,20 +1810,26 @@ namespace wpfTDX
                 row.RecalcNewDeployment();
                 row.ReCalcScaledDeployment();
 
-                MergedRows.Add(row);
+                tempRows.Add(row);
             }
+
+            // Sort in memory first, then populate collection in one batch
+            tempRows.Sort((a, b) =>
+            {
+                int c = string.Compare(a.FundGroup, b.FundGroup, StringComparison.OrdinalIgnoreCase);
+                if (c != 0) return c;
+                c = string.Compare(a.FundName, b.FundName, StringComparison.OrdinalIgnoreCase);
+                if (c != 0) return c;
+                return string.Compare(a.Tickername, b.Tickername, StringComparison.OrdinalIgnoreCase);
+            });
+
+            MergedRows.Clear();
+            foreach (var r in tempRows)
+                MergedRows.Add(r);
 
             if (MergedRowsView != null)
             {
-                // 🔹 Sort by FundGroup, then FundName, then Tickername
                 MergedRowsView.SortDescriptions.Clear();
-                MergedRowsView.SortDescriptions.Add(
-                    new SortDescription(nameof(MergedTickerRow.FundGroup), ListSortDirection.Ascending));
-                MergedRowsView.SortDescriptions.Add(
-                    new SortDescription(nameof(MergedTickerRow.FundName), ListSortDirection.Ascending));
-                MergedRowsView.SortDescriptions.Add(
-                    new SortDescription(nameof(MergedTickerRow.Tickername), ListSortDirection.Ascending));
-
                 MergedRowsView.Refresh();
             }
 
@@ -3435,6 +3442,12 @@ namespace wpfTDX
                 }
             }
 
+            /// <summary>
+            /// True when this is a new ticker with no existing strategies_override row.
+            /// Forces a default override row to be written on save.
+            /// </summary>
+            public bool NeedsNewOverride { get; set; }
+
             //for setting colours
             // Reuse ONE set of static, frozen brushes
             private static readonly Brush BgGrey = new SolidColorBrush(Color.FromRgb(224, 224, 224));
@@ -3553,6 +3566,7 @@ namespace wpfTDX
             public void AttachStrategyOverride(StrategiesOverrideDataModel so)
             {
                 StrategyOverride = so;
+                if (so == null) NeedsNewOverride = true;
 
                 // Use the override's strategy as the "original" baseline (fall back to "default")
                 var baseline = so?.StrategyName ?? "default";
