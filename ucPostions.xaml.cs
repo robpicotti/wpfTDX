@@ -310,6 +310,21 @@ namespace wpfTDX
         {
             new winScaledPositions().Show();
         }
+
+        private void PaperTrade_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel?.SelectedPosition == null)
+            {
+                MessageBox.Show("Please select a position first.", "Paper Trade",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var fundname = ViewModel.SelectedFund?.FundName ?? "";
+            var dlg = new winPaperTrade(ViewModel.SelectedPosition, fundname);
+            dlg.Owner = Window.GetWindow(this);
+            dlg.ShowDialog();
+        }
     }
 }
 

@@ -38,30 +38,98 @@ namespace wpfTDX
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // Initial window load uses the same flow as the Reload Both button so
+            // the progress bar and status messages behave identically in both cases.
+            await DoFullReloadAsync();
+        }
+
+        /// <summary>
+        /// Shared full-reload flow used by both the initial Window_Loaded and the
+        /// Reload Both button — guarantees identical progress bar + status messaging.
+        /// </summary>
+        private async Task DoFullReloadAsync()
+        {
             try
             {
-                await LoadAllAsync();
+                _viewModel.ClearJobStatus();
+                await RunWithBusy(LoadAllAsync);
+                StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Load failed:\n" + ex.Message, "Error",
+                MessageBox.Show(this, "Reload failed:\n" + ex.Message, "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private async Task LoadAllAsync()
         {
+            BeginLoad(totalSteps: 8);
+
+            await SetStatus("Loading host env...");
             await _viewModel.LoadHostEnvAsync();
+
+            await SetStatus("Loading freeze definitions...");
             await _viewModel.LoadManualFreezeDefsAsync();
+
+            await SetStatus("Loading active freezes...");
             await _viewModel.LoadActiveManualFreezesAsync();
+
+            await SetStatus("Loading strategy overrides...");
             await _viewModel.LoadStrategiesOverrideAsync();
+
+            await SetStatus("Loading strategy names...");
             await _viewModel.LoadStrategyNamesAsync();
 
-
+            await SetStatus("Loading ticker universe...");
             await _viewModel.LoadTickerUniverseAsync();
-            await _viewModel.LoadFilterIntervalsDataAsync();
-            await _viewModel.LoadTadPositionsDataAsync();
+
+            await SetStatus("Loading filter intervals + positions from server...");
+            // Single fetch: /filtered_intervals returns both filter intervals and positions data
+            await _viewModel.LoadFilterIntervalsAndPositionsAsync();
+
+            await SetStatus("Rendering data on UI...");
             await _viewModel.RebuildMerged();
             UpdateIntervalColumnVisibility();
+
+            _viewModel.LoadProgress = 100;
+        }
+
+        // Step counter for the determinate load progress bar — set by BeginLoad,
+        // incremented by SetStatus.
+        private int _loadStepCurrent;
+        private int _loadStepTotal;
+
+        /// <summary>
+        /// Resets the load progress counter at the start of a multi-stage load so
+        /// SetStatus can compute LoadProgress as a percentage of total stages.
+        /// </summary>
+        private void BeginLoad(int totalSteps)
+        {
+            _loadStepCurrent = 0;
+            _loadStepTotal = totalSteps;
+            _viewModel.LoadProgress = 0;
+        }
+
+        /// <summary>
+        /// Updates the status bar text, ticks the determinate load progress bar
+        /// forward by one step, and yields at Background priority so WPF gets a
+        /// chance to repaint before the next async call begins. The Background
+        /// priority is critical: Task.Yield resumes at Normal priority which is
+        /// higher than Render, so without the explicit yield priority the new
+        /// text + progress value never make it to the screen.
+        /// </summary>
+        private async Task SetStatus(string text)
+        {
+            StatusTextBlock.Text = text;
+
+            if (_loadStepTotal > 0)
+            {
+                _loadStepCurrent++;
+                int pct = (int)Math.Round(100.0 * _loadStepCurrent / _loadStepTotal);
+                _viewModel.LoadProgress = Math.Min(100, Math.Max(0, pct));
+            }
+
+            await Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -165,7 +233,7 @@ namespace wpfTDX
                 case "so_only": case "so": flagProp = "ShortOnly"; return true;
                 case "buy_only": case "byo": flagProp = "BuyOnly"; return true;
                 case "sell_only": case "slo": flagProp = "SellOnly"; return true;
-                case "filt_intvls": flagProp = "AllIntervals"; return true;
+                case "filt_intvls": case "filt_all": flagProp = "AllIntervals"; return true;
 
                 // cont_upd toggle (no Position* guard)
                 case "c_upd": case "c__upd": flagProp = "ContUpd"; return true;
@@ -261,14 +329,20 @@ namespace wpfTDX
         {
             try
             {
-                StatusTextBlock.Text = "Reloading positions...";
                 _viewModel.ClearJobStatus();
                 await RunWithBusy(async () =>
                 {
+                    BeginLoad(totalSteps: 2);
+
+                    await SetStatus("Loading positions from server...");
                     await _viewModel.LoadTadPositionsDataAsync();
+
+                    await SetStatus("Rendering data on UI...");
                     await _viewModel.RebuildMerged(preserveUserFiFlags: true);
+                    UpdateIntervalColumnVisibility();
+
+                    _viewModel.LoadProgress = 100;
                 });
-                UpdateIntervalColumnVisibility();
                 StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
             }
             catch (Exception ex)
@@ -282,14 +356,20 @@ namespace wpfTDX
         {
             try
             {
-                StatusTextBlock.Text = "Reloading filters...";
                 _viewModel.ClearJobStatus();
                 await RunWithBusy(async () =>
                 {
+                    BeginLoad(totalSteps: 2);
+
+                    await SetStatus("Loading filters from server...");
                     await _viewModel.LoadFilterIntervalsDataAsync();
+
+                    await SetStatus("Rendering data on UI...");
                     await _viewModel.RebuildMerged(preserveUserFiFlags: false);
+                    UpdateIntervalColumnVisibility();
+
+                    _viewModel.LoadProgress = 100;
                 });
-                UpdateIntervalColumnVisibility();
                 StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
             }
             catch (Exception ex)
@@ -303,7 +383,6 @@ namespace wpfTDX
         {
             try
             {
-                StatusTextBlock.Text = "Reloading...";
                 _viewModel.ClearJobStatus();
                 await RunWithBusy(LoadAllAsync);
                 StatusTextBlock.Text = $"Reloaded {DateTime.Now:HH:mm:ss}";
@@ -378,7 +457,15 @@ namespace wpfTDX
             if (vm == null) return;
 
             if (vm.TickerUniverse == null || vm.TickerUniverse.Count == 0)
-                await vm.LoadTickerUniverseAsync();
+            {
+                await RunWithBusy(async () =>
+                {
+                    BeginLoad(totalSteps: 1);
+                    await SetStatus("Loading ticker universe...");
+                    await vm.LoadTickerUniverseAsync();
+                    vm.LoadProgress = 100;
+                });
+            }
             //MessageBox.Show(this, "New ticker test",
             //    "Select Tickers", MessageBoxButton.OK, MessageBoxImage.Information);
             var dlg = new winAddTicker(vm.TickerUniverse);
@@ -391,6 +478,31 @@ namespace wpfTDX
             foreach (var tr in dlg.SelectedTickers)
             {
                 var ticker = Norm(tr.TickerName);
+                var fundGroupCheck = string.IsNullOrWhiteSpace(tr.FundGroupName) ? "*" : Norm(tr.FundGroupName);
+                var fundNameCheck = string.IsNullOrWhiteSpace(tr.FundName) ? "*" : Norm(tr.FundName);
+
+                // Check if ticker is in the benchmark for the selected fund/fundgroup
+                try
+                {
+                    var ws = new WebServiceData();
+                    var check = await ws.IsTickerInBenchmarkAsync(ticker, fundGroupCheck, fundNameCheck);
+
+                    if (!check.InBenchmark)
+                    {
+                        MessageBox.Show(this,
+                            $"Cannot add ticker '{ticker}'.\n\n{check.Detail}",
+                            "Not in benchmark", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        continue; // skip this ticker
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var result = MessageBox.Show(this,
+                        $"Could not verify benchmark for '{ticker}':\n{ex.Message}\n\nAdd anyway?",
+                        "Benchmark check failed", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    if (result != MessageBoxResult.Yes)
+                        continue;
+                }
 
                 // Find ANY existing rows with same ticker (primary key = ticker only)
                 var existingForTicker = vm.MergedRows
@@ -442,7 +554,13 @@ namespace wpfTDX
         {
             var vm = DataContext as FilterIntervalsViewModel;
             if (vm == null) return;
-            await vm.LoadTickerUniverseAsync();
+            await RunWithBusy(async () =>
+            {
+                BeginLoad(totalSteps: 1);
+                await SetStatus("Loading ticker universe...");
+                await vm.LoadTickerUniverseAsync();
+                vm.LoadProgress = 100;
+            });
         }
         /// <summary>
         /// saves data to filters interval table
@@ -607,11 +725,10 @@ namespace wpfTDX
 
                             if (isDone)
                             {
-                                var okMsg = inScaledPhase
-                                    ? "Saved filter intervals and scaled positions."
-                                    : "Saved filter intervals.";
-                                MessageBox.Show(this, okMsg, "Save",
-                                    MessageBoxButton.OK, MessageBoxImage.Information);
+                                // No success modal — feedback comes from the progress bar
+                                // + final status text. Failures still get a modal below.
+                                await DoFullReloadAsync();
+                                StatusTextBlock.Text = $"Saved + Reloaded {DateTime.Now:HH:mm:ss}";
                             }
                             else
                             {

@@ -118,5 +118,84 @@ namespace wpfTDX
             }
         }
 
+        /// <summary>
+        /// Fetches the current documentation string for a given error_code.
+        /// Calls the /get_error_documentation API endpoint.
+        /// </summary>
+        public async Task<string> GetErrorDocumentationAsync(int errorCode, CancellationToken ct = default(CancellationToken))
+        {
+            var request = new { error_code = errorCode };
+            string body = JsonConvert.SerializeObject(request);
+            using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+            using (var resp = await _client.PostAsync("get_error_documentation", content, ct).ConfigureAwait(false))
+            {
+                resp.EnsureSuccessStatusCode();
+                string json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                var obj = JObject.Parse(json);
+                return obj["documentation"]?.Type == JTokenType.Null ? null : obj["documentation"]?.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Updates the documentation field on the errors table for a given error_code.
+        /// Calls the /update_error_documentation API endpoint.
+        /// </summary>
+        public async Task UpdateErrorDocumentationAsync(int errorCode, string documentation, CancellationToken ct = default(CancellationToken))
+        {
+            var request = new
+            {
+                error_code = errorCode,
+                documentation = documentation
+            };
+
+            string body = JsonConvert.SerializeObject(request);
+            using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+            using (var resp = await _client.PostAsync("update_error_documentation", content, ct).ConfigureAwait(false))
+            {
+                resp.EnsureSuccessStatusCode();
+            }
+        }
+
+        /// <summary>
+        /// Checks if a ticker is in the benchmark for the given fund selection.
+        /// Calls the /is_ticker_in_benchmark API endpoint.
+        /// </summary>
+        public async Task<BenchmarkCheckResult> IsTickerInBenchmarkAsync(
+            string tickername, string fundgroupname = "*", string fundname = "*")
+        {
+            var request = new
+            {
+                tickername,
+                fundgroupname = fundgroupname ?? "*",
+                fundname = fundname ?? "*",
+            };
+
+            string body = JsonConvert.SerializeObject(request);
+            using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+            using (var resp = await _client.PostAsync("is_ticker_in_benchmark", content).ConfigureAwait(false))
+            {
+                resp.EnsureSuccessStatusCode();
+                string json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                return JsonConvert.DeserializeObject<BenchmarkCheckResult>(json);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Response from /is_ticker_in_benchmark endpoint.
+    /// </summary>
+    public class BenchmarkCheckResult
+    {
+        [JsonProperty("in_benchmark")] public bool InBenchmark { get; set; }
+        [JsonProperty("portfolionames")] public List<string> PortfolioNames { get; set; }
+        [JsonProperty("funds")] public List<BenchmarkFundInfo> Funds { get; set; }
+        [JsonProperty("detail")] public string Detail { get; set; }
+    }
+
+    public class BenchmarkFundInfo
+    {
+        [JsonProperty("portfolioname")] public string PortfolioName { get; set; }
+        [JsonProperty("fundgroupname")] public string FundGroupName { get; set; }
+        [JsonProperty("fundname")] public string FundName { get; set; }
     }
 }

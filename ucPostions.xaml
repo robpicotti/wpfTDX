@@ -37,10 +37,14 @@
                     </DatePicker>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Margin="5 23">
-                    <Button x:Name="cmdRun" 
-                            Command="{Binding RunPositionCommand}" 
+                    <Button x:Name="cmdRun"
+                            Command="{Binding RunPositionCommand}"
                             Content="{Binding RunStatus, UpdateSourceTrigger=PropertyChanged}" Background="LightGray" FontWeight="Bold"
                             />
+                </StackPanel>
+                <StackPanel Grid.Column="3" Margin="5 25" Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding BenchmarkOnly, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Only benchmark tickers" VerticalAlignment="Center" FontSize="11"/>
                 </StackPanel>
                 <StackPanel Grid.Column="8" Margin="5">
                     <Button x:Name="cmdClose" Click="cmdClose_Click"  Content="x" />
@@ -103,7 +107,9 @@
                                 <MenuItem Header="freeze fund-tickername" Click="MenuItem_Click_5"/>
                                 <MenuItem Header="View trading history" Click="MenuItem_Click_6"/>
                                 <MenuItem Header="closeout expired position" Click="MenuItem_Click_7" />
-                                <MenuItem Header="View all scaled positions" Click="MenuItem_Click_8" />    
+                                <MenuItem Header="View all scaled positions" Click="MenuItem_Click_8" />
+                                <Separator/>
+                                <MenuItem Header="Paper trade (reconcile position)" Click="PaperTrade_Click" />
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                     </DataGrid>

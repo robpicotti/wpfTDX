@@ -189,6 +189,7 @@
                                 <MenuItem Header="remove override for this tad_id?" Command="{Binding RemoveOverrideCommand}"/>
                                 <MenuItem Header="search any tad_id to freeze?" Command="{Binding SearchTadIdCommand}" >
                                 </MenuItem>
+                                <MenuItem Header="info (how to fix this error)" Command="{Binding ShowErrorInfoCommand}" />
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                     </DataGrid>

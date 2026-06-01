@@ -519,7 +519,7 @@ namespace wpfTDX
         public List<TickerRow> TickerUniverse { get; private set; } = new List<TickerRow>();
 
         private bool _isExecuting;
-        
+
         public bool IsExecuting
         {
             get => _isExecuting;
@@ -528,8 +528,30 @@ namespace wpfTDX
                 if (_isExecuting != value)
                 {
                     _isExecuting = value;
+                    // Reset load progress whenever we transition into a busy state so
+                    // the determinate progress bar starts from 0 each time.
+                    if (_isExecuting) LoadProgress = 0;
                     OnPropertyChanged(); // raises PropertyChanged(nameof(IsExecuting))
                     OnPropertyChanged(nameof(IsSaveEnabled));
+                }
+            }
+        }
+
+        // Determinate load progress bar value (0–100). Bumped from the window
+        // code-behind as each load stage starts. Driven this way (discrete steps)
+        // instead of an indeterminate animation so it works even at WPF render
+        // tier 0/1 (software rendering, e.g. over RDP), where indeterminate
+        // animations freeze whenever the UI thread is doing sync work.
+        private int _loadProgress;
+        public int LoadProgress
+        {
+            get => _loadProgress;
+            set
+            {
+                if (_loadProgress != value)
+                {
+                    _loadProgress = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -1209,19 +1231,52 @@ namespace wpfTDX
                 string jsonResponse = await response.Content.ReadAsStringAsync();
 
                 var fullResponse = JObject.Parse(jsonResponse);
-                var filterIntervalsJson = fullResponse["filter_intervals"];
-
-                // Deserialize into a Dictionary<string, FilterIntervalsDataModel>
-                var dict = filterIntervalsJson.ToObject<Dictionary<string, FilterIntervalsDataModel>>();
-
-                FilterIntervalsData.Clear();
-                foreach (var kvp in dict)
-                {
-                    var item = kvp.Value;
-                    item.TickerName = kvp.Key; // Add index (key) as ticker if needed
-                    FilterIntervalsData.Add(item);
-                }
+                PopulateFilterIntervalsFromJson(fullResponse);
             }
+        }
+
+        private void PopulateFilterIntervalsFromJson(JObject fullResponse)
+        {
+            var filterIntervalsJson = fullResponse["filter_intervals"];
+
+            // Deserialize into a Dictionary<string, FilterIntervalsDataModel>
+            var dict = filterIntervalsJson.ToObject<Dictionary<string, FilterIntervalsDataModel>>();
+
+            FilterIntervalsData.Clear();
+            foreach (var kvp in dict)
+            {
+                var item = kvp.Value;
+                item.TickerName = kvp.Key; // Add index (key) as ticker if needed
+                FilterIntervalsData.Add(item);
+            }
+        }
+
+        /// <summary>
+        /// Single-fetch combined load: POSTs once to /filtered_intervals and populates both
+        /// FilterIntervalsData and TadPositionsData (and ScaledPositionsData) from the same
+        /// response. Use this on initial window load to avoid hitting the endpoint twice.
+        /// </summary>
+        public async Task LoadFilterIntervalsAndPositionsAsync()
+        {
+            // Fetch + JSON parse on a background thread so the UI thread stays free
+            // and the indeterminate progress bar keeps animating. Populators run on
+            // UI thread (ObservableCollection updates require it).
+            JObject root = await Task.Run(async () =>
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                    var content = new StringContent("{}", Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync($"{baseUrl}/filtered_intervals", content).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+
+                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    return JObject.Parse(json);
+                }
+            });
+
+            PopulateFilterIntervalsFromJson(root);
+            PopulateTadPositionsFromJson(root);
         }
 
 
@@ -1248,6 +1303,11 @@ namespace wpfTDX
             var json = await response.Content.ReadAsStringAsync();
             var root = JObject.Parse(json);
 
+            PopulateTadPositionsFromJson(root);
+        }
+
+        private void PopulateTadPositionsFromJson(JObject root)
+        {
             var positionsJson = (JObject)root["positions"];
             var viewPositionsJson = (JObject)root["viewpositions"];
             var filterPositionsJson = (JObject)root["filterpositions"];
@@ -4284,43 +4344,41 @@ namespace wpfTDX
 
         public async Task LoadTickerUniverseAsync()
         {
-            try
+            // Note: this method does NOT manage IsExecuting itself — outer callers
+            // (RunWithBusy in the window code-behind) own that state. If we set
+            // IsExecuting=true/false in here, the finally block stomps the outer
+            // state mid-load and the progress bar disappears partway through.
+            using (var client = new HttpClient())
             {
-                IsExecuting = true;
-
-                using (var client = new HttpClient())
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                var request = new
                 {
-                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
-                    var request = new
-                    {
-                        table_name = "tickers",
-                        where_dict = new Dictionary<string, object> { { "valid_tickername", 1 } }
-                    };
+                    table_name = "tickers",
+                    where_dict = new Dictionary<string, object> { { "valid_tickername", 1 } }
+                };
 
-                    var content = new StringContent(
-                        JsonConvert.SerializeObject(request),
-                        Encoding.UTF8, "application/json");
+                var content = new StringContent(
+                    JsonConvert.SerializeObject(request),
+                    Encoding.UTF8, "application/json");
 
-                    var resp = await client.PostAsync($"{baseUrl}/select_table", content);
-                    resp.EnsureSuccessStatusCode();
+                var resp = await client.PostAsync($"{baseUrl}/select_table", content);
+                resp.EnsureSuccessStatusCode();
 
-                    var json = await resp.Content.ReadAsStringAsync();
-                    var rows = JsonConvert.DeserializeObject<List<TickerRow>>(json) ?? new List<TickerRow>();
+                var json = await resp.Content.ReadAsStringAsync();
+                var rows = JsonConvert.DeserializeObject<List<TickerRow>>(json) ?? new List<TickerRow>();
 
-                    foreach (var r in rows)
-                    {
-                        r.TickerName = r.TickerName?.Trim();
-                        r.Description = r.Description?.Trim();
-                    }
-
-                    TickerUniverse = rows
-                        .OrderBy(r => r.TickerName, StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    OnPropertyChanged(nameof(TickerUniverse));
+                foreach (var r in rows)
+                {
+                    r.TickerName = r.TickerName?.Trim();
+                    r.Description = r.Description?.Trim();
                 }
+
+                TickerUniverse = rows
+                    .OrderBy(r => r.TickerName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                OnPropertyChanged(nameof(TickerUniverse));
             }
-            finally { IsExecuting = false; }
         }
 
 

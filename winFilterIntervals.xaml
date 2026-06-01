@@ -108,9 +108,13 @@
 
             <Separator Margin="6,0"/>
 
-            <!-- Shows while vm.IsExecuting == true -->
+            <!-- Determinate load progress (0–100). Driven in discrete steps from
+                 the code-behind so it stays visible/correct at WPF render tier 0/1
+                 (software rendering / RDP), where indeterminate animations freeze
+                 whenever the UI thread is busy. -->
             <ProgressBar Width="120" Height="14"
-                 IsIndeterminate="{Binding IsExecuting}"
+                 Minimum="0" Maximum="100"
+                 Value="{Binding LoadProgress, Mode=OneWay}"
                  Visibility="{Binding IsExecuting,
                                       Converter={StaticResource BooleanToVisibilityConverter}}"/>
 

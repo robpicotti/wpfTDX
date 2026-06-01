@@ -146,6 +146,26 @@ namespace wpfTDX
             }
         }
         public DateTime Date_t { get; set; }
+
+        // Benchmark filter — holds the full unfiltered list so we can toggle
+        private List<PositionsDataModel> _allPositions = new List<PositionsDataModel>();
+        private HashSet<string> _benchmarkTickers;
+
+        private bool _benchmarkOnly;
+        public bool BenchmarkOnly
+        {
+            get => _benchmarkOnly;
+            set
+            {
+                if (_benchmarkOnly != value)
+                {
+                    _benchmarkOnly = value;
+                    OnPropertyChanged(nameof(BenchmarkOnly));
+                    ApplyBenchmarkFilter();
+                }
+            }
+        }
+
         public ICommand RunPositionCommand { get; }
         public PositionViewModel()
         {
@@ -277,10 +297,19 @@ namespace wpfTDX
                     PositionsData.Clear();
                 }
 
-                foreach (var item in positionList)
+                // Store full list for benchmark filtering
+                _allPositions = positionList ?? new List<PositionsDataModel>();
+                _benchmarkTickers = null; // Reset cache when new data loads
+
+                foreach (var item in _allPositions)
                 {
                     PositionsData.Add(item);
                 }
+
+                // Re-apply filter if checkbox is checked
+                if (BenchmarkOnly)
+                    ApplyBenchmarkFilter();
+
                 //cash positions
                 if(CashPosition == null)
                 {
@@ -370,5 +399,80 @@ namespace wpfTDX
         }
 
 
+        /// <summary>
+        /// Applies or removes the benchmark filter on PositionsData.
+        /// When BenchmarkOnly is true, fetches benchmark tickers from the API
+        /// and filters the display to only show those tickers.
+        /// </summary>
+        private async void ApplyBenchmarkFilter()
+        {
+            if (!BenchmarkOnly)
+            {
+                // Show all positions
+                PositionsData.Clear();
+                foreach (var item in _allPositions)
+                    PositionsData.Add(item);
+                return;
+            }
+
+            // Fetch benchmark tickers if not cached
+            if (_benchmarkTickers == null && SelectedFund != null)
+            {
+                try
+                {
+                    _benchmarkTickers = await GetBenchmarkTickersAsync(SelectedFund.FundName);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not load benchmark tickers:\n{ex.Message}",
+                        "Benchmark filter", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _benchmarkOnly = false;
+                    OnPropertyChanged(nameof(BenchmarkOnly));
+                    return;
+                }
+            }
+
+            if (_benchmarkTickers == null || _benchmarkTickers.Count == 0)
+            {
+                // No benchmark data — show all
+                PositionsData.Clear();
+                foreach (var item in _allPositions)
+                    PositionsData.Add(item);
+                return;
+            }
+
+            // Filter to only benchmark tickers
+            PositionsData.Clear();
+            foreach (var item in _allPositions)
+            {
+                if (_benchmarkTickers.Contains(item.TickerName))
+                    PositionsData.Add(item);
+            }
+        }
+
+        /// <summary>
+        /// Gets the set of tickers that are in the benchmark for the given fundname.
+        /// Calls portfolio_weights via the select_table API to get raw (unpivoted) data.
+        /// </summary>
+        private async Task<HashSet<string>> GetBenchmarkTickersAsync(string fundname)
+        {
+            var ws = new WebServiceData();
+
+            var request = new { fundname };
+            string body = JsonConvert.SerializeObject(request);
+
+            using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("X-API-Key", ws.apiKey);
+                using (var resp = await client.PostAsync($"{ws.baseUrl}/get_benchmark_tickers", content))
+                {
+                    resp.EnsureSuccessStatusCode();
+                    string json = await resp.Content.ReadAsStringAsync();
+                    var tickers = JsonConvert.DeserializeObject<List<string>>(json);
+                    return new HashSet<string>(tickers ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+                }
+            }
+        }
     }
 }

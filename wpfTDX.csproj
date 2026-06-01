@@ -216,6 +216,9 @@
     <Compile Include="Windows\winAddTicker.xaml.cs">
       <DependentUpon>winAddTicker.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\winPaperTrade.xaml.cs">
+      <DependentUpon>winPaperTrade.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\winPortfolioWeights.xaml.cs">
       <DependentUpon>winPortfolioWeights.xaml</DependentUpon>
     </Compile>
@@ -236,6 +239,9 @@
     </Compile>
     <Compile Include="winThawFreezer.xaml.cs">
       <DependentUpon>winThawFreezer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="winErrorInfo.xaml.cs">
+      <DependentUpon>winErrorInfo.xaml</DependentUpon>
     </Compile>
     <Compile Include="winTradeHistory.xaml.cs">
       <DependentUpon>winTradeHistory.xaml</DependentUpon>
@@ -329,6 +335,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Windows\winPaperTrade.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\winAddTicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -358,6 +368,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="winThawFreezer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="winErrorInfo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

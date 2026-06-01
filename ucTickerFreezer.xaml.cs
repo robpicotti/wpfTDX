@@ -55,6 +55,7 @@ namespace wpfTDX
                 this.viewmodel.OpenFreezeTadIdDialog += Viewmodel_OpenFreezeTadIdDialog;
                 this.viewmodel.ShowMessage += ViewModel_ShowMessage;
                 this.viewmodel.OpenThawFreezerDialog += ViewModel_OpenThawFreezerDialog;
+                this.viewmodel.OpenErrorInfoDialog += ViewModel_OpenErrorInfoDialog;
             }
             catch(Exception ex)
             {
@@ -80,6 +81,21 @@ namespace wpfTDX
         private void ViewModel_ShowMessage(object sender, MessageEventArgs e)
         {
             MessageBox.Show(e.Message, e.Title, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ViewModel_OpenErrorInfoDialog(object sender, ErrorInfoEventArgs e)
+        {
+            try
+            {
+                Cursor = Cursors.Wait;
+                winErrorInfo info = new winErrorInfo(e.Ticker, e.WebServiceData);
+                info.Owner = Window.GetWindow(this);
+                info.ShowDialog();
+            }
+            finally
+            {
+                Cursor = Cursors.Arrow;
+            }
         }
 
         private void ViewModel_OpenThawFreezerDialog(object sender, ThawFreezerEventArgs e)

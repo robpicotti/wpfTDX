@@ -1,0 +1,66 @@
+<Window x:Class="wpfTDX.winPaperTrade"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Paper Trade — Reconcile Position" Height="350" Width="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Row 0: Ticker info -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Ticker:" FontWeight="Bold" Margin="0,4"/>
+        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="txtTicker" Margin="0,4"/>
+
+        <!-- Row 1: TAD ID -->
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="TAD ID:" FontWeight="Bold" Margin="0,4"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="txtTadId" Margin="0,4"/>
+
+        <!-- Row 2: Subaccount -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Subaccount:" FontWeight="Bold" Margin="0,4"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="txtSubaccount" Margin="0,4"/>
+
+        <!-- Row 3: Current TAD position -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Current TAD Position:" FontWeight="Bold" Margin="0,4"/>
+        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="txtTadPosition" Margin="0,4"/>
+
+        <!-- Row 4: Current price -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Last Price:" FontWeight="Bold" Margin="0,4"/>
+        <TextBlock Grid.Row="4" Grid.Column="1" x:Name="txtPrice" Margin="0,4"/>
+
+        <!-- Row 5: IBK position input -->
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Actual IBK Position:" FontWeight="Bold" Margin="0,8"/>
+        <TextBox Grid.Row="5" Grid.Column="1" x:Name="txtIbkPosition" Margin="0,4" FontWeight="Bold"
+                 TextChanged="txtIbkPosition_TextChanged"/>
+
+        <!-- Row 6: Calculated offset -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Offset Qty (auto):" FontWeight="Bold" Margin="0,4"/>
+        <TextBlock Grid.Row="6" Grid.Column="1" x:Name="txtOffset" Margin="0,4" FontWeight="Bold" Foreground="Blue"/>
+
+        <!-- Row 7: Action -->
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Action:" FontWeight="Bold" Margin="0,4" VerticalAlignment="Top"/>
+        <TextBlock Grid.Row="7" Grid.Column="1" x:Name="txtAction" Margin="0,4" FontWeight="Bold" VerticalAlignment="Top"/>
+
+        <!-- Row 8: Buttons -->
+        <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button x:Name="btnPreview" Content="Preview Row" Width="100" Margin="0,0,10,0"
+                    Click="btnPreview_Click" IsEnabled="False" Background="LightYellow"/>
+            <Button x:Name="btnSubmit" Content="Submit Paper Trade" Width="150" Margin="0,0,10,0"
+                    Click="btnSubmit_Click" IsEnabled="False" Background="LightGreen" FontWeight="Bold"/>
+            <Button Content="Cancel" Width="80" Click="btnCancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

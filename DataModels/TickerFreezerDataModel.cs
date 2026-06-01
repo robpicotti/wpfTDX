@@ -34,6 +34,7 @@ namespace wpfTDX
         private DateTime? _overrideexpiration;
         private string _benchmarkname;
         private string _notes;
+        private string _documentation;
         private DateTime? _runtimeresolved;
         private bool _forceOverride = false;
         private bool _thaw = false;
@@ -270,6 +271,20 @@ namespace wpfTDX
                 if (_notes != value)
                 {
                     _notes = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("documentation")]
+        public string Documentation
+        {
+            get => _documentation;
+            set
+            {
+                if (_documentation != value)
+                {
+                    _documentation = value;
                     OnPropertyChanged();
                 }
             }

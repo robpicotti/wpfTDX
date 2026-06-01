@@ -27,6 +27,11 @@ namespace wpfTDX
         {
             OpenThawFreezerDialog?.Invoke(this, args);
         }
+        public event EventHandler<ErrorInfoEventArgs> OpenErrorInfoDialog;
+        protected void OnOpenErrorInfoDialog(ErrorInfoEventArgs args)
+        {
+            OpenErrorInfoDialog?.Invoke(this, args);
+        }
         protected void OnShowMessage(string message, string title)
         {
             ShowMessage?.Invoke(this, new MessageEventArgs { Message = message, Title = title });
@@ -152,6 +157,7 @@ namespace wpfTDX
         public ICommand BatchThawCommand { get; }
         public ICommand GetFundDataCommand { get; }
         public ICommand ToggleFreezeFundCommand { get; }
+        public ICommand ShowErrorInfoCommand { get; }
 
         private bool _isSelectAllChecked;
         public bool IsSelectAllChecked
@@ -214,6 +220,28 @@ namespace wpfTDX
             BatchThawCommand = new TickerFreezerRelayCommand(async () => await ExecuteBatchThaw());
             GetFundDataCommand = new TickerFreezerRelayCommand(async () => await GetFundsData());
             ToggleFreezeFundCommand = new TickerFreezerRelayCommand(async () => await FreezeFund());
+            ShowErrorInfoCommand = new TickerFreezerRelayCommand(
+                async () => await ExecuteOpenErrorInfoAsync(),
+                () => SelectedTicker != null);
+        }
+
+        private async Task ExecuteOpenErrorInfoAsync()
+        {
+            if (SelectedTicker == null) return;
+
+            var args = new ErrorInfoEventArgs
+            {
+                Ticker = SelectedTicker,
+                WebServiceData = WSD,
+            };
+
+            await Task.Run(() =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    OnOpenErrorInfoDialog(args);
+                });
+            });
         }
         
         private void SelectAllThaw(bool isChecked)
@@ -740,5 +768,11 @@ namespace wpfTDX
         public string BrokerCodeExec { get; set; }
         public string EmsName { get; set; }
         public string ErrorCode { get; set; }
+    }
+
+    public class ErrorInfoEventArgs : EventArgs
+    {
+        public TickerFreezerDataModel Ticker { get; set; }
+        public WebServiceData WebServiceData { get; set; }
     }
 }
