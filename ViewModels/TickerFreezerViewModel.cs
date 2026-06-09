@@ -636,7 +636,7 @@ namespace wpfTDX
             try
             {
                 DateTime now = DateTime.UtcNow;
-                LastRunTime = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                LastRunTime = now.ToString("yyyy-MM-dd HH:mm:ss");
                 string jsonResponse = await GetTickerFreezer();
                 // Parse the response as a JArray since it's a list of dictionaries
                 JArray tickerfreezer = JArray.Parse(jsonResponse);

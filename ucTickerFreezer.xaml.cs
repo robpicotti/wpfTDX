@@ -16,6 +16,8 @@ using System.Data;
 using System.Data.SqlClient;
 using TDX;
 using System.Collections;
+using System.Configuration;
+using System.Windows.Threading;
 
 namespace wpfTDX
 {
@@ -41,6 +43,10 @@ namespace wpfTDX
         string EXPIRATION_DATETIME;
         TickerFreezer TFR;
         TickerFreezerViewModel viewmodel { get; set; }
+
+        // Auto-refresh timer (its own dedicated timer; the process monitor has none).
+        private DispatcherTimer _autoRefreshTimer;
+        private bool _isAutoRefreshing;
         public ucTickerFreezer(SqlConnection conn,string default_fund)
         {
             InitializeComponent();
@@ -56,6 +62,7 @@ namespace wpfTDX
                 this.viewmodel.ShowMessage += ViewModel_ShowMessage;
                 this.viewmodel.OpenThawFreezerDialog += ViewModel_OpenThawFreezerDialog;
                 this.viewmodel.OpenErrorInfoDialog += ViewModel_OpenErrorInfoDialog;
+                this.Unloaded += OnUnloaded;
             }
             catch(Exception ex)
             {
@@ -145,11 +152,76 @@ namespace wpfTDX
             {
                 // Unsubscribe to prevent the method from being called multiple times
                 this.Loaded -= OnLoaded;
+
+                // Begin the background auto-refresh once the initial load is done.
+                StartAutoRefresh();
             }
         }
         public void Refresh()
         {
              this.viewmodel?.Refresh();
+        }
+
+        /// <summary>
+        /// Starts a dedicated timer that periodically refreshes the Ticker Freezer
+        /// in the background. Interval comes from the "TickerFreezerRefreshSeconds"
+        /// app setting (defaults to 60s; 0 disables it).
+        /// </summary>
+        private void StartAutoRefresh()
+        {
+            if (_autoRefreshTimer != null) return; // already running
+
+            int seconds = 60;
+            string cfg = ConfigurationManager.AppSettings["TickerFreezerRefreshSeconds"];
+            if (!string.IsNullOrWhiteSpace(cfg) && int.TryParse(cfg, out int parsed))
+                seconds = parsed;
+
+            if (seconds <= 0) return; // auto-refresh disabled via config
+
+            _autoRefreshTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(seconds)
+            };
+            _autoRefreshTimer.Tick += AutoRefreshTimer_Tick;
+            _autoRefreshTimer.Start();
+        }
+
+        /// <summary>
+        /// Fires on the UI DispatcherTimer, but the work in viewmodel.Refresh()
+        /// awaits async HTTP I/O — the network wait runs off the UI thread so the
+        /// screen (and everything else) stays responsive. The bound collection is
+        /// updated on the UI thread, as WPF requires. A re-entrancy guard skips a
+        /// tick while a previous refresh is still running, and errors are swallowed
+        /// so a transient network blip doesn't pop a dialog every tick (the manual
+        /// Refresh button still surfaces errors).
+        /// </summary>
+        private async void AutoRefreshTimer_Tick(object sender, EventArgs e)
+        {
+            if (_isAutoRefreshing || this.viewmodel == null) return;
+
+            _isAutoRefreshing = true;
+            try
+            {
+                await this.viewmodel.Refresh();
+            }
+            catch
+            {
+                // ignore transient auto-refresh errors
+            }
+            finally
+            {
+                _isAutoRefreshing = false;
+            }
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (_autoRefreshTimer != null)
+            {
+                _autoRefreshTimer.Stop();
+                _autoRefreshTimer.Tick -= AutoRefreshTimer_Tick;
+                _autoRefreshTimer = null;
+            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

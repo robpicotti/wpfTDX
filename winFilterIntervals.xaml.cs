@@ -238,6 +238,14 @@ namespace wpfTDX
                 // cont_upd toggle (no Position* guard)
                 case "c_upd": case "c__upd": flagProp = "ContUpd"; return true;
 
+                // base intervals — independent toggles, one column per filter_intervals base flag
+                case "b_t1": flagProp = "BaseT1"; posProp = "PositionBaseT1"; return true;
+                case "b_v1": flagProp = "BaseV1"; posProp = "PositionBaseV1"; return true;
+                case "b_n1": flagProp = "BaseN1"; posProp = "PositionBaseN1"; return true;
+                case "b_y1": flagProp = "BaseY1"; posProp = "PositionBaseY1"; return true;
+                case "b_h1": flagProp = "BaseH1"; posProp = "PositionBaseH1"; return true;
+                case "b_d1": flagProp = "BaseD1"; posProp = "PositionBaseD1"; return true;
+
                 // short-term intervals
                 case "t1": flagProp = "T1"; posProp = "PositionT1"; return true;
                 case "t2": flagProp = "T2"; posProp = "PositionT2"; return true;

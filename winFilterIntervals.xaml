@@ -730,6 +730,138 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
+                <!-- b_t1 (base_t1) -->
+                <DataGridTextColumn Header="b_t1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseT1"/><Binding Path="PositionBaseT1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseT1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseT1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseT1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- b_v1 (base_v1) -->
+                <DataGridTextColumn Header="b_v1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseV1"/><Binding Path="PositionBaseV1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseV1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseV1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseV1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- b_n1 (base_n1) -->
+                <DataGridTextColumn Header="b_n1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseN1"/><Binding Path="PositionBaseN1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseN1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseN1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseN1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- b_y1 (base_y1) -->
+                <DataGridTextColumn Header="b_y1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseY1"/><Binding Path="PositionBaseY1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseY1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseY1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- b_h1 (base_h1) -->
+                <DataGridTextColumn Header="b_h1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseH1"/><Binding Path="PositionBaseH1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseH1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseH1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- b_d1 (base_D1) -->
+                <DataGridTextColumn Header="b_d1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseD1"/><Binding Path="PositionBaseD1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseD1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
                 <!-- t1 -->
                 <DataGridTextColumn Header="t1" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
@@ -1597,6 +1729,13 @@
                 <DataGridTextColumn Header="trd"
                                     Binding="{Binding NumTrades}"
                                     IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Net trades (unfiltered model): number of position intervals currently long minus those short, as last processed by the server.&#10;Read-only baseline — your interval toggles do NOT change it. The filtered (per-fund) equivalent is 'filt_t'; the live what-if as you toggle is 'new_t'."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
@@ -1607,6 +1746,13 @@
                 <DataGridTextColumn Header="n"
                                     Binding="{Binding NumPositionIntervals}"
                                     IsReadOnly="True" >
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Number of position intervals (the deployment denominator): how many intervals can hold a position on the active side — long_pos_intervals when net long, short_pos_intervals when net short (min 1).&#10;Read-only server baseline; toggles do NOT change it. dep ≈ trd ÷ n, and n is the cap used when recomputing 'new_n'."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
@@ -1615,6 +1761,13 @@
                 </DataGridTextColumn>
 
                 <DataGridTextColumn Header="dep" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Position deployment for the unfiltered model, in -100%…+100% — the target that drives sizing (target = deployment × VAR_limit ÷ asset_VAR).&#10;dep = trd ÷ n (net trades over the side cap). Read-only server baseline; toggles do NOT change it. The filtered equivalent is 'f_dep', the live what-if is 'n_dep'."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="PositionDeployment"
                      StringFormat="{}{0:P1}"
@@ -1633,6 +1786,13 @@
                 <DataGridTextColumn Header="filt_t"
                                     Binding="{Binding NumFilteredTrades}"
                                     IsReadOnly="True" >
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Filtered net trades: the same longs − shorts count as 'trd', but over the fund's filtered interval set and using filter_position values (buy_only / sell_only already applied).&#10;Read-only server baseline — what this fund actually trades after customisation. The live what-if as you toggle is 'new_t'."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
@@ -1643,6 +1803,13 @@
                 <DataGridTextColumn Header="filt_n"
                                     Binding="{Binding NumFiltIntervals}"
                                     IsReadOnly="True" >
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Filtered interval count: how many intervals are in the fund's filtered set on the active side — the denominator for f_dep (f_dep = filt_t ÷ filt_n).&#10;Read-only server baseline. The live count after your toggles is 'new_n' (= n minus the intervals you've filtered out)."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
@@ -1651,6 +1818,13 @@
                 </DataGridTextColumn>
 
                 <DataGridTextColumn Header="f_dep" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Filtered deployment in -100%…+100%: deployment over the fund's filtered interval set (buy_only / sell_only applied). f_dep = filt_t ÷ filt_n.&#10;This is what sizes real orders for a customised fund (falls back to 'dep' when there is no customisation). Read-only server baseline; the live what-if is 'n_dep'."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="FilteredDeployment"
                      StringFormat="{}{0:P1}"
@@ -1667,6 +1841,13 @@
 
                 <!-- new_trades -->
                 <DataGridTextColumn Header="new_t" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Proposed filtered net trades, recomputed live from your toggles: sum of the positions of every interval left un-filtered (buy_only / sell_only applied); forced to 0 when filt_all is on.&#10;Same definition as filt_t, live. Colour vs saved filt_t: green = more trades, red = fewer. On save it becomes the next filt_t."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewTrades" TargetNullValue=""/>
                     </DataGridTextColumn.Binding>
@@ -1681,6 +1862,13 @@
 
                 <!-- new_intvls -->
                 <DataGridTextColumn Header="new_n" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Proposed interval count (the denominator for n_dep), recomputed live.&#10;rescale = true: new_n = n minus the intervals you've filtered out (clamped 1..n) — deployment is redistributed over the survivors. rescale = false: new_n stays at n. Colour vs saved filt_n: green = more, red = fewer."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="RescaledIntervals" TargetNullValue="" StringFormat="N0"/>
                     </DataGridTextColumn.Binding>
@@ -1695,6 +1883,13 @@
 
                 <!-- new_deploy -->
                 <DataGridTextColumn Header="n_dep" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Proposed deployment in -100%…+100%, recomputed live: n_dep = new_t ÷ new_n (then clamped by long_only / short_only).&#10;The live what-if of f_dep — what the fund's filtered deployment becomes if you save. Colour vs saved f_dep: green = more deployed, red = less."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="NewDeployment" StringFormat="{}{0:P1}" TargetNullValue="0" FallbackValue="0"/>
                     </DataGridTextColumn.Binding>
@@ -1709,6 +1904,13 @@
 
                 <!-- scaled deployment -->
                 <DataGridTextColumn Header="s_dep" IsReadOnly="True">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ToolTip"
+                                    Value="Scaled deployment in -100%…+100%, recomputed live: s_dep = n_dep × scale factor (new_f if set, else scale_f, else 1).&#10;The proposed deployment after the per-ticker position scaling. Updates when you toggle intervals (n_dep moves) or edit new_f."/>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
                     <DataGridTextColumn.Binding>
                         <Binding Path="ScaledDeployment"
                      StringFormat="{}{0:P1}"

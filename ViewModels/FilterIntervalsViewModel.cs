@@ -1340,7 +1340,7 @@ namespace wpfTDX
                     // Map fields you expect (null-safe conversions)
                     model.PositionBaseY1 = row.Value<float?>("position_base_y1");
                     model.PositionBaseH1 = row.Value<float?>("position_base_h1");
-                    model.PositionBaseD1 = row.Value<float?>("position_base_d1");
+                    model.PositionBaseD1 = row.Value<float?>("position_base_D1");
                     model.PositionBaseT1 = row.Value<float?>("position_base_t1");
                     model.PositionBaseV1 = row.Value<float?>("position_base_v1");
                     model.PositionBaseN1 = row.Value<float?>("position_base_n1");
@@ -1732,6 +1732,9 @@ namespace wpfTDX
                     row.BaseY1 = old.BaseY1;
                     row.BaseH1 = old.BaseH1;
                     row.BaseD1 = old.BaseD1;
+                    row.BaseT1 = old.BaseT1;
+                    row.BaseV1 = old.BaseV1;
+                    row.BaseN1 = old.BaseN1;
                     row.y1 = old.y1;
                     row.y2 = old.y2;
                     row.y3 = old.y3;
@@ -2415,7 +2418,7 @@ namespace wpfTDX
             private float? _positionBaseH1;
             public float? PositionBaseH1
             {
-                get => _positionBaseH1; 
+                get => _positionBaseH1;
                 set
                 {
                     if (_positionBaseH1 != value)
@@ -2461,27 +2464,110 @@ namespace wpfTDX
                 }
             }
 
-            // ── new base intervals (data only, not shown in UI) ──
+            // ── base intervals shown on the grid as independent columns ──
+            //   base_t1, base_v1, base_n1, base_y1, base_h1, base_d1 each behave
+            //   like every other interval column (independent toggle + counts).
             public bool? OriginalBaseT1 { get; private set; }
             private bool? _baseT1;
-            public bool? BaseT1 { get => _baseT1; set { if (_baseT1 != value) { _baseT1 = value; OnPropertyChanged(); } } }
+            public bool? BaseT1
+            {
+                get => _baseT1;
+                set
+                {
+                    if (_baseT1 != value)
+                    {
+                        _baseT1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseT1HasChanged));
+                        OnPropertyChanged(nameof(BaseT1Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
             public bool BaseT1HasChanged => _isInitialized && _baseT1 != OriginalBaseT1;
             private float? _positionBaseT1;
-            public float? PositionBaseT1 { get => _positionBaseT1; set { if (_positionBaseT1 != value) { _positionBaseT1 = value; OnPropertyChanged(); } } }
+            public float? PositionBaseT1
+            {
+                get => _positionBaseT1;
+                set
+                {
+                    if (_positionBaseT1 != value)
+                    {
+                        _positionBaseT1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseT1Brush));
+                    }
+                }
+            }
 
             public bool? OriginalBaseV1 { get; private set; }
             private bool? _baseV1;
-            public bool? BaseV1 { get => _baseV1; set { if (_baseV1 != value) { _baseV1 = value; OnPropertyChanged(); } } }
+            public bool? BaseV1
+            {
+                get => _baseV1;
+                set
+                {
+                    if (_baseV1 != value)
+                    {
+                        _baseV1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseV1HasChanged));
+                        OnPropertyChanged(nameof(BaseV1Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
             public bool BaseV1HasChanged => _isInitialized && _baseV1 != OriginalBaseV1;
             private float? _positionBaseV1;
-            public float? PositionBaseV1 { get => _positionBaseV1; set { if (_positionBaseV1 != value) { _positionBaseV1 = value; OnPropertyChanged(); } } }
+            public float? PositionBaseV1
+            {
+                get => _positionBaseV1;
+                set
+                {
+                    if (_positionBaseV1 != value)
+                    {
+                        _positionBaseV1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseV1Brush));
+                    }
+                }
+            }
 
             public bool? OriginalBaseN1 { get; private set; }
             private bool? _baseN1;
-            public bool? BaseN1 { get => _baseN1; set { if (_baseN1 != value) { _baseN1 = value; OnPropertyChanged(); } } }
+            public bool? BaseN1
+            {
+                get => _baseN1;
+                set
+                {
+                    if (_baseN1 != value)
+                    {
+                        _baseN1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseN1HasChanged));
+                        OnPropertyChanged(nameof(BaseN1Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
             public bool BaseN1HasChanged => _isInitialized && _baseN1 != OriginalBaseN1;
             private float? _positionBaseN1;
-            public float? PositionBaseN1 { get => _positionBaseN1; set { if (_positionBaseN1 != value) { _positionBaseN1 = value; OnPropertyChanged(); } } }
+            public float? PositionBaseN1
+            {
+                get => _positionBaseN1;
+                set
+                {
+                    if (_positionBaseN1 != value)
+                    {
+                        _positionBaseN1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseN1Brush));
+                    }
+                }
+            }
 
             // ── new short-term trading intervals ──
             public bool? OriginalT1 { get; private set; }
@@ -3520,6 +3606,9 @@ namespace wpfTDX
             public Brush BaseY1Brush => ComputeFlagPosBrush(BaseY1, PositionBaseY1);
             public Brush BaseH1Brush => ComputeFlagPosBrush(BaseH1, PositionBaseH1);
             public Brush BaseD1Brush => ComputeFlagPosBrush(BaseD1, PositionBaseD1);
+            public Brush BaseT1Brush => ComputeFlagPosBrush(BaseT1, PositionBaseT1);
+            public Brush BaseV1Brush => ComputeFlagPosBrush(BaseV1, PositionBaseV1);
+            public Brush BaseN1Brush => ComputeFlagPosBrush(BaseN1, PositionBaseN1);
             public Brush T1Brush => ComputeFlagPosBrush(T1, PositionT1);
             public Brush T2Brush => ComputeFlagPosBrush(T2, PositionT2);
             public Brush T3Brush => ComputeFlagPosBrush(T3, PositionT3);
@@ -3759,6 +3848,9 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(BaseY1HasChanged));
                 OnPropertyChanged(nameof(BaseH1HasChanged));
                 OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(BaseT1HasChanged));
+                OnPropertyChanged(nameof(BaseV1HasChanged));
+                OnPropertyChanged(nameof(BaseN1HasChanged));
                 OnPropertyChanged(nameof(T1HasChanged));
                 OnPropertyChanged(nameof(T2HasChanged));
                 OnPropertyChanged(nameof(T3HasChanged));
@@ -3804,6 +3896,9 @@ namespace wpfTDX
                 if (BaseY1 == true) c++;
                 if (BaseH1 == true) c++;
                 if (BaseD1 == true) c++;
+                if (BaseT1 == true) c++;
+                if (BaseV1 == true) c++;
+                if (BaseN1 == true) c++;
 
                 if (T1 == true) c++;
                 if (T2 == true) c++;
@@ -3847,6 +3942,9 @@ namespace wpfTDX
                 if (OriginalBaseY1 == false) c++;
                 if (OriginalBaseH1 == false) c++;
                 if (OriginalBaseD1 == false) c++;
+                if (OriginalBaseT1 == false) c++;
+                if (OriginalBaseV1 == false) c++;
+                if (OriginalBaseN1 == false) c++;
 
                 if (OriginalT1 == false) c++;
                 if (OriginalT2 == false) c++;
@@ -3897,6 +3995,9 @@ namespace wpfTDX
                 CountIfFiltered(BaseY1, PositionBaseY1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseH1, PositionBaseH1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseT1, PositionBaseT1, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseV1, PositionBaseV1, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseN1, PositionBaseN1, ref c, excludeZeroPositions);
                 CountIfFiltered(T1, PositionT1, ref c, excludeZeroPositions);
                 CountIfFiltered(T2, PositionT2, ref c, excludeZeroPositions);
                 CountIfFiltered(T3, PositionT3, ref c, excludeZeroPositions);
@@ -3935,6 +4036,9 @@ namespace wpfTDX
                 CountIfFiltered(OriginalBaseY1, PositionBaseY1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseH1, PositionBaseH1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseT1, PositionBaseT1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseV1, PositionBaseV1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseN1, PositionBaseN1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalT1, PositionT1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalT2, PositionT2, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalT3, PositionT3, ref c, excludeZeroPositions);
@@ -4206,6 +4310,9 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(D1HasChanged));
                 OnPropertyChanged(nameof(BaseH1HasChanged));
                 OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(BaseT1HasChanged));
+                OnPropertyChanged(nameof(BaseV1HasChanged));
+                OnPropertyChanged(nameof(BaseN1HasChanged));
                 OnPropertyChanged(nameof(T1HasChanged));
                 OnPropertyChanged(nameof(T2HasChanged));
                 OnPropertyChanged(nameof(T3HasChanged));
