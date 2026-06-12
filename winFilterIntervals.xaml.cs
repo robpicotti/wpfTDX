@@ -156,18 +156,36 @@ namespace wpfTDX
                     ? System.Windows.Visibility.Visible
                     : System.Windows.Visibility.Collapsed;
             }
-        }
-        // Interval column groups that can be collapsed/expanded via a banded header.
-        private static readonly string[] BaseGroupHeaders =
-            { "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1" };
 
-        private bool _baseExpanded = true;
+            // Keep any user-collapsed groups collapsed after this visibility pass.
+            ReapplyCollapsedGroups();
+        }
+        // ── Collapsible interval column groups (Excel-style banded headers) ──
+        private sealed class ColumnGroup
+        {
+            public string Label;
+            public string[] Headers;
+            public Border Band;                  // the banded header in GroupHeaderCanvas
+            public ToggleButton Toggle;
+            public TextBlock LabelText;
+            public Border BracketLine, TickLeft, TickRight;
+            public bool Expanded = true;
+            public string First { get { return Headers[0]; } }
+            public string Last { get { return Headers[Headers.Length - 1]; } }
+        }
+
+        private readonly List<ColumnGroup> _columnGroups = new List<ColumnGroup>();
         private ScrollViewer _gridScrollViewer;
         private DataGridColumnHeadersPresenter _headersPresenter;
 
+        private static readonly Brush BandBracketBrush =
+            new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x5A, 0x6B, 0x8C));
+        private static readonly Brush BandChipBrush =
+            new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF0, 0xF0, 0xF0));
+
         /// <summary>
-        /// Wires up the group-band positioning once the grid's visual tree exists:
-        /// reposition on horizontal scroll and on every layout pass (column resize, etc.).
+        /// Once the grid's visual tree exists, build the group bands and keep them aligned
+        /// over their columns on horizontal scroll and on every layout pass (column resize).
         /// </summary>
         private void FilterGrid_Loaded(object sender, RoutedEventArgs e)
         {
@@ -178,114 +196,257 @@ namespace wpfTDX
                 if (_gridScrollViewer != null)
                     _gridScrollViewer.ScrollChanged += (s, a) => PositionGroupBands();
                 FilterGrid.LayoutUpdated += (s, a) => PositionGroupBands();
+                BuildColumnGroups();
             }
             PositionGroupBands();
         }
 
         /// <summary>
-        /// Collapse/expand the base interval group. Hides the member columns and shows a
-        /// thin placeholder column so the collapsed "▸ Base" band has something to sit over.
+        /// Defines each interval family and creates its banded header (bracket + −/+ chip)
+        /// in GroupHeaderCanvas. No placeholder columns — a collapsed column takes zero
+        /// width so the grid closes up, and the collapsed "+" marker floats at the boundary.
         /// </summary>
-        private void ToggleBaseGroup_Click(object sender, RoutedEventArgs e)
+        private void BuildColumnGroups()
         {
-            _baseExpanded = tglBaseGroup.IsChecked == true;
-            SetColumnsVisible(BaseGroupHeaders, _baseExpanded);
-            colBaseGroupPlaceholder.Visibility = _baseExpanded
-                ? System.Windows.Visibility.Collapsed
-                : System.Windows.Visibility.Visible;
-            tglBaseGroup.Content = _baseExpanded ? "−" : "+";
-            var bracketVis = _baseExpanded
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
-            BaseBracketLine.Visibility = bracketVis;
-            BaseTickLeft.Visibility = bracketVis;
-            BaseTickRight.Visibility = bracketVis;
+            if (_columnGroups.Count > 0) return;
 
-            // Reposition after the grid has re-laid-out its columns.
+            AddGroup("base", new[] { "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1" });
+            AddGroup("t", new[] { "t1", "t2", "t3", "t4", "t5", "t8" });
+            AddGroup("v", new[] { "v2", "v3" });
+            AddGroup("n", new[] { "n2", "n3", "n4" });
+            // Temporarily disabled while evaluating the collapser look — re-enable when ready.
+            //AddGroup("y", new[] { "y2", "y3" });
+            //AddGroup("h", new[] { "h2", "h3", "h4", "h6", "h12", "h16", "h36" });
+            //AddGroup("D", new[] { "D1", "D2", "D3", "D4", "D8" });
+            //AddGroup("W", new[] { "W1", "W2" });
+        }
+
+        private void AddGroup(string label, string[] headers)
+        {
+            if (IndexOfColumn(headers[0]) < 0) return;   // group not present on this grid
+
+            var g = new ColumnGroup { Label = label, Headers = headers };
+
+            // Outline bracket: a line with end-ticks.
+            g.BracketLine = new Border { Height = 2, VerticalAlignment = VerticalAlignment.Center,
+                Background = BandBracketBrush, Margin = new Thickness(9, 0, 9, 0) };
+            g.TickLeft = new Border { Width = 2, Height = 8, HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(9, 0, 0, 0), Background = BandBracketBrush };
+            g.TickRight = new Border { Width = 2, Height = 8, HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 9, 0), Background = BandBracketBrush };
+
+            // −/+ chip + label, with a background that "breaks" the bracket line.
+            g.Toggle = new ToggleButton { Content = "−", IsChecked = true, Width = 16, Height = 16,
+                Padding = new Thickness(0), FontWeight = FontWeights.Bold,
+                ToolTip = "Collapse/expand the " + label + " interval columns" };
+            var captured = g;
+            g.Toggle.Click += (s, e) => ToggleGroup(captured);
+
+            g.LabelText = new TextBlock { Text = label, FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 3, 0) };
+
+            var chip = new StackPanel { Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Background = BandChipBrush };
+            chip.Children.Add(g.Toggle);
+            chip.Children.Add(g.LabelText);
+
+            var grid = new Grid();
+            grid.Children.Add(g.BracketLine);
+            grid.Children.Add(g.TickLeft);
+            grid.Children.Add(g.TickRight);
+            grid.Children.Add(chip);
+
+            // Background = null (not Transparent) so the band's empty area is NOT hit-testable
+            // — otherwise an expanded band would swallow clicks meant for an overlapping
+            // collapsed "+" marker. Only the bracket/chip/+ button are clickable.
+            g.Band = new Border { Height = 22, Background = null,
+                Visibility = System.Windows.Visibility.Collapsed, Child = grid };
+            GroupHeaderCanvas.Children.Add(g.Band);
+
+            _columnGroups.Add(g);
+        }
+
+        private int IndexOfColumn(string header)
+        {
+            for (int i = 0; i < FilterGrid.Columns.Count; i++)
+                if ((FilterGrid.Columns[i].Header as string) == header) return i;
+            return -1;
+        }
+
+        /// <summary>
+        /// Collapse/expand one interval group: hides its member columns (they take zero width,
+        /// so the grid closes up) and switches its band to the bracket (expanded) or a small
+        /// floating "+" marker (collapsed).
+        /// </summary>
+        private void ToggleGroup(ColumnGroup g)
+        {
+            g.Expanded = g.Toggle.IsChecked == true;
+            SetColumnsVisible(g.Headers, g.Expanded);
+            // Expanding shows the group's columns; re-apply the min-p_int baseline so we
+            // don't force-show interval columns the grid normally hides. (Base columns
+            // aren't ranked, so they just stay shown.)
+            if (g.Expanded)
+                UpdateIntervalColumnVisibility();
+            g.Toggle.Content = g.Expanded ? "−" : "+";
+            var expandedVis = g.Expanded ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            g.BracketLine.Visibility = expandedVis;
+            g.TickLeft.Visibility = expandedVis;
+            g.TickRight.Visibility = expandedVis;
+            g.LabelText.Visibility = expandedVis;   // collapsed marker is just the "+"
+
             Dispatcher.BeginInvoke(new Action(PositionGroupBands),
                 System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         /// <summary>
-        /// Positions the base group band directly above its columns (or the placeholder
-        /// column when collapsed), clipped to the visible header area.
+        /// Re-applies collapsed groups after the min-interval visibility pass, so a reload
+        /// doesn't re-show columns belonging to a group the user has collapsed.
+        /// </summary>
+        private void ReapplyCollapsedGroups()
+        {
+            foreach (var g in _columnGroups)
+            {
+                if (g.Expanded) continue;
+                SetColumnsVisible(g.Headers, false);
+            }
+            PositionGroupBands();
+        }
+
+        /// <summary>
+        /// Positions every group band: expanded bands span their columns; collapsed groups
+        /// show a small "+" marker floated at the group's boundary, packed left-to-right so
+        /// adjacent collapsed markers don't overlap.
         /// </summary>
         private void PositionGroupBands()
         {
-            if (GroupHeaderCanvas == null || BaseBand == null || FilterGrid == null) return;
+            if (GroupHeaderCanvas == null || FilterGrid == null || _columnGroups.Count == 0) return;
 
-            DataGridColumnHeader left, right;
-            if (_baseExpanded)
+            var byText = new Dictionary<string, DataGridColumnHeader>(StringComparer.Ordinal);
+            var scope = (DependencyObject)_headersPresenter ?? FilterGrid;
+            foreach (var h in FindVisualChildren<DataGridColumnHeader>(scope))
             {
-                left = FindColumnHeader("b_t1");
-                right = FindColumnHeader("b_d1");
-            }
-            else
-            {
-                left = right = FindColumnHeaderForColumn(colBaseGroupPlaceholder);
+                if (h.Column == null) continue;
+                var txt = h.Column.Header as string;
+                if (txt != null) byText[txt] = h;
             }
 
-            if (left == null || right == null || left.ActualWidth <= 0)
+            double canvasW = GroupHeaderCanvas.ActualWidth;
+            double canvasX = GroupHeaderCanvas.TransformToVisual(this).Transform(new System.Windows.Point(0, 0)).X;
+
+            double lastCollapsedRight = double.NegativeInfinity;
+            foreach (var g in _columnGroups)
             {
-                BaseBand.Visibility = System.Windows.Visibility.Collapsed;
+                if (g.Expanded)
+                    PositionExpandedBand(g, byText, canvasX, canvasW);
+                else
+                    lastCollapsedRight = PositionCollapsedBand(g, byText, canvasX, canvasW, lastCollapsedRight);
+
+                // Keep collapsed "+" markers above expanded brackets so they stay clickable
+                // where the two overlap at a boundary.
+                System.Windows.Controls.Panel.SetZIndex(g.Band, g.Expanded ? 0 : 1);
+            }
+        }
+
+        private void PositionExpandedBand(ColumnGroup g,
+            Dictionary<string, DataGridColumnHeader> byText, double canvasX, double canvasW)
+        {
+            // Span the first-visible to last-visible column of the group, so the bracket
+            // appears whenever ANY of its columns are on screen (the min-p_int logic may
+            // hide part of a group).
+            DataGridColumnHeader left = null, right = null;
+            foreach (var hdr in g.Headers)
+            {
+                DataGridColumnHeader hh;
+                if (byText.TryGetValue(hdr, out hh) && hh.ActualWidth > 0)
+                {
+                    if (left == null) left = hh;
+                    right = hh;
+                }
+            }
+
+            if (left == null || right == null)
+            {
+                g.Band.Visibility = System.Windows.Visibility.Collapsed;
                 return;
             }
 
             try
             {
-                var leftPt = left.TransformToVisual(this).Transform(new System.Windows.Point(0, 0));
-                var rightPt = right.TransformToVisual(this).Transform(new System.Windows.Point(right.ActualWidth, 0));
-                var canvasPt = GroupHeaderCanvas.TransformToVisual(this).Transform(new System.Windows.Point(0, 0));
+                double leftX = left.TransformToVisual(this).Transform(new System.Windows.Point(0, 0)).X;
+                double rightX = right.TransformToVisual(this).Transform(new System.Windows.Point(right.ActualWidth, 0)).X;
 
-                double x = leftPt.X - canvasPt.X;
-                double w = rightPt.X - leftPt.X;
-
-                // Clip to the visible header strip so the band doesn't spill off the edges.
-                double maxRight = GroupHeaderCanvas.ActualWidth;
+                double x = leftX - canvasX;
+                double w = rightX - leftX;
                 if (x < 0) { w += x; x = 0; }
-                if (x + w > maxRight) w = maxRight - x;
-                if (w <= 0)
-                {
-                    BaseBand.Visibility = System.Windows.Visibility.Collapsed;
-                    return;
-                }
+                if (x + w > canvasW) w = canvasW - x;
+                if (w <= 0) { g.Band.Visibility = System.Windows.Visibility.Collapsed; return; }
 
-                Canvas.SetLeft(BaseBand, x);
-                BaseBand.Width = w;
-                BaseBand.Visibility = System.Windows.Visibility.Visible;
+                Canvas.SetLeft(g.Band, x);
+                g.Band.Width = w;
+                g.Band.Visibility = System.Windows.Visibility.Visible;
             }
             catch
             {
-                BaseBand.Visibility = System.Windows.Visibility.Collapsed;
+                g.Band.Visibility = System.Windows.Visibility.Collapsed;
             }
         }
 
-        private DataGridColumnHeader FindColumnHeader(string header)
+        private double PositionCollapsedBand(ColumnGroup g,
+            Dictionary<string, DataGridColumnHeader> byText, double canvasX, double canvasW, double lastRight)
         {
-            var scope = (DependencyObject)_headersPresenter ?? FilterGrid;
-            foreach (var h in FindVisualChildren<DataGridColumnHeader>(scope))
-            {
-                if ((h.Column != null ? h.Column.Header as string : null) == header)
-                    return h;
-            }
-            return null;
-        }
+            const double w = 18;   // small "+" marker
 
-        private DataGridColumnHeader FindColumnHeaderForColumn(DataGridColumn col)
-        {
-            if (col == null) return null;
-            var scope = (DependencyObject)_headersPresenter ?? FilterGrid;
-            foreach (var h in FindVisualChildren<DataGridColumnHeader>(scope))
+            // Boundary = left edge of the first visible column to the RIGHT of the group;
+            // fall back to the right edge of the nearest visible column to the LEFT.
+            double boundaryX = double.NaN;
+            int gl = IndexOfColumn(g.Last);
+            if (gl >= 0)
             {
-                if (ReferenceEquals(h.Column, col))
-                    return h;
+                for (int i = gl + 1; i < FilterGrid.Columns.Count; i++)
+                {
+                    var col = FilterGrid.Columns[i];
+                    if (col.Visibility != System.Windows.Visibility.Visible) continue;
+                    DataGridColumnHeader hh;
+                    if ((col.Header as string) != null && byText.TryGetValue((string)col.Header, out hh))
+                    { boundaryX = hh.TransformToVisual(this).Transform(new System.Windows.Point(0, 0)).X; break; }
+                }
             }
-            return null;
+            if (double.IsNaN(boundaryX))
+            {
+                int gf = IndexOfColumn(g.First);
+                for (int i = gf - 1; i >= 0; i--)
+                {
+                    var col = FilterGrid.Columns[i];
+                    if (col.Visibility != System.Windows.Visibility.Visible) continue;
+                    DataGridColumnHeader hh;
+                    if ((col.Header as string) != null && byText.TryGetValue((string)col.Header, out hh))
+                    { boundaryX = hh.TransformToVisual(this).Transform(new System.Windows.Point(hh.ActualWidth, 0)).X; break; }
+                }
+            }
+            if (double.IsNaN(boundaryX))
+            {
+                g.Band.Visibility = System.Windows.Visibility.Collapsed;
+                return lastRight;
+            }
+
+            double x = boundaryX - canvasX - w / 2.0;   // centre the marker on the boundary
+            if (x < lastRight + 1) x = lastRight + 1;    // pack against the previous collapsed marker
+            if (x < 0) x = 0;
+            if (x + w > canvasW)
+            {
+                g.Band.Visibility = System.Windows.Visibility.Collapsed;
+                return lastRight;
+            }
+
+            Canvas.SetLeft(g.Band, x);
+            g.Band.Width = w;
+            g.Band.Visibility = System.Windows.Visibility.Visible;
+            return x + w;
         }
 
         /// <summary>
         /// Shows or hides the grid columns whose headers are in <paramref name="headers"/>.
-        /// Reusable for any interval group toggle.
         /// </summary>
         private void SetColumnsVisible(string[] headers, bool visible)
         {

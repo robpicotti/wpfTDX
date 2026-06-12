@@ -1312,7 +1312,7 @@ namespace wpfTDX
             cboInstance.IsEnabled = false;
             cboDatabase.IsEnabled = false;
             txtStatus.Background = Brushes.Goldenrod;
-            txtStatus.Text = "Detecting machine and selecting database…";
+            txtStatus.Text = "Detecting machine and selecting dbase…";
 
             try
             {
