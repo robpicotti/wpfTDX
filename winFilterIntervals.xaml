@@ -44,7 +44,6 @@
         <local:NotEqualConverter x:Key="NotEqualConverter"/>
         <SolidColorBrush x:Key="DiffFromDefaultBrush" Color="#B7E0FF"/>
 
-
     </Window.Resources>
 
     <Grid>
@@ -56,6 +55,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Toolbar -->
+            <RowDefinition Height="Auto"/>
+            <!-- Group header strip -->
             <RowDefinition Height="*"/>
             <!-- Data grid -->
             <RowDefinition Height="Auto"/>
@@ -101,8 +102,35 @@
 
         </StackPanel>
 
+        <!-- Group-header band: positioned in code to sit directly above its columns,
+             re-synced on scroll/resize. Collapsing hides the member columns and shows
+             a thin placeholder column for the collapsed band to sit over. -->
+        <Canvas x:Name="GroupHeaderCanvas" Grid.Row="1" Grid.ColumnSpan="2"
+                Height="24" Margin="10,2,10,0" ClipToBounds="True">
+            <Border x:Name="BaseBand" Canvas.Left="0" Canvas.Top="0" Height="22"
+                    Background="Transparent" BorderThickness="0"
+                    Visibility="Collapsed">
+                <Grid>
+                    <!-- Excel-style outline bracket spanning the group -->
+                    <Border x:Name="BaseBracketLine" VerticalAlignment="Center" Height="2"
+                            Margin="9,0,9,0" Background="#FF5A6B8C"/>
+                    <Border x:Name="BaseTickLeft" HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Width="2" Height="8" Margin="9,0,0,0" Background="#FF5A6B8C"/>
+                    <Border x:Name="BaseTickRight" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Width="2" Height="8" Margin="0,0,9,0" Background="#FF5A6B8C"/>
+                    <!-- collapse/expand button (Excel −/+) -->
+                    <ToggleButton x:Name="tglBaseGroup" Content="−" IsChecked="True"
+                                  Click="ToggleBaseGroup_Click"
+                                  Width="16" Height="16" Padding="0"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  FontWeight="Bold"
+                                  ToolTip="Collapse/expand the base interval columns (b_t1 … b_d1)"/>
+                </Grid>
+            </Border>
+        </Canvas>
 
-        <StatusBar Grid.Row="2" Margin="10,6,10,10" Grid.ColumnSpan="2">
+
+        <StatusBar Grid.Row="3" Margin="10,6,10,10" Grid.ColumnSpan="2">
             <!-- Left: code-behind updates this (StatusTextBlock.Text) -->
             <TextBlock x:Name="StatusTextBlock" />
 
@@ -137,7 +165,7 @@
 
         <DataGrid ItemsSource="{Binding MergedRowsView}"
                   x:Name="FilterGrid"
-                  Grid.Row="1"
+                  Grid.Row="2"
                   AutoGenerateColumns="False"
                   IsReadOnly="False"
                   Margin="10,10,10,10"
@@ -148,9 +176,10 @@
                   VirtualizingPanel.ScrollUnit="Item"
                          VirtualizingPanel.CacheLength="2"
                     VirtualizingPanel.CacheLengthUnit="Item"
-                    EnableColumnVirtualization="True"
+                    EnableColumnVirtualization="False"
                   FrozenColumnCount="0"
                   PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
+                  Loaded="FilterGrid_Loaded"
                       SelectionMode="Single"
                         SelectionUnit="FullRow" Grid.ColumnSpan="2"
                   >
@@ -729,6 +758,11 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
+
+                <!-- base group collapsed placeholder: only visible when the base group is collapsed,
+                     gives the collapsed "▸ Base" band a column to sit over -->
+                <DataGridTextColumn x:Name="colBaseGroupPlaceholder" Header="" Width="22"
+                                    IsReadOnly="True" Visibility="Collapsed"/>
 
                 <!-- b_t1 (base_t1) -->
                 <DataGridTextColumn Header="b_t1" IsReadOnly="True">

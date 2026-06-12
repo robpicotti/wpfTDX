@@ -19,6 +19,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Net.Http;
+using System.Configuration;
+using Newtonsoft.Json.Linq;
 using TDX;
 
 
@@ -78,6 +81,8 @@ namespace wpfTDX
         public List<string> lstINSTANCES;
         public SqlConnection sql_conn;
         public SqlConnection sql_conn_monitor;
+        private readonly string _apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
+        private readonly string _baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         //private readonly ImageList statusImageList;
         private bool stopMonitoring;
         //DataTable dtHeartBeatsMonitored;
@@ -1274,8 +1279,13 @@ namespace wpfTDX
 
         private Border _tickerFreezerBorder;   // keep reference so we don't add duplicates
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // Auto-select server/instance/database from this machine's host environment
+            // (server is always local; database follows the default env). The combo
+            // boxes remain available for the user to change the selection afterwards.
+            await AutoSelectConnectionAsync();
+
             // If you only want to load it when you already have a connection:
             if (sql_conn != null)
             {
@@ -1284,6 +1294,118 @@ namespace wpfTDX
 
             // If sql_conn is created later (after user selects server/db),
             // call EnsureTickerFreezerLoaded() at the point you create sql_conn successfully.
+        }
+
+        /// <summary>
+        /// Asks the API for this machine's default connection (env -> database) and
+        /// pre-selects server=(local), the instance, and the database in the combo
+        /// boxes, then connects. Best-effort: on any failure the combos are simply
+        /// left for the user to choose manually. The user can still change any of
+        /// the three selections afterwards.
+        /// </summary>
+        private async Task AutoSelectConnectionAsync()
+        {
+            // Busy state: wait cursor, status message, and lock the selectors so the
+            // user doesn't fight the auto-selection while it's in progress.
+            Mouse.OverrideCursor = Cursors.Wait;
+            cboServer.IsEnabled = false;
+            cboInstance.IsEnabled = false;
+            cboDatabase.IsEnabled = false;
+            txtStatus.Background = Brushes.Goldenrod;
+            txtStatus.Text = "Detecting machine and selecting database…";
+
+            try
+            {
+                string instance = null;
+                string database = null;
+                try
+                {
+                    string url = $"{_baseUrl}/get_default_connection";
+                    using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) })
+                    {
+                        client.DefaultRequestHeaders.Add("X-Api-Key", _apiKey);
+                        HttpResponseMessage response = await client.PostAsync(url, null);
+                        response.EnsureSuccessStatusCode();
+                        JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                        instance = json["instance"]?.ToString();
+                        database = json["database"]?.ToString();
+                    }
+                }
+                catch
+                {
+                    // API unavailable / not configured — leave manual selection.
+                    ChangeCommandButtonConnectionStatus(false);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(database))
+                {
+                    ChangeCommandButtonConnectionStatus(false);
+                    return;
+                }
+
+                // Set the combos without firing the SelectionChanged cascade (which would
+                // disconnect/reset between each set); we connect once at the end instead.
+                cboServer.SelectionChanged   -= cboServer_SelectionChanged;
+                cboInstance.SelectionChanged -= cboInstance_SelectionChanged;
+                cboDatabase.SelectionChanged -= cboDatabase_SelectionChanged;
+                try
+                {
+                    SelectComboItem(cboServer, "(local)");
+                    if (!string.IsNullOrWhiteSpace(instance))
+                        SelectComboItem(cboInstance, instance);
+                    SelectComboItem(cboDatabase, database);
+                }
+                finally
+                {
+                    cboServer.SelectionChanged   += cboServer_SelectionChanged;
+                    cboInstance.SelectionChanged += cboInstance_SelectionChanged;
+                    cboDatabase.SelectionChanged += cboDatabase_SelectionChanged;
+                }
+
+                // Only connect if we matched both a server and a database in the combos.
+                if (cboServer.SelectedItem == null || cboDatabase.SelectedItem == null)
+                {
+                    ChangeCommandButtonConnectionStatus(false);
+                    return;
+                }
+
+                txtStatus.Text = $"Connecting to {database}…";
+                connect_database();   // updates txtStatus to Connected / Not connected
+                EnsureTickerFreezerLoaded();
+                StartMonitoring();
+            }
+            catch (Exception ex)
+            {
+                ChangeCommandButtonConnectionStatus(false);
+                MessageBox.Show(ex.Message, "Auto-connect", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                // Always restore interactivity so the user can change the selection.
+                cboServer.IsEnabled = true;
+                cboInstance.IsEnabled = true;
+                cboDatabase.IsEnabled = true;
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        /// <summary>
+        /// Selects the combo item whose text matches <paramref name="value"/>
+        /// (case-insensitive). No-op if not found, so a missing item just leaves
+        /// the box unchanged for manual selection.
+        /// </summary>
+        private static void SelectComboItem(ComboBox combo, string value)
+        {
+            if (combo == null || string.IsNullOrWhiteSpace(value)) return;
+            foreach (var item in combo.Items)
+            {
+                if (string.Equals(item?.ToString(), value, StringComparison.OrdinalIgnoreCase))
+                {
+                    combo.SelectedItem = item;
+                    return;
+                }
+            }
         }
 
         private void EnsureTickerFreezerLoaded()

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -156,6 +157,167 @@ namespace wpfTDX
                     : System.Windows.Visibility.Collapsed;
             }
         }
+        // Interval column groups that can be collapsed/expanded via a banded header.
+        private static readonly string[] BaseGroupHeaders =
+            { "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1" };
+
+        private bool _baseExpanded = true;
+        private ScrollViewer _gridScrollViewer;
+        private DataGridColumnHeadersPresenter _headersPresenter;
+
+        /// <summary>
+        /// Wires up the group-band positioning once the grid's visual tree exists:
+        /// reposition on horizontal scroll and on every layout pass (column resize, etc.).
+        /// </summary>
+        private void FilterGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_headersPresenter == null)
+            {
+                _headersPresenter = FindVisualChild<DataGridColumnHeadersPresenter>(FilterGrid);
+                _gridScrollViewer = FindVisualChild<ScrollViewer>(FilterGrid);
+                if (_gridScrollViewer != null)
+                    _gridScrollViewer.ScrollChanged += (s, a) => PositionGroupBands();
+                FilterGrid.LayoutUpdated += (s, a) => PositionGroupBands();
+            }
+            PositionGroupBands();
+        }
+
+        /// <summary>
+        /// Collapse/expand the base interval group. Hides the member columns and shows a
+        /// thin placeholder column so the collapsed "▸ Base" band has something to sit over.
+        /// </summary>
+        private void ToggleBaseGroup_Click(object sender, RoutedEventArgs e)
+        {
+            _baseExpanded = tglBaseGroup.IsChecked == true;
+            SetColumnsVisible(BaseGroupHeaders, _baseExpanded);
+            colBaseGroupPlaceholder.Visibility = _baseExpanded
+                ? System.Windows.Visibility.Collapsed
+                : System.Windows.Visibility.Visible;
+            tglBaseGroup.Content = _baseExpanded ? "−" : "+";
+            var bracketVis = _baseExpanded
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            BaseBracketLine.Visibility = bracketVis;
+            BaseTickLeft.Visibility = bracketVis;
+            BaseTickRight.Visibility = bracketVis;
+
+            // Reposition after the grid has re-laid-out its columns.
+            Dispatcher.BeginInvoke(new Action(PositionGroupBands),
+                System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        /// <summary>
+        /// Positions the base group band directly above its columns (or the placeholder
+        /// column when collapsed), clipped to the visible header area.
+        /// </summary>
+        private void PositionGroupBands()
+        {
+            if (GroupHeaderCanvas == null || BaseBand == null || FilterGrid == null) return;
+
+            DataGridColumnHeader left, right;
+            if (_baseExpanded)
+            {
+                left = FindColumnHeader("b_t1");
+                right = FindColumnHeader("b_d1");
+            }
+            else
+            {
+                left = right = FindColumnHeaderForColumn(colBaseGroupPlaceholder);
+            }
+
+            if (left == null || right == null || left.ActualWidth <= 0)
+            {
+                BaseBand.Visibility = System.Windows.Visibility.Collapsed;
+                return;
+            }
+
+            try
+            {
+                var leftPt = left.TransformToVisual(this).Transform(new System.Windows.Point(0, 0));
+                var rightPt = right.TransformToVisual(this).Transform(new System.Windows.Point(right.ActualWidth, 0));
+                var canvasPt = GroupHeaderCanvas.TransformToVisual(this).Transform(new System.Windows.Point(0, 0));
+
+                double x = leftPt.X - canvasPt.X;
+                double w = rightPt.X - leftPt.X;
+
+                // Clip to the visible header strip so the band doesn't spill off the edges.
+                double maxRight = GroupHeaderCanvas.ActualWidth;
+                if (x < 0) { w += x; x = 0; }
+                if (x + w > maxRight) w = maxRight - x;
+                if (w <= 0)
+                {
+                    BaseBand.Visibility = System.Windows.Visibility.Collapsed;
+                    return;
+                }
+
+                Canvas.SetLeft(BaseBand, x);
+                BaseBand.Width = w;
+                BaseBand.Visibility = System.Windows.Visibility.Visible;
+            }
+            catch
+            {
+                BaseBand.Visibility = System.Windows.Visibility.Collapsed;
+            }
+        }
+
+        private DataGridColumnHeader FindColumnHeader(string header)
+        {
+            var scope = (DependencyObject)_headersPresenter ?? FilterGrid;
+            foreach (var h in FindVisualChildren<DataGridColumnHeader>(scope))
+            {
+                if ((h.Column != null ? h.Column.Header as string : null) == header)
+                    return h;
+            }
+            return null;
+        }
+
+        private DataGridColumnHeader FindColumnHeaderForColumn(DataGridColumn col)
+        {
+            if (col == null) return null;
+            var scope = (DependencyObject)_headersPresenter ?? FilterGrid;
+            foreach (var h in FindVisualChildren<DataGridColumnHeader>(scope))
+            {
+                if (ReferenceEquals(h.Column, col))
+                    return h;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Shows or hides the grid columns whose headers are in <paramref name="headers"/>.
+        /// Reusable for any interval group toggle.
+        /// </summary>
+        private void SetColumnsVisible(string[] headers, bool visible)
+        {
+            var set = new HashSet<string>(headers, StringComparer.OrdinalIgnoreCase);
+            var vis = visible ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+            foreach (var col in FilterGrid.Columns)
+            {
+                var h = col.Header as string;
+                if (h != null && set.Contains(h))
+                    col.Visibility = vis;
+            }
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            foreach (var c in FindVisualChildren<T>(parent)) return c;
+            return null;
+        }
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) yield break;
+            int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) yield return t;
+                foreach (var d in FindVisualChildren<T>(child))
+                    yield return d;
+            }
+        }
+
         private async Task RunWithBusy(Func<Task> work)
         {
             try

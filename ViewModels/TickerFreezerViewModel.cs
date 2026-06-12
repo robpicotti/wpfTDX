@@ -78,11 +78,16 @@ namespace wpfTDX
             }
         }
 
+        // Manual-trading error codes hidden by default (shown when "Show Manual" is ticked).
+        // Update this list if the manual error-code range changes.
+        private static readonly HashSet<int> ManualErrorCodes =
+            new HashSet<int> { 2007, 2008, 2009, 2010 };
+
         private bool TickerFreezerFilter(object item)
         {
             if (_showManual) return true;
             var row = item as TickerFreezerDataModel;
-            return row == null || row.Errorcode != 2009;
+            return row == null || !ManualErrorCodes.Contains(row.Errorcode);
         }
 
         private ObservableCollection<FundsDataModel> _fundsData { get; set; }
