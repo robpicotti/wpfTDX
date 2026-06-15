@@ -389,6 +389,7 @@ namespace wpfTDX
 
         // strategies list for the ComboBox
         public ObservableCollection<string> StrategyNames { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> StrategyNamesBase { get; } = new ObservableCollection<string>();
 
         // min_intvl options for the dropdown — "default" + all trading intervals from t1 upwards
         public ObservableCollection<string> MinIntvlOptions { get; } = new ObservableCollection<string>(new[]
@@ -950,6 +951,36 @@ namespace wpfTDX
             }
         }
 
+        public async Task LoadStrategyNamesBaseAsync()
+        {
+            StrategyNamesBase.Clear();
+
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                var resp = await client.PostAsync($"{baseUrl}/get_strategynames",
+                                                  new StringContent("{\"interval_type\":\"base\"}", Encoding.UTF8, "application/json"));
+                resp.EnsureSuccessStatusCode();
+                var body = await resp.Content.ReadAsStringAsync();
+
+                var tok = JToken.Parse(body);
+                if (tok.Type == JTokenType.Array)
+                {
+                    foreach (var item in (JArray)tok)
+                    {
+                        string name = null;
+                        if (item.Type == JTokenType.String)
+                            name = (string)item;
+                        else if (item.Type == JTokenType.Object)
+                            name = ((JObject)item).Value<string>("strategyname");
+
+                        if (!string.IsNullOrWhiteSpace(name))
+                            StrategyNamesBase.Add(name.Trim());
+                    }
+                }
+            }
+        }
+
         public async Task LoadStrategiesOverrideAsync()
         {
             _overrideByTicker.Clear();
@@ -1311,6 +1342,7 @@ namespace wpfTDX
             var positionsJson = (JObject)root["positions"];
             var viewPositionsJson = (JObject)root["viewpositions"];
             var filterPositionsJson = (JObject)root["filterpositions"];
+            var positionLimitsJson = root["positionlimits"] as JObject;
             // Accept either "scaledpositions" or "scaled_positions"
             JToken scaledPositionsJson = root["scaledpositions"] ?? root["scaled_positions"];
 
@@ -1404,6 +1436,21 @@ namespace wpfTDX
                     model.NumFilteredTrades = row.Value<float?>("num_filtered_trades") ?? 0;
                     model.NumFiltIntervals = row.Value<int?>("num_filtintervals") ?? 0;
                     model.FilteredDeployment = row.Value<float?>("filtered_deployment") ?? 0;
+                }
+            }
+
+            // 3b) position limits (from target_positions, merged on tickername+fundname)
+            if (positionLimitsJson != null)
+            {
+                foreach (var kv in positionLimitsJson)
+                {
+                    var ticker = kv.Key;
+                    var row = (JObject)kv.Value;
+                    var model = GetOrCreate(ticker);
+
+                    model.PositionLimit = row.Value<float?>("position_limit");
+                    model.ScaledPositionLimit = row.Value<float?>("scaled_position_limit");
+                    model.PositionTarget = row.Value<float?>("position_target");
                 }
             }
 
@@ -1579,14 +1626,44 @@ namespace wpfTDX
             if (_activeManualFreezes == null || _activeManualFreezes.Count == 0)
                 await LoadActiveManualFreezesAsync();
 
-            string MakeKey(string t, string fg, string fn)
-            {
-                return $"{(t ?? "").Trim().ToUpperInvariant()}|{(fg ?? "").Trim().ToUpperInvariant()}|{(fn ?? "").Trim().ToUpperInvariant()}";
-            }
+            string Norm(string s) => (s ?? "").Trim().ToUpperInvariant();
 
-            var scaledByComposite = (ScaledPositionsData ?? new ObservableCollection<ScaledPositionsDataModel>())
-                .GroupBy(s => MakeKey(s.TickerName, s.FundGroupName, s.FundName))
-                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+            // Group scaled positions by ticker so we can wildcard-match on
+            // (fundgroupname, fundname). A scaled row may carry "*" for fundname and/or
+            // fundgroupname (a blanket rule), which must still apply to a concrete
+            // fund/group filter row — mirrors Scale.load()'s fund IN ('*', fund) semantics.
+            var scaledByTicker = (ScaledPositionsData ?? new ObservableCollection<ScaledPositionsDataModel>())
+                .Where(s => s != null)
+                .GroupBy(s => Norm(s.TickerName))
+                .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+            // Find the best scaled row for a (ticker, fundgroup, fundname) filter row.
+            // "*" on the scaled side matches anything; we prefer the most specific match
+            // (exact fund > exact group > exact ticker) so a fund-specific override wins
+            // over a blanket wildcard when both exist.
+            ScaledPositionsDataModel FindScaled(string ticker, string fundgroup, string fundname)
+            {
+                string t = Norm(ticker), g = Norm(fundgroup), f = Norm(fundname);
+
+                IEnumerable<ScaledPositionsDataModel> candidates = Enumerable.Empty<ScaledPositionsDataModel>();
+                if (scaledByTicker.TryGetValue(t, out var exactT)) candidates = candidates.Concat(exactT);
+                if (t != "*" && scaledByTicker.TryGetValue("*", out var wildT)) candidates = candidates.Concat(wildT);
+
+                ScaledPositionsDataModel best = null;
+                int bestScore = -1;
+                foreach (var s in candidates)
+                {
+                    string sg = Norm(s.FundGroupName), sf = Norm(s.FundName), st = Norm(s.TickerName);
+                    bool groupOk = sg == g || sg == "*";
+                    bool fundOk = sf == f || sf == "*";
+                    bool tickOk = st == t || st == "*";
+                    if (!(groupOk && fundOk && tickOk)) continue;
+
+                    int score = (sf == "*" ? 0 : 4) + (sg == "*" ? 0 : 2) + (st == "*" ? 0 : 1);
+                    if (score > bestScore) { bestScore = score; best = s; }
+                }
+                return best;
+            }
 
             // capture current rows (for preserving user edits/baselines)
             Dictionary<string, MergedTickerRow> previous = null;
@@ -1700,13 +1777,17 @@ namespace wpfTDX
                     NumPositionIntervals = tp.PositionNumIntervals,
                     ViewDeployment = tp.ViewDeployment,
                     PositionDeployment = tp.PositionDeployment,
+                    PositionLimit = tp.PositionLimit,
+                    ScaledPositionLimit = tp.ScaledPositionLimit,
+                    PositionTarget = tp.PositionTarget,
                 };
 
-                // scaled positions join by composite key
-                if (scaledByComposite.TryGetValue(MakeKey(tp.Tickername, fi?.FundGroup, fi?.FundName), out var sp))
+                // scaled positions join (wildcard-aware on fundgroup/fundname)
+                var sp = FindScaled(tp.Tickername, fi?.FundGroup, fi?.FundName);
+                if (sp != null)
                 {
-                    row.ScaleFactor = sp?.ScaledTarget;
-                    row.ScaledPercent = sp?.ScaledPercent;
+                    row.ScaleFactor = sp.ScaledTarget;
+                    row.ScaledPercent = sp.ScaledPercent;
                 }
 
                 // Manual flag via your row-level matcher
@@ -1758,7 +1839,7 @@ namespace wpfTDX
                     row.Manual = old.Manual;
                     // if your Attach method also sets OriginalStrategyName, keep that consistent:
                     if (old.StrategyOverride != null) row.AttachStrategyOverride(old.StrategyOverride);
-                    else row.StrategyName = old.StrategyName;
+                    else { row.StrategyName = old.StrategyName; row.StrategyNameBase = old.StrategyNameBase; }
 
                     // keep ORIGINALS so HasChanged continues to compare to the same baseline
                     row.RestoreOriginalsFrom(old);
@@ -1831,11 +1912,12 @@ namespace wpfTDX
                     W2 = fiOnly.W2,
                 };
 
-                // join scaled positions for FI-only row as well
-                if (scaledByComposite.TryGetValue(MakeKey(row.Tickername, row.FundGroup, row.FundName), out var sp2))
+                // join scaled positions for FI-only row as well (wildcard-aware)
+                var sp2 = FindScaled(row.Tickername, row.FundGroup, row.FundName);
+                if (sp2 != null)
                 {
-                    row.ScaleFactor = sp2?.ScaledTarget;
-                    row.ScaledPercent = sp2?.ScaledPercent;
+                    row.ScaleFactor = sp2.ScaledTarget;
+                    row.ScaledPercent = sp2.ScaledPercent;
                 }
 
                 if (preserveUserFiFlags && previous != null && previous.TryGetValue(fiOnly.TickerName, out var oldFi))
@@ -1850,7 +1932,7 @@ namespace wpfTDX
                     // also preserve manual & strategy from previous row
                     row.Manual = oldFi.Manual;
                     if (oldFi.StrategyOverride != null) row.AttachStrategyOverride(oldFi.StrategyOverride);
-                    else row.StrategyName = oldFi.StrategyName;
+                    else { row.StrategyName = oldFi.StrategyName; row.StrategyNameBase = oldFi.StrategyNameBase; }
 
                     row.RestoreOriginalsFrom(oldFi);
                 }
@@ -2192,6 +2274,24 @@ namespace wpfTDX
                 }
             }
             public bool StrategyNameHasChanged => _isInitialized && !string.Equals(_strategyName, OriginalStrategyName, StringComparison.Ordinal);
+
+            // --- NEW: StrategyNameBase (base strategy, also from strategies_override) ---
+            public string OriginalStrategyNameBase { get; private set; }
+            private string _strategyNameBase;
+            public string StrategyNameBase
+            {
+                get => _strategyNameBase;
+                set
+                {
+                    if (_strategyNameBase != value)
+                    {
+                        _strategyNameBase = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(StrategyNameBaseHasChanged));
+                    }
+                }
+            }
+            public bool StrategyNameBaseHasChanged => _isInitialized && !string.Equals(_strategyNameBase, OriginalStrategyNameBase, StringComparison.Ordinal);
 
             private float? _scaledDeployment { get; set; }
             public float? ScaledDeployment
@@ -3504,6 +3604,11 @@ namespace wpfTDX
             public float? ViewDeployment { get; set; }
             public float? PositionDeployment { get; set; }
 
+            // position limits (read-only; from target_positions merged on tickername+fundname)
+            public float? PositionLimit { get; set; }
+            public float? ScaledPositionLimit { get; set; }
+            public float? PositionTarget { get; set; }
+
 
             private float? _newTrades;
             public float? NewTrades
@@ -3566,7 +3671,7 @@ namespace wpfTDX
             // convenience aliases (optional)
             public bool HasIntervalEdits => HasAnyEdits; // your existing property
 
-            public bool HasStrategyEdit => _isInitialized && StrategyNameHasChanged;
+            public bool HasStrategyEdit => _isInitialized && (StrategyNameHasChanged || StrategyNameBaseHasChanged);
 
             // If you ever want to branch on manual work:
             public bool HasManualChange => _isInitialized && ManualHasChanged;
@@ -3725,6 +3830,14 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(StrategyName));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
 
+                // base strategy baseline (fall back to "default")
+                var baselineBase = so?.StrategyNameBase ?? "default";
+                OriginalStrategyNameBase = baselineBase;
+                StrategyNameBase = baselineBase;
+                OnPropertyChanged(nameof(OriginalStrategyNameBase));
+                OnPropertyChanged(nameof(StrategyNameBase));
+                OnPropertyChanged(nameof(StrategyNameBaseHasChanged));
+
                 // min_intvl from min_update_freq
                 var minIntvlBaseline = so?.MinUpdateFreq ?? "default";
                 OriginalMinIntvl = minIntvlBaseline;
@@ -3772,7 +3885,7 @@ namespace wpfTDX
                     keep_updated = StrategyOverride?.KeepUpdated ?? true,
                     calc_trades = StrategyOverride?.CalcTrades ?? true,
                     take_position = StrategyOverride?.TakePosition ?? true,
-                    strategyname_base = StrategyOverride?.StrategyNameBase ?? "default",
+                    strategyname_base = this.StrategyNameBase ?? "default",
                     strategyname_base_daily = StrategyOverride?.StrategyNameBaseDaily ?? "default",
 
                     min_update_freq = minVal,
@@ -3835,6 +3948,7 @@ namespace wpfTDX
                 OriginalW2 = src.OriginalW2;
                 OriginalManual = src.OriginalManual;
                 OriginalStrategyName = src.OriginalStrategyName;
+                OriginalStrategyNameBase = src.OriginalStrategyNameBase;
                 _isInitialized = true;
                 _isInitialized = true;
 
@@ -3885,6 +3999,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W2HasChanged));
                 OnPropertyChanged(nameof(ManualHasChanged));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
+                OnPropertyChanged(nameof(StrategyNameBaseHasChanged));
             }
 
 
@@ -4292,6 +4407,7 @@ namespace wpfTDX
 
                 OriginalManual = _manual;
                 OriginalStrategyName = _strategyName;
+                OriginalStrategyNameBase = _strategyNameBase;
                 _isInitialized = true;
 
                 // (repeat for other tracked fields)
@@ -4346,6 +4462,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W2HasChanged));
                 OnPropertyChanged(nameof(ManualHasChanged));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
+                OnPropertyChanged(nameof(StrategyNameBaseHasChanged));
             }
 
             private static bool PickForSave(bool? current, bool? original, bool hasChanged, bool defaultValue = false)

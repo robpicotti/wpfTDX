@@ -974,6 +974,51 @@ namespace wpfTDX
             }
         }
 
+        // position limits (merged from target_positions on tickername+fundname)
+        private float? _position_limit;
+        [JsonProperty("position_limit")]
+        public float? PositionLimit
+        {
+            get => _position_limit;
+            set
+            {
+                if (value != _position_limit)
+                {
+                    _position_limit = value;
+                    OnPropertyChanged(nameof(PositionLimit));
+                }
+            }
+        }
+        private float? _scaled_position_limit;
+        [JsonProperty("scaled_position_limit")]
+        public float? ScaledPositionLimit
+        {
+            get => _scaled_position_limit;
+            set
+            {
+                if (value != _scaled_position_limit)
+                {
+                    _scaled_position_limit = value;
+                    OnPropertyChanged(nameof(ScaledPositionLimit));
+                }
+            }
+        }
+
+        private float? _position_target;
+        [JsonProperty("position_target")]
+        public float? PositionTarget
+        {
+            get => _position_target;
+            set
+            {
+                if (value != _position_target)
+                {
+                    _position_target = value;
+                    OnPropertyChanged(nameof(PositionTarget));
+                }
+            }
+        }
+
 
         //filter position stuff
         private float _filter_position_base_y1;

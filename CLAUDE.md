@@ -106,6 +106,90 @@ Key relationships:
 Every column after `W2` has a **header tooltip** documenting the above — hover the column
 title. (The `b_*` base columns do not have tooltips.)
 
+### Column order & collapsible group headers
+
+**On-screen column order is set in code, not by the XAML order.** `ApplyColumnOrder()`
+(called from `FilterGrid_Loaded`) assigns each column's `DisplayIndex` from the
+`DesiredColumnOrder` array — Bill's layout: `ticker, fundgrp, fund, strategy, strategy_b,
+m__int, p__int, c__upd, manual, rescale…filt_all, trd…n_dep, scale_f, new_f, s_dep, pos_lim,
+pos_tgt, s_pos_lim,` then **all intervals at the far right** (`b_t1…b_d1`, then `t1…W2`). To change the
+on-screen order, edit `DesiredColumnOrder` (not the XAML block order). If you add a column,
+add its header to that array or it'll fall to the end.
+
+The interval columns' underlying order (in the XAML Columns collection and within
+`DesiredColumnOrder`) is **chronological (duration)**, e.g. `… h16, D1, h36, D2, D3, D4, W1,
+D8, W2 …` — `h36` (36h) between `D1` (24h) and `D2` (48h), `W1` (1wk) before `D8` (8d).
+Intentional; don't "tidy" it into per-letter family blocks.
+
+Two **collapsible group bands** (Excel-style outline brackets) sit in a row above the grid,
+generated in code by `BuildColumnGroups()` ([winFilterIntervals.xaml.cs](winFilterIntervals.xaml.cs)):
+- **`base`** → the `b_*` columns.
+- **`daily/weekly`** → the contiguous chronological `D1 → W2` block (`D1, h36, D2, D3, D4,
+  W1, D8, W2`).
+
+Shorter families (`t/v/n/y/h`) intentionally have **no** collapser. How it works:
+- No placeholder columns — collapsing sets the member columns to `Visibility.Collapsed`
+  (zero width, grid closes up); the collapsed band becomes a small floating **`+`** marker
+  at the group boundary (in the `GroupHeaderCanvas` outline row), packed so adjacent markers
+  don't overlap. Expanded shows a bracket + `−` chip + label.
+- Bands are **measured against live column headers** and repositioned on scroll / layout, so
+  `EnableColumnVirtualization="False"` is required (headers must always be realisable).
+- A bracket spans the **first-visible to last-visible** column of its group, so it appears
+  whenever *any* member column is on screen (the min-`p_int` pass may hide part of a group).
+- Band `Border.Background` is `null` (not `Transparent`) so empty band area isn't
+  hit-testable and doesn't swallow clicks meant for an overlapping `+`; collapsed markers
+  also get a higher `Panel.ZIndex`.
+- Expanding re-applies `UpdateIntervalColumnVisibility()` (min-`p_int` baseline); that method
+  also calls `ReapplyCollapsedGroups()` so a reload doesn't re-show a user-collapsed group.
+
+### Strategy columns (`strategy`, `strategy_b`) — editable dropdowns
+
+Two editable ComboBox columns backed by `strategies_override`:
+- **`strategy`** ↔ `StrategyName` ↔ `strategies_override.strategyname`.
+- **`strategy_b`** ↔ `StrategyNameBase` ↔ `strategies_override.strategyname_base` (the base strategy).
+
+Each has its own `Original…`/`…HasChanged` tracking, khaki "changed" highlight, and is wired
+through `AttachStrategyOverride` (baseline), `ToStrategyOverrideInsertModel` (save payload —
+sends `this.StrategyName` / `this.StrategyNameBase`), the clone/snapshot/preserve paths, and
+the save triggers (`affectedStrategyTickers`, the override-payload `.Where`, `HasStrategyEdit`).
+Server-side the upsert maps both into `strategies_override` ([tapi.py](trading/apis/tapi.py) `upsert_filter_intervals` job).
+
+Dropdown lists come from **one endpoint**, `/get_strategynames`, which takes an optional JSON
+body `{"interval_type": "<type>"}`:
+- `LoadStrategyNamesAsync` posts `{}` → all manual strategies (`where {manual:1}`).
+- `LoadStrategyNamesBaseAsync` posts `{"interval_type":"base"}` → `where {manual:1, interval_type:"base"}`.
+`"default"` is always prepended, so the dropdown is never empty.
+
+### Position columns (`pos_lim`, `pos_tgt`, `s_pos_lim`) — read-only
+
+`get_filtered_intervals` merges `target_positions` (latest, `sub_tickername=="NONE"`, deduped to
+one row per `(tickername, fundname)`) onto the filter rows **on `(tickername, fundname)`** and
+returns a `positionlimits` section keyed by ticker (`position_limit`, `position_target`,
+`scaled_position_limit`). The WPF parses it into `TadPositionsDataModel` and surfaces read-only
+`PositionLimit` / `PositionTarget` / `ScaledPositionLimit` on the row → grid columns
+`pos_lim` / `pos_tgt` / `s_pos_lim` (N0 — rounded to whole numbers, right-aligned). `pos_tgt`
+sits immediately after `pos_lim`. A wildcard (`*`) `fundname` in `filter_intervals` won't match a
+real fund → cells are blank (intended).
+
+### Scaled-positions join (`scale_f` / `new_f`) — wildcard-aware
+
+`get_filtered_intervals` returns a `scaledpositions` section: every `scaled_positions` row with
+`scaled_type='filtered'` (and not a trivial 1.0/1.0) whose `tickername` is in the requested set,
+passed through verbatim — including rows whose `fundname` and/or `fundgroupname` are `'*'`
+(blanket rules). It does **not** pre-resolve wildcards.
+
+The match to a concrete filter row happens in `RebuildMerged()`
+([FilterIntervalsViewModel.cs](ViewModels/FilterIntervalsViewModel.cs)) via the local
+`FindScaled(ticker, fundgroup, fundname)`. It is **wildcard-aware**: a scaled row matches when,
+for each of ticker/fundgroup/fundname, the scaled value equals the row's value **or is `'*'`**
+(mirrors `Scale.load()`'s `fund IN ('*', fund)` semantics). When several rows match it picks the
+**most specific** (exact fund > exact group > exact ticker, scored 4/2/1). The matched
+`scaled_target` → `ScaleFactor` (`scale_f`), `scaled_percent` → `ScaledPercent` (`new_f`).
+Applied at both join sites (TAD-positions rows and FI-only rows).
+
+⚠️ Don't revert this to an exact composite-key dictionary lookup (`ticker|group|fund`): that was
+the old bug — a `fundname='*'` scaling silently failed to appear on a fund-specific filter row.
+
 ## Ticker Freezer screen (`ucTickerFreezer`)
 
 Loaded into MainWindow on connect (`EnsureTickerFreezerLoaded`). Has a manual **Refresh**

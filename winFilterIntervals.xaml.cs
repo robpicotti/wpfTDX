@@ -80,6 +80,7 @@ namespace wpfTDX
 
             await SetStatus("Loading strategy names...");
             await _viewModel.LoadStrategyNamesAsync();
+            await _viewModel.LoadStrategyNamesBaseAsync();
 
             await SetStatus("Loading ticker universe...");
             await _viewModel.LoadTickerUniverseAsync();
@@ -196,9 +197,44 @@ namespace wpfTDX
                 if (_gridScrollViewer != null)
                     _gridScrollViewer.ScrollChanged += (s, a) => PositionGroupBands();
                 FilterGrid.LayoutUpdated += (s, a) => PositionGroupBands();
+                ApplyColumnOrder();
                 BuildColumnGroups();
             }
             PositionGroupBands();
+        }
+
+        // Bill's column order for the filter intervals screen (left → right). ticker stays
+        // first as the row identifier; intervals (base + trading) sit at the far right.
+        private static readonly string[] DesiredColumnOrder =
+        {
+            "ticker", "fundgrp", "fund", "strategy", "strategy_b", "m__int", "p__int",
+            "c__upd", "manual", "rescale", "LO", "SO", "byO", "slO", "filt_all",
+            "trd", "n", "dep", "filt_t", "filt_n", "f_dep", "new_t", "new_n", "n_dep",
+            "scale_f", "new_f", "s_dep", "pos_lim", "pos_tgt", "s_pos_lim",
+            "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1",
+            "t1", "t2", "t3", "t4", "t5", "t8", "v2", "v3", "n2", "n3", "n4", "y2", "y3",
+            "h2", "h3", "h4", "h6", "h12", "h16", "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2",
+        };
+
+        /// <summary>
+        /// Sets each column's DisplayIndex to match DesiredColumnOrder. Assigning in
+        /// increasing target order keeps WPF's auto-shift from disturbing already-placed
+        /// columns. Any header not present is skipped.
+        /// </summary>
+        private void ApplyColumnOrder()
+        {
+            int di = 0;
+            foreach (var header in DesiredColumnOrder)
+            {
+                foreach (var col in FilterGrid.Columns)
+                {
+                    if (string.Equals(col.Header as string, header, StringComparison.Ordinal))
+                    {
+                        col.DisplayIndex = di++;
+                        break;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -211,14 +247,8 @@ namespace wpfTDX
             if (_columnGroups.Count > 0) return;
 
             AddGroup("base", new[] { "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1" });
-            AddGroup("t", new[] { "t1", "t2", "t3", "t4", "t5", "t8" });
-            AddGroup("v", new[] { "v2", "v3" });
-            AddGroup("n", new[] { "n2", "n3", "n4" });
-            // Temporarily disabled while evaluating the collapser look — re-enable when ready.
-            //AddGroup("y", new[] { "y2", "y3" });
-            //AddGroup("h", new[] { "h2", "h3", "h4", "h6", "h12", "h16", "h36" });
-            //AddGroup("D", new[] { "D1", "D2", "D3", "D4", "D8" });
-            //AddGroup("W", new[] { "W1", "W2" });
+            // Chronological D1 → W2 block (h36 = 36h sits between D1 and D2; W1 before D8).
+            AddGroup("daily/weekly", new[] { "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2" });
         }
 
         private void AddGroup(string label, string[] headers)
@@ -939,7 +969,7 @@ namespace wpfTDX
                 .ToList();
 
                 var affectedStrategyTickers = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged || r.NeedsNewOverride)
+                    .Where(r => r.StrategyNameHasChanged || r.StrategyNameBaseHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged || r.NeedsNewOverride)
                     .Select(r => r.Tickername)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -993,7 +1023,7 @@ namespace wpfTDX
 
 
                 var strategyOverridesPayload = vm.MergedRows
-                    .Where(r => r.StrategyNameHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged || r.NeedsNewOverride)
+                    .Where(r => r.StrategyNameHasChanged || r.StrategyNameBaseHasChanged || r.MinIntvlHasChanged || r.ContUpdHasChanged || r.PosIntvlHasChanged || r.NeedsNewOverride)
                     .Select(r => r.ToStrategyOverrideInsertModel(nowUtc,vm.HostEnv))  // your helper
                     .ToList();
 
