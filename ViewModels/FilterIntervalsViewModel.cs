@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Globalization;
@@ -24,6 +25,27 @@ using static System.Net.WebRequestMethods;
 
 namespace wpfTDX
 {
+    /// <summary>
+    /// ObservableCollection that can be refilled in one shot, raising a single Reset
+    /// notification instead of one Add per item — so a bound DataGrid regenerates and
+    /// lays out once rather than per row.
+    /// </summary>
+    public class RangeObservableCollection<T> : ObservableCollection<T>
+    {
+        public RangeObservableCollection() { }
+        public RangeObservableCollection(IEnumerable<T> items) : base(items) { }
+
+        public void ReplaceAll(IEnumerable<T> items)
+        {
+            Items.Clear();
+            foreach (var it in items)
+                Items.Add(it);
+
+            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
+    }
 
     public class BoolToStringConverter : IValueConverter
     {
@@ -356,7 +378,7 @@ namespace wpfTDX
         }
 
 
-        public ObservableCollection<MergedTickerRow> MergedRows { get; } = new ObservableCollection<MergedTickerRow>();
+        public RangeObservableCollection<MergedTickerRow> MergedRows { get; } = new RangeObservableCollection<MergedTickerRow>();
 
 
         private ObservableCollection<TadPositionsDataModel> _tadPositionsData;
@@ -419,10 +441,9 @@ namespace wpfTDX
         public static readonly string[] IntervalOrder = new[]
         {
             "t1", "t2", "t3", "t4", "t5", "t8",
-            "v2", "v3", "n2", "n3", "n4",
-            "y2", "y3",
-            "h2", "h3", "h4", "h6", "h12", "h16",
-            "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
+            "v2", "v3", "v4", "v6", "v8",
+            "y2", "y3", "y4", "y6", "y8", "y12", "y24", "y32",
+            "D1", "y72", "D2", "D3", "D4", "W1", "D8", "W2"
         };
 
         /// <summary>
@@ -451,8 +472,8 @@ namespace wpfTDX
             // if no non-default p_int found, default minimum is n3
             if (minInterval == null)
             {
-                int n3Idx = Array.FindIndex(IntervalOrder, i => i == "n3");
-                return IntervalOrder[n3Idx];
+                int defIdx = Array.FindIndex(IntervalOrder, i => i == "v6");
+                return IntervalOrder[defIdx];
             }
             return minInterval;
         }
@@ -928,8 +949,9 @@ namespace wpfTDX
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                // Exclude base strategies — those belong to the strategy_b dropdown.
                 var resp = await client.PostAsync($"{baseUrl}/get_strategynames",
-                                                  new StringContent("{}", Encoding.UTF8, "application/json"));
+                                                  new StringContent("{\"exclude_interval_type\":\"base\"}", Encoding.UTF8, "application/json"));
                 resp.EnsureSuccessStatusCode();
                 var body = await resp.Content.ReadAsStringAsync();
 
@@ -1384,6 +1406,16 @@ namespace wpfTDX
                     model.PositionT8 = row.Value<float?>("position_t8");
                     model.PositionV2 = row.Value<float?>("position_v2");
                     model.PositionV3 = row.Value<float?>("position_v3");
+                    model.PositionV4 = row.Value<float?>("position_v4");
+                    model.PositionV6 = row.Value<float?>("position_v6");
+                    model.PositionV8 = row.Value<float?>("position_v8");
+                    model.PositionY4 = row.Value<float?>("position_y4");
+                    model.PositionY6 = row.Value<float?>("position_y6");
+                    model.PositionY8 = row.Value<float?>("position_y8");
+                    model.PositionY12 = row.Value<float?>("position_y12");
+                    model.PositionY24 = row.Value<float?>("position_y24");
+                    model.PositionY32 = row.Value<float?>("position_y32");
+                    model.PositionY72 = row.Value<float?>("position_y72");
                     model.PositionN2 = row.Value<float?>("position_n2");
                     model.PositionN3 = row.Value<float?>("position_n3");
                     model.PositionN4 = row.Value<float?>("position_n4");
@@ -1711,6 +1743,16 @@ namespace wpfTDX
                     T8 = fi?.T8,
                     V2 = fi?.V2,
                     V3 = fi?.V3,
+                    V4 = fi?.V4,
+                    V6 = fi?.V6,
+                    V8 = fi?.V8,
+                    y4 = fi?.Y4,
+                    y6 = fi?.Y6,
+                    y8 = fi?.Y8,
+                    y12 = fi?.Y12,
+                    y24 = fi?.Y24,
+                    y32 = fi?.Y32,
+                    y72 = fi?.Y72,
                     N2 = fi?.N2,
                     N3 = fi?.N3,
                     N4 = fi?.N4,
@@ -1748,6 +1790,16 @@ namespace wpfTDX
                     PositionT8 = tp.PositionT8,
                     PositionV2 = tp.PositionV2,
                     PositionV3 = tp.PositionV3,
+                    PositionV4 = tp.PositionV4,
+                    PositionV6 = tp.PositionV6,
+                    PositionV8 = tp.PositionV8,
+                    PositionY4 = tp.PositionY4,
+                    PositionY6 = tp.PositionY6,
+                    PositionY8 = tp.PositionY8,
+                    PositionY12 = tp.PositionY12,
+                    PositionY24 = tp.PositionY24,
+                    PositionY32 = tp.PositionY32,
+                    PositionY72 = tp.PositionY72,
                     PositionN2 = tp.PositionN2,
                     PositionN3 = tp.PositionN3,
                     PositionN4 = tp.PositionN4,
@@ -1890,6 +1942,16 @@ namespace wpfTDX
                     T8 = fiOnly.T8,
                     V2 = fiOnly.V2,
                     V3 = fiOnly.V3,
+                    V4 = fiOnly.V4,
+                    V6 = fiOnly.V6,
+                    V8 = fiOnly.V8,
+                    y4 = fiOnly.Y4,
+                    y6 = fiOnly.Y6,
+                    y8 = fiOnly.Y8,
+                    y12 = fiOnly.Y12,
+                    y24 = fiOnly.Y24,
+                    y32 = fiOnly.Y32,
+                    y72 = fiOnly.Y72,
                     N2 = fiOnly.N2,
                     N3 = fiOnly.N3,
                     N4 = fiOnly.N4,
@@ -1968,9 +2030,9 @@ namespace wpfTDX
                 return string.Compare(a.Tickername, b.Tickername, StringComparison.OrdinalIgnoreCase);
             });
 
-            MergedRows.Clear();
-            foreach (var r in tempRows)
-                MergedRows.Add(r);
+            // Bulk-replace in one shot: a single Reset notification instead of N Adds, so the
+            // DataGrid regenerates containers and lays out once rather than per row.
+            MergedRows.ReplaceAll(tempRows);
 
             if (MergedRowsView != null)
             {
@@ -2878,6 +2940,266 @@ namespace wpfTDX
                 set { if (_positionV3 != value) { _positionV3 = value; OnPropertyChanged(); OnPropertyChanged(nameof(V3Brush)); } }
             }
 
+            public bool? OriginalV4 { get; private set; }
+            private bool? _v4;
+            public bool? V4
+            {
+                get => _v4;
+                set
+                {
+                    if (_v4 != value)
+                    {
+                        _v4 = value;
+                        OnPropertyChanged(nameof(V4));
+                        OnPropertyChanged(nameof(V4HasChanged));
+                        OnPropertyChanged(nameof(V4Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool V4HasChanged => _isInitialized && _v4 != OriginalV4;
+            private float? _positionV4;
+            public float? PositionV4
+            {
+                get => _positionV4;
+                set { if (_positionV4 != value) { _positionV4 = value; OnPropertyChanged(nameof(PositionV4)); OnPropertyChanged(nameof(V4Brush)); } }
+            }
+
+            public bool? OriginalV6 { get; private set; }
+            private bool? _v6;
+            public bool? V6
+            {
+                get => _v6;
+                set
+                {
+                    if (_v6 != value)
+                    {
+                        _v6 = value;
+                        OnPropertyChanged(nameof(V6));
+                        OnPropertyChanged(nameof(V6HasChanged));
+                        OnPropertyChanged(nameof(V6Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool V6HasChanged => _isInitialized && _v6 != OriginalV6;
+            private float? _positionV6;
+            public float? PositionV6
+            {
+                get => _positionV6;
+                set { if (_positionV6 != value) { _positionV6 = value; OnPropertyChanged(nameof(PositionV6)); OnPropertyChanged(nameof(V6Brush)); } }
+            }
+
+            public bool? OriginalV8 { get; private set; }
+            private bool? _v8;
+            public bool? V8
+            {
+                get => _v8;
+                set
+                {
+                    if (_v8 != value)
+                    {
+                        _v8 = value;
+                        OnPropertyChanged(nameof(V8));
+                        OnPropertyChanged(nameof(V8HasChanged));
+                        OnPropertyChanged(nameof(V8Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool V8HasChanged => _isInitialized && _v8 != OriginalV8;
+            private float? _positionV8;
+            public float? PositionV8
+            {
+                get => _positionV8;
+                set { if (_positionV8 != value) { _positionV8 = value; OnPropertyChanged(nameof(PositionV8)); OnPropertyChanged(nameof(V8Brush)); } }
+            }
+
+            public bool? OriginalY4 { get; private set; }
+            private bool? _y4;
+            public bool? y4
+            {
+                get => _y4;
+                set
+                {
+                    if (_y4 != value)
+                    {
+                        _y4 = value;
+                        OnPropertyChanged(nameof(y4));
+                        OnPropertyChanged(nameof(Y4HasChanged));
+                        OnPropertyChanged(nameof(Y4Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y4HasChanged => _isInitialized && _y4 != OriginalY4;
+            private float? _positionY4;
+            public float? PositionY4
+            {
+                get => _positionY4;
+                set { if (_positionY4 != value) { _positionY4 = value; OnPropertyChanged(nameof(PositionY4)); OnPropertyChanged(nameof(Y4Brush)); } }
+            }
+
+            public bool? OriginalY6 { get; private set; }
+            private bool? _y6;
+            public bool? y6
+            {
+                get => _y6;
+                set
+                {
+                    if (_y6 != value)
+                    {
+                        _y6 = value;
+                        OnPropertyChanged(nameof(y6));
+                        OnPropertyChanged(nameof(Y6HasChanged));
+                        OnPropertyChanged(nameof(Y6Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y6HasChanged => _isInitialized && _y6 != OriginalY6;
+            private float? _positionY6;
+            public float? PositionY6
+            {
+                get => _positionY6;
+                set { if (_positionY6 != value) { _positionY6 = value; OnPropertyChanged(nameof(PositionY6)); OnPropertyChanged(nameof(Y6Brush)); } }
+            }
+
+            public bool? OriginalY8 { get; private set; }
+            private bool? _y8;
+            public bool? y8
+            {
+                get => _y8;
+                set
+                {
+                    if (_y8 != value)
+                    {
+                        _y8 = value;
+                        OnPropertyChanged(nameof(y8));
+                        OnPropertyChanged(nameof(Y8HasChanged));
+                        OnPropertyChanged(nameof(Y8Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y8HasChanged => _isInitialized && _y8 != OriginalY8;
+            private float? _positionY8;
+            public float? PositionY8
+            {
+                get => _positionY8;
+                set { if (_positionY8 != value) { _positionY8 = value; OnPropertyChanged(nameof(PositionY8)); OnPropertyChanged(nameof(Y8Brush)); } }
+            }
+
+            public bool? OriginalY12 { get; private set; }
+            private bool? _y12;
+            public bool? y12
+            {
+                get => _y12;
+                set
+                {
+                    if (_y12 != value)
+                    {
+                        _y12 = value;
+                        OnPropertyChanged(nameof(y12));
+                        OnPropertyChanged(nameof(Y12HasChanged));
+                        OnPropertyChanged(nameof(Y12Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y12HasChanged => _isInitialized && _y12 != OriginalY12;
+            private float? _positionY12;
+            public float? PositionY12
+            {
+                get => _positionY12;
+                set { if (_positionY12 != value) { _positionY12 = value; OnPropertyChanged(nameof(PositionY12)); OnPropertyChanged(nameof(Y12Brush)); } }
+            }
+
+            public bool? OriginalY24 { get; private set; }
+            private bool? _y24;
+            public bool? y24
+            {
+                get => _y24;
+                set
+                {
+                    if (_y24 != value)
+                    {
+                        _y24 = value;
+                        OnPropertyChanged(nameof(y24));
+                        OnPropertyChanged(nameof(Y24HasChanged));
+                        OnPropertyChanged(nameof(Y24Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y24HasChanged => _isInitialized && _y24 != OriginalY24;
+            private float? _positionY24;
+            public float? PositionY24
+            {
+                get => _positionY24;
+                set { if (_positionY24 != value) { _positionY24 = value; OnPropertyChanged(nameof(PositionY24)); OnPropertyChanged(nameof(Y24Brush)); } }
+            }
+
+            public bool? OriginalY32 { get; private set; }
+            private bool? _y32;
+            public bool? y32
+            {
+                get => _y32;
+                set
+                {
+                    if (_y32 != value)
+                    {
+                        _y32 = value;
+                        OnPropertyChanged(nameof(y32));
+                        OnPropertyChanged(nameof(Y32HasChanged));
+                        OnPropertyChanged(nameof(Y32Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y32HasChanged => _isInitialized && _y32 != OriginalY32;
+            private float? _positionY32;
+            public float? PositionY32
+            {
+                get => _positionY32;
+                set { if (_positionY32 != value) { _positionY32 = value; OnPropertyChanged(nameof(PositionY32)); OnPropertyChanged(nameof(Y32Brush)); } }
+            }
+
+            public bool? OriginalY72 { get; private set; }
+            private bool? _y72;
+            public bool? y72
+            {
+                get => _y72;
+                set
+                {
+                    if (_y72 != value)
+                    {
+                        _y72 = value;
+                        OnPropertyChanged(nameof(y72));
+                        OnPropertyChanged(nameof(Y72HasChanged));
+                        OnPropertyChanged(nameof(Y72Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool Y72HasChanged => _isInitialized && _y72 != OriginalY72;
+            private float? _positionY72;
+            public float? PositionY72
+            {
+                get => _positionY72;
+                set { if (_positionY72 != value) { _positionY72 = value; OnPropertyChanged(nameof(PositionY72)); OnPropertyChanged(nameof(Y72Brush)); } }
+            }
+
             public bool? OriginalN2 { get; private set; }
             private bool? _n2;
             public bool? N2
@@ -3722,6 +4044,16 @@ namespace wpfTDX
             public Brush T8Brush => ComputeFlagPosBrush(T8, PositionT8);
             public Brush V2Brush => ComputeFlagPosBrush(V2, PositionV2);
             public Brush V3Brush => ComputeFlagPosBrush(V3, PositionV3);
+            public Brush V4Brush => ComputeFlagPosBrush(V4, PositionV4);
+            public Brush V6Brush => ComputeFlagPosBrush(V6, PositionV6);
+            public Brush V8Brush => ComputeFlagPosBrush(V8, PositionV8);
+            public Brush Y4Brush => ComputeFlagPosBrush(y4, PositionY4);
+            public Brush Y6Brush => ComputeFlagPosBrush(y6, PositionY6);
+            public Brush Y8Brush => ComputeFlagPosBrush(y8, PositionY8);
+            public Brush Y12Brush => ComputeFlagPosBrush(y12, PositionY12);
+            public Brush Y24Brush => ComputeFlagPosBrush(y24, PositionY24);
+            public Brush Y32Brush => ComputeFlagPosBrush(y32, PositionY32);
+            public Brush Y72Brush => ComputeFlagPosBrush(y72, PositionY72);
             public Brush N2Brush => ComputeFlagPosBrush(N2, PositionN2);
             public Brush N3Brush => ComputeFlagPosBrush(N3, PositionN3);
             public Brush N4Brush => ComputeFlagPosBrush(N4, PositionN4);
@@ -3919,6 +4251,16 @@ namespace wpfTDX
                 OriginalT8 = src.OriginalT8;
                 OriginalV2 = src.OriginalV2;
                 OriginalV3 = src.OriginalV3;
+                OriginalV4 = src.OriginalV4;
+                OriginalV6 = src.OriginalV6;
+                OriginalV8 = src.OriginalV8;
+                OriginalY4 = src.OriginalY4;
+                OriginalY6 = src.OriginalY6;
+                OriginalY8 = src.OriginalY8;
+                OriginalY12 = src.OriginalY12;
+                OriginalY24 = src.OriginalY24;
+                OriginalY32 = src.OriginalY32;
+                OriginalY72 = src.OriginalY72;
                 OriginalN2 = src.OriginalN2;
                 OriginalN3 = src.OriginalN3;
                 OriginalN4 = src.OriginalN4;
@@ -3997,6 +4339,16 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W1HasChanged));
                 OnPropertyChanged(nameof(D8HasChanged));
                 OnPropertyChanged(nameof(W2HasChanged));
+                OnPropertyChanged(nameof(V4HasChanged));
+                OnPropertyChanged(nameof(V6HasChanged));
+                OnPropertyChanged(nameof(V8HasChanged));
+                OnPropertyChanged(nameof(Y4HasChanged));
+                OnPropertyChanged(nameof(Y6HasChanged));
+                OnPropertyChanged(nameof(Y8HasChanged));
+                OnPropertyChanged(nameof(Y12HasChanged));
+                OnPropertyChanged(nameof(Y24HasChanged));
+                OnPropertyChanged(nameof(Y32HasChanged));
+                OnPropertyChanged(nameof(Y72HasChanged));
                 OnPropertyChanged(nameof(ManualHasChanged));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
                 OnPropertyChanged(nameof(StrategyNameBaseHasChanged));
@@ -4023,6 +4375,16 @@ namespace wpfTDX
                 if (T8 == true) c++;
                 if (V2 == true) c++;
                 if (V3 == true) c++;
+                if (V4 == true) c++;
+                if (V6 == true) c++;
+                if (V8 == true) c++;
+                if (y4 == true) c++;
+                if (y6 == true) c++;
+                if (y8 == true) c++;
+                if (y12 == true) c++;
+                if (y24 == true) c++;
+                if (y32 == true) c++;
+                if (y72 == true) c++;
                 if (N2 == true) c++;
                 if (N3 == true) c++;
                 if (N4 == true) c++;
@@ -4069,6 +4431,16 @@ namespace wpfTDX
                 if (OriginalT8 == false) c++;
                 if (OriginalV2 == false) c++;
                 if (OriginalV3 == false) c++;
+                if (OriginalV4 == false) c++;
+                if (OriginalV6 == false) c++;
+                if (OriginalV8 == false) c++;
+                if (OriginalY4 == false) c++;
+                if (OriginalY6 == false) c++;
+                if (OriginalY8 == false) c++;
+                if (OriginalY12 == false) c++;
+                if (OriginalY24 == false) c++;
+                if (OriginalY32 == false) c++;
+                if (OriginalY72 == false) c++;
                 if (OriginalN2 == false) c++;
                 if (OriginalN3 == false) c++;
                 if (OriginalN4 == false) c++;
@@ -4121,6 +4493,16 @@ namespace wpfTDX
                 CountIfFiltered(T8, PositionT8, ref c, excludeZeroPositions);
                 CountIfFiltered(V2, PositionV2, ref c, excludeZeroPositions);
                 CountIfFiltered(V3, PositionV3, ref c, excludeZeroPositions);
+                CountIfFiltered(V4, PositionV4, ref c, excludeZeroPositions);
+                CountIfFiltered(V6, PositionV6, ref c, excludeZeroPositions);
+                CountIfFiltered(V8, PositionV8, ref c, excludeZeroPositions);
+                CountIfFiltered(y4, PositionY4, ref c, excludeZeroPositions);
+                CountIfFiltered(y6, PositionY6, ref c, excludeZeroPositions);
+                CountIfFiltered(y8, PositionY8, ref c, excludeZeroPositions);
+                CountIfFiltered(y12, PositionY12, ref c, excludeZeroPositions);
+                CountIfFiltered(y24, PositionY24, ref c, excludeZeroPositions);
+                CountIfFiltered(y32, PositionY32, ref c, excludeZeroPositions);
+                CountIfFiltered(y72, PositionY72, ref c, excludeZeroPositions);
                 CountIfFiltered(N2, PositionN2, ref c, excludeZeroPositions);
                 CountIfFiltered(N3, PositionN3, ref c, excludeZeroPositions);
                 CountIfFiltered(N4, PositionN4, ref c, excludeZeroPositions);
@@ -4162,6 +4544,16 @@ namespace wpfTDX
                 CountIfFiltered(OriginalT8, PositionT8, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalV2, PositionV2, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalV3, PositionV3, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalV4, PositionV4, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalV6, PositionV6, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalV8, PositionV8, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY4, PositionY4, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY6, PositionY6, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY8, PositionY8, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY12, PositionY12, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY24, PositionY24, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY32, PositionY32, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalY72, PositionY72, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalN2, PositionN2, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalN3, PositionN3, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalN4, PositionN4, ref c, excludeZeroPositions);
@@ -4202,8 +4594,10 @@ namespace wpfTDX
                     int curFiltered = CountCurrentFiltered(excludeZeroPositions);
                     int activeNow = ah2 - curFiltered;
 
-                    // Clamp to [1, AH2]
-                    x = Math.Min(ah2, Math.Max(1, activeNow));
+                    // Allow 0 for DISPLAY (e.g. every position interval filtered out); clamp to
+                    // [0, AH2]. The divide-by-zero-safe divisor (max(new_n, 1)) is applied only in
+                    // RecalcNewDeployment — new_n itself is shown as the real value.
+                    x = Math.Min(ah2, Math.Max(0, activeNow));
                 }
                 else
                 {
@@ -4223,8 +4617,8 @@ namespace wpfTDX
                 || BaseY1HasChanged || BaseH1HasChanged || BaseD1HasChanged
                 || BaseT1HasChanged || BaseV1HasChanged || BaseN1HasChanged
                 || T1HasChanged || T2HasChanged || T3HasChanged || T4HasChanged || T5HasChanged || T8HasChanged
-                || V2HasChanged || V3HasChanged || N2HasChanged || N3HasChanged || N4HasChanged
-                || Y1HasChanged || Y2HasChanged || Y3HasChanged
+                || V2HasChanged || V3HasChanged || V4HasChanged || V6HasChanged || V8HasChanged || N2HasChanged || N3HasChanged || N4HasChanged
+                || Y1HasChanged || Y2HasChanged || Y3HasChanged || Y4HasChanged || Y6HasChanged || Y8HasChanged || Y12HasChanged || Y24HasChanged || Y32HasChanged || Y72HasChanged
                 || H2HasChanged || H3HasChanged || H4HasChanged /* no H5 on purpose */
                 || H6HasChanged || H12HasChanged || H16HasChanged || H36HasChanged
                 || D1HasChanged || D2HasChanged || D3HasChanged || D4HasChanged
@@ -4273,6 +4667,16 @@ namespace wpfTDX
                 AddIfNotFiltered(T8, PositionT8, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(V2, PositionV2, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(V3, PositionV3, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(V4, PositionV4, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(V6, PositionV6, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(V8, PositionV8, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y4, PositionY4, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y6, PositionY6, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y8, PositionY8, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y12, PositionY12, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y24, PositionY24, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y32, PositionY32, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(y72, PositionY72, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(N2, PositionN2, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(N3, PositionN3, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(N4, PositionN4, BuyOnly, SellOnly, ref sum);
@@ -4313,9 +4717,12 @@ namespace wpfTDX
             {
                 float? nd = null;
 
-                if (NewTrades.HasValue && RescaledIntervals.HasValue && RescaledIntervals.Value != 0f)
+                if (NewTrades.HasValue && RescaledIntervals.HasValue)
                 {
-                    float r = NewTrades.Value / RescaledIntervals.Value;
+                    // new_n is displayed as-is (may be 0), but clamp the divisor to >= 1 so an
+                    // all-filtered row (new_n = 0) doesn't divide by zero.
+                    float divisor = Math.Max(1f, (float)RescaledIntervals.Value);
+                    float r = NewTrades.Value / divisor;
 
                     if (LongOnly == true) r = Math.Max(r, 0f);   // float overload
                     else if (ShortOnly == true) r = Math.Min(r, 0f);
@@ -4381,6 +4788,16 @@ namespace wpfTDX
                 OriginalT8 = _t8;
                 OriginalV2 = _v2;
                 OriginalV3 = _v3;
+                OriginalV4 = _v4;
+                OriginalV6 = _v6;
+                OriginalV8 = _v8;
+                OriginalY4 = _y4;
+                OriginalY6 = _y6;
+                OriginalY8 = _y8;
+                OriginalY12 = _y12;
+                OriginalY24 = _y24;
+                OriginalY32 = _y32;
+                OriginalY72 = _y72;
                 OriginalN2 = _n2;
                 OriginalN3 = _n3;
                 OriginalN4 = _n4;
@@ -4460,6 +4877,16 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(W1HasChanged));
                 OnPropertyChanged(nameof(D8HasChanged));
                 OnPropertyChanged(nameof(W2HasChanged));
+                OnPropertyChanged(nameof(V4HasChanged));
+                OnPropertyChanged(nameof(V6HasChanged));
+                OnPropertyChanged(nameof(V8HasChanged));
+                OnPropertyChanged(nameof(Y4HasChanged));
+                OnPropertyChanged(nameof(Y6HasChanged));
+                OnPropertyChanged(nameof(Y8HasChanged));
+                OnPropertyChanged(nameof(Y12HasChanged));
+                OnPropertyChanged(nameof(Y24HasChanged));
+                OnPropertyChanged(nameof(Y32HasChanged));
+                OnPropertyChanged(nameof(Y72HasChanged));
                 OnPropertyChanged(nameof(ManualHasChanged));
                 OnPropertyChanged(nameof(StrategyNameHasChanged));
                 OnPropertyChanged(nameof(StrategyNameBaseHasChanged));
@@ -4516,6 +4943,16 @@ namespace wpfTDX
                     T8 = PickForSave(this.T8, this.OriginalT8, this.T8HasChanged),
                     V2 = PickForSave(this.V2, this.OriginalV2, this.V2HasChanged),
                     V3 = PickForSave(this.V3, this.OriginalV3, this.V3HasChanged),
+                    V4 = PickForSave(this.V4, this.OriginalV4, this.V4HasChanged),
+                    V6 = PickForSave(this.V6, this.OriginalV6, this.V6HasChanged),
+                    V8 = PickForSave(this.V8, this.OriginalV8, this.V8HasChanged),
+                    Y4 = PickForSave(this.y4, this.OriginalY4, this.Y4HasChanged),
+                    Y6 = PickForSave(this.y6, this.OriginalY6, this.Y6HasChanged),
+                    Y8 = PickForSave(this.y8, this.OriginalY8, this.Y8HasChanged),
+                    Y12 = PickForSave(this.y12, this.OriginalY12, this.Y12HasChanged),
+                    Y24 = PickForSave(this.y24, this.OriginalY24, this.Y24HasChanged),
+                    Y32 = PickForSave(this.y32, this.OriginalY32, this.Y32HasChanged),
+                    Y72 = PickForSave(this.y72, this.OriginalY72, this.Y72HasChanged),
                     N2 = PickForSave(this.N2, this.OriginalN2, this.N2HasChanged),
                     N3 = PickForSave(this.N3, this.OriginalN3, this.N3HasChanged),
                     N4 = PickForSave(this.N4, this.OriginalN4, this.N4HasChanged),
@@ -4708,6 +5145,16 @@ namespace wpfTDX
                 y1 = false,
                 y2 = false,
                 y3 = false,
+                V4 = false,
+                V6 = false,
+                V8 = false,
+                y4 = false,
+                y6 = false,
+                y8 = false,
+                y12 = false,
+                y24 = false,
+                y32 = false,
+                y72 = false,
                 H2 = false,
                 H3 = false,
                 H4 = false,
@@ -4743,6 +5190,16 @@ namespace wpfTDX
                 PositionY1 = 0f,
                 PositionY2 = 0f,
                 PositionY3 = 0f,
+                PositionV4 = 0f,
+                PositionV6 = 0f,
+                PositionV8 = 0f,
+                PositionY4 = 0f,
+                PositionY6 = 0f,
+                PositionY8 = 0f,
+                PositionY12 = 0f,
+                PositionY24 = 0f,
+                PositionY32 = 0f,
+                PositionY72 = 0f,
                 PositionH2 = 0f,
                 PositionH3 = 0f,
                 PositionH4 = 0f,

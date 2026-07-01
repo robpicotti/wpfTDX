@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +53,16 @@ namespace wpfTDX
         [JsonProperty("W1")] public bool? W1 { get; set; }
         [JsonProperty("D8")] public bool? D8 { get; set; }
         [JsonProperty("W2")] public bool? W2 { get; set; }
+        [JsonProperty("v4")] public bool? V4 { get; set; }
+        [JsonProperty("v6")] public bool? V6 { get; set; }
+        [JsonProperty("v8")] public bool? V8 { get; set; }
+        [JsonProperty("y4")] public bool? Y4 { get; set; }
+        [JsonProperty("y6")] public bool? Y6 { get; set; }
+        [JsonProperty("y8")] public bool? Y8 { get; set; }
+        [JsonProperty("y12")] public bool? Y12 { get; set; }
+        [JsonProperty("y24")] public bool? Y24 { get; set; }
+        [JsonProperty("y32")] public bool? Y32 { get; set; }
+        [JsonProperty("y72")] public bool? Y72 { get; set; }
     }
 
 }

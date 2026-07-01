@@ -88,8 +88,8 @@ toggle (and feeds the colours). Server-side calcs live in
 | `filt_n` | `NumFiltIntervals` | interval count, filtered | filtered-side cap (`num_filtintervals`) |
 | `f_dep` | `FilteredDeployment` | deployment, filtered | `filt_t ÷ filt_n` — **sizes real orders for customised funds** (`filtered_deployment`) |
 | `new_t` | `NewTrades` | net trades, **live what-if** | `RecalcNewTrades`: Σ positions of un-filtered intervals (buy/sell-only); 0 if `filt_all` on |
-| `new_n` | `RescaledIntervals` | interval count, live | `RecalcRescaledIntervals`: `n − filtered-out` (clamp 1..n) if `rescale`, else `n` |
-| `n_dep` | `NewDeployment` | deployment, live | `RecalcNewDeployment`: `new_t ÷ new_n`, long/short clamped |
+| `new_n` | `RescaledIntervals` | interval count, live | `RecalcRescaledIntervals`: `n − filtered-out` (clamp **0..n**, so an all-filtered row shows 0) if `rescale`, else `n` |
+| `n_dep` | `NewDeployment` | deployment, live | `RecalcNewDeployment`: `new_t ÷ max(new_n, 1)`, long/short clamped — divisor clamped to ≥1 so `new_n = 0` doesn't divide by zero (`new_n` itself is still displayed as 0) |
 | `s_dep` | `ScaledDeployment` | scaled deployment, live | `ReCalcScaledDeployment`: `n_dep × scale factor` (`new_f` else `scale_f` else 1) |
 
 Key relationships:
@@ -117,17 +117,54 @@ on-screen order, edit `DesiredColumnOrder` (not the XAML block order). If you ad
 add its header to that array or it'll fall to the end.
 
 The interval columns' underlying order (in the XAML Columns collection and within
-`DesiredColumnOrder`) is **chronological (duration)**, e.g. `… h16, D1, h36, D2, D3, D4, W1,
-D8, W2 …` — `h36` (36h) between `D1` (24h) and `D2` (48h), `W1` (1wk) before `D8` (8d).
-Intentional; don't "tidy" it into per-letter family blocks.
+`DesiredColumnOrder`) is **chronological (duration)**, e.g. `… v8, y2, y3, y4, y6, y8, y12,
+y24, y32, D1, y72, D2, D3, D4, W1, D8, W2` — `y72` (36h) between `D1` (24h) and `D2` (48h),
+`W1` (1wk) before `D8` (8d). Intentional; don't "tidy" it into per-letter family blocks.
 
-Two **collapsible group bands** (Excel-style outline brackets) sit in a row above the grid,
+#### 2026-06 interval-set change (Bill)
+The `filter_intervals` table schema changed: the **`n` and `h` interval families were retired**
+and replaced with **extended `v` (`v4 v6 v8`) and `y` (`y4 y6 y8 y12 y24 y32 y72`) families**;
+bases dropped from 6 to **4** (`base_t1 base_v1 base_y1 base_D1` — no `base_n1`/`base_h1`).
+The live set is whatever `Interval.filter(groupname="trading")` emits server-side
+(`FILTER_INTV_EXPECTED_COLS` in [tapi.py](trading/apis/tapi.py)).
+- **New columns are fully wired** (flag/Position/Original/Brush/HasChanged on `MergedTickerRow`,
+  `FilterIntervalsDataModel`, `TadPositionsDataModel`, `FilterIntervalsUpsertRow`, both merge
+  loops, parse, counts, deployment, `ToUpsertRow`, `IntervalOrder`, `DesiredColumnOrder`, XAML).
+- **Retired columns (`n2 n3 n4 h2 h3 h4 h6 h12 h16 h36 b_n1 b_h1`) are only hidden, not deleted:**
+  their XAML columns carry `Visibility="Collapsed"` and their full ViewModel/model wiring is kept,
+  so reverting = remove the `Visibility="Collapsed"` and restore them to `IntervalOrder`/
+  `DesiredColumnOrder`. They're absent from `IntervalOrder`, so `UpdateIntervalColumnVisibility`
+  (which `continue`s on non-interval-order headers) won't re-show them.
+- `GetMinVisibleInterval`'s all-default fallback is now `"v6"` (was `"n3"`, which no longer exists).
+
+Three **collapsible group bands** (Excel-style outline brackets) sit in a row above the grid,
 generated in code by `BuildColumnGroups()` ([winFilterIntervals.xaml.cs](winFilterIntervals.xaml.cs)):
-- **`base`** → the `b_*` columns.
-- **`daily/weekly`** → the contiguous chronological `D1 → W2` block (`D1, h36, D2, D3, D4,
-  W1, D8, W2`).
+- **`base`** → the `b_*` columns (`b_t1, b_v1, b_y1, b_d1`).
+- **`intraday`** → the contiguous `t1 → y12` block (all sub-daily trading intervals:
+  `t1 t2 t3 t4 t5 t8 v2 v3 v4 v6 v8 y2 y3 y4 y6 y8 y12`).
+- **`daily/weekly`** → the contiguous `y24 → W2` block (`y24, y32, D1, y72, D2, D3, D4, W1,
+  D8, W2`) — starts at `y24`; `y72` (36h) sits between D1 and D2, `W1` before `D8`.
 
-Shorter families (`t/v/n/y/h`) intentionally have **no** collapser. How it works:
+Each group's `Headers` array MUST be in **display (chronological) order** — the bracket spans the
+first-visible to last-visible entry, and the collapsed `+` marker is placed at `Last`'s boundary.
+Groups must be contiguous in `DesiredColumnOrder` (base, then intraday, then daily/weekly).
+
+**Interval cell text is inverted for display only.** All interval/base columns bind their text
+through `FlagTextOrBlankConverter` (`TrueText=""`, `FalseText="ON"` in the XAML resource): an
+**active** interval (`flag == false`, i.e. not filtered out) shows **`ON`**, a **filtered-out**
+one (`flag == true`) shows **blank**, and a cell with no position stays blank. This is display
+only — the columns are read-only and saving uses the real bool values via `ToUpsertRow`, so the
+stored `true`/`false` semantics are unchanged. (Don't "fix" the converter to show True/False.)
+
+**Group separators (dark vertical gridlines).** The two inter-group boundaries are marked with a
+2px `#FF5A6B8C` cell border on always-visible anchor columns: **right** border on `b_d1`
+(base│intraday) and **left** border on `y24` (intraday│daily). Anchored on `b_d1`/`y24` because
+bases and `y24` aren't hidden by the min-`p_int` pass, so the line is always drawn even when the
+adjacent intraday columns are hidden/collapsed. Single-side thickness relies on the DataGrid's
+own gridlines (`GridLinesVisibility` defaults to `All`) for the other edges. The per-cell
+`…HasChanged` edit highlight (black, 3px) transiently overrides it while a cell is edited.
+
+How it works:
 - No placeholder columns — collapsing sets the member columns to `Visibility.Collapsed`
   (zero width, grid closes up); the collapsed band becomes a small floating **`+`** marker
   at the group boundary (in the `GroupHeaderCanvas` outline row), packed so adjacent markers
@@ -136,11 +173,35 @@ Shorter families (`t/v/n/y/h`) intentionally have **no** collapser. How it works
   `EnableColumnVirtualization="False"` is required (headers must always be realisable).
 - A bracket spans the **first-visible to last-visible** column of its group, so it appears
   whenever *any* member column is on screen (the min-`p_int` pass may hide part of a group).
+- **Marker/bracket placement works in `DisplayIndex` (on-screen) order, NOT `Columns`-collection
+  order.** `ApplyColumnOrder()` reorders via `DisplayIndex`, so the XAML collection order ≠ visual
+  order (stat columns are declared *after* the intervals but shown to their left). A collapsed
+  group's `+` is placed at the nearest **visible** neighbour found by `DisplayIndex`
+  (`PositionCollapsedBand` scans for smallest `DisplayIndex > lastDi` on the right, else largest
+  `DisplayIndex < firstDi` on the left). Do **not** revert this to `IndexOfColumn`/collection-order
+  walking — that put the daily `+` marker to the *left* of the intraday group.
 - Band `Border.Background` is `null` (not `Transparent`) so empty band area isn't
   hit-testable and doesn't swallow clicks meant for an overlapping `+`; collapsed markers
   also get a higher `Panel.ZIndex`.
 - Expanding re-applies `UpdateIntervalColumnVisibility()` (min-`p_int` baseline); that method
   also calls `ReapplyCollapsedGroups()` so a reload doesn't re-show a user-collapsed group.
+
+**Performance — band repositioning is debounced.** `PositionGroupBands()` does a visual-tree
+walk, and `FilterGrid.LayoutUpdated` fires on nearly every layout pass, so it must **not** be
+called directly from `LayoutUpdated`/`ScrollChanged`. Those handlers call
+`QueuePositionGroupBands()`, which coalesces a burst into a single pass per render frame
+(`DispatcherPriority.Render` + a `_bandsUpdateQueued` guard). Calling `PositionGroupBands()`
+directly on every layout tick made load/reload visibly slow (it ran hundreds–thousands of times
+as rows streamed in). Relatedly, `RebuildMerged()` refills `MergedRows` via
+`RangeObservableCollection.ReplaceAll(...)` — one `Reset` notification, not N `Add`s — so the
+grid regenerates/lays out once instead of per row. Keep both patterns if you touch this path.
+
+**Add/Delete ticker + `Refresh()`.** Delete is a *soft* delete (`row.IsDeleted = true`, hidden by
+`RowFilter`) followed by `MergedRowsView.Refresh()`. `DeleteTickerMenuItem_Click` must first end
+any open grid edit (`FilterGrid.CommitEdit(Cell)` then `CommitEdit(Row)`, cancel if commit is
+rejected) — otherwise deleting a freshly-added, still-unsaved row (which is mid-`EditItem`
+transaction) makes `Refresh()` throw *"not allowed during an AddNew or EditItem transaction."*
+Any code that calls `MergedRowsView.Refresh()` while a row could be in edit needs the same guard.
 
 ### Strategy columns (`strategy`, `strategy_b`) — editable dropdowns
 
@@ -155,10 +216,12 @@ the save triggers (`affectedStrategyTickers`, the override-payload `.Where`, `Ha
 Server-side the upsert maps both into `strategies_override` ([tapi.py](trading/apis/tapi.py) `upsert_filter_intervals` job).
 
 Dropdown lists come from **one endpoint**, `/get_strategynames`, which takes an optional JSON
-body `{"interval_type": "<type>"}`:
-- `LoadStrategyNamesAsync` posts `{}` → all manual strategies (`where {manual:1}`).
+body — `{"interval_type": "<t>"}` restricts to that type; `{"exclude_interval_type": "<t>"}` drops
+that type (`where` is equality-only, so exclusion is post-filtered in the handler):
+- `LoadStrategyNamesAsync` posts `{"exclude_interval_type":"base"}` → all manual strategies
+  **except** base ones (`strategy` must not offer base strategies — those belong to `strategy_b`).
 - `LoadStrategyNamesBaseAsync` posts `{"interval_type":"base"}` → `where {manual:1, interval_type:"base"}`.
-`"default"` is always prepended, so the dropdown is never empty.
+`"NONE"` and `"default"` are always prepended, so the dropdown is never empty.
 
 ### Position columns (`pos_lim`, `pos_tgt`, `s_pos_lim`) — read-only
 

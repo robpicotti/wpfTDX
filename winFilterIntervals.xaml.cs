@@ -195,12 +195,28 @@ namespace wpfTDX
                 _headersPresenter = FindVisualChild<DataGridColumnHeadersPresenter>(FilterGrid);
                 _gridScrollViewer = FindVisualChild<ScrollViewer>(FilterGrid);
                 if (_gridScrollViewer != null)
-                    _gridScrollViewer.ScrollChanged += (s, a) => PositionGroupBands();
-                FilterGrid.LayoutUpdated += (s, a) => PositionGroupBands();
+                    _gridScrollViewer.ScrollChanged += (s, a) => QueuePositionGroupBands();
+                FilterGrid.LayoutUpdated += (s, a) => QueuePositionGroupBands();
                 ApplyColumnOrder();
                 BuildColumnGroups();
             }
             PositionGroupBands();
+        }
+
+        // LayoutUpdated fires on virtually every layout pass (and each row Add during a
+        // reload triggers one), so running PositionGroupBands() — a visual-tree walk —
+        // synchronously on each was the load/reload bottleneck. Coalesce a burst of
+        // layout/scroll events into a single positioning pass per render frame.
+        private bool _bandsUpdateQueued;
+        private void QueuePositionGroupBands()
+        {
+            if (_bandsUpdateQueued) return;
+            _bandsUpdateQueued = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _bandsUpdateQueued = false;
+                PositionGroupBands();
+            }), System.Windows.Threading.DispatcherPriority.Render);
         }
 
         // Bill's column order for the filter intervals screen (left → right). ticker stays
@@ -211,9 +227,10 @@ namespace wpfTDX
             "c__upd", "manual", "rescale", "LO", "SO", "byO", "slO", "filt_all",
             "trd", "n", "dep", "filt_t", "filt_n", "f_dep", "new_t", "new_n", "n_dep",
             "scale_f", "new_f", "s_dep", "pos_lim", "pos_tgt", "s_pos_lim",
-            "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1",
-            "t1", "t2", "t3", "t4", "t5", "t8", "v2", "v3", "n2", "n3", "n4", "y2", "y3",
-            "h2", "h3", "h4", "h6", "h12", "h16", "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2",
+            "b_t1", "b_v1", "b_y1", "b_d1",
+            "t1", "t2", "t3", "t4", "t5", "t8", "v2", "v3", "v4", "v6", "v8",
+            "y2", "y3", "y4", "y6", "y8", "y12", "y24", "y32",
+            "D1", "y72", "D2", "D3", "D4", "W1", "D8", "W2",
         };
 
         /// <summary>
@@ -246,9 +263,16 @@ namespace wpfTDX
         {
             if (_columnGroups.Count > 0) return;
 
-            AddGroup("base", new[] { "b_t1", "b_v1", "b_n1", "b_y1", "b_h1", "b_d1" });
-            // Chronological D1 → W2 block (h36 = 36h sits between D1 and D2; W1 before D8).
-            AddGroup("daily/weekly", new[] { "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2" });
+            AddGroup("base", new[] { "b_t1", "b_v1", "b_y1", "b_d1" });
+            // Intraday block: t1 → y12 (all sub-daily trading intervals). Contiguous, sits
+            // between the base group and the daily/weekly group.
+            AddGroup("intraday", new[] {
+                "t1", "t2", "t3", "t4", "t5", "t8",
+                "v2", "v3", "v4", "v6", "v8",
+                "y2", "y3", "y4", "y6", "y8", "y12" });
+            // Daily/weekly block: starts at y24 → W2 (y72 = 36h sits between D1 and D2; W1 before D8).
+            AddGroup("daily/weekly", new[] {
+                "y24", "y32", "D1", "y72", "D2", "D3", "D4", "W1", "D8", "W2" });
         }
 
         private void AddGroup(string label, string[] headers)
@@ -302,6 +326,13 @@ namespace wpfTDX
             for (int i = 0; i < FilterGrid.Columns.Count; i++)
                 if ((FilterGrid.Columns[i].Header as string) == header) return i;
             return -1;
+        }
+
+        private DataGridColumn ColumnByHeader(string header)
+        {
+            for (int i = 0; i < FilterGrid.Columns.Count; i++)
+                if ((FilterGrid.Columns[i].Header as string) == header) return FilterGrid.Columns[i];
+            return null;
         }
 
         /// <summary>
@@ -427,32 +458,54 @@ namespace wpfTDX
         {
             const double w = 18;   // small "+" marker
 
-            // Boundary = left edge of the first visible column to the RIGHT of the group;
-            // fall back to the right edge of the nearest visible column to the LEFT.
+            // Boundary is computed in DISPLAY order (DisplayIndex), NOT the Columns-collection
+            // order. ApplyColumnOrder() reorders columns via DisplayIndex, so collection order
+            // != on-screen order (e.g. the stat columns are declared after the intervals in XAML
+            // but shown to their left). Walking the collection would find the wrong neighbour and
+            // place the "+" on the wrong side of the group. So: find the group's member
+            // DisplayIndex range, then the nearest VISIBLE neighbour on each side by DisplayIndex.
             double boundaryX = double.NaN;
-            int gl = IndexOfColumn(g.Last);
-            if (gl >= 0)
+
+            int firstDi = int.MaxValue, lastDi = int.MinValue;
+            foreach (var h in g.Headers)
             {
-                for (int i = gl + 1; i < FilterGrid.Columns.Count; i++)
-                {
-                    var col = FilterGrid.Columns[i];
-                    if (col.Visibility != System.Windows.Visibility.Visible) continue;
-                    DataGridColumnHeader hh;
-                    if ((col.Header as string) != null && byText.TryGetValue((string)col.Header, out hh))
-                    { boundaryX = hh.TransformToVisual(this).Transform(new System.Windows.Point(0, 0)).X; break; }
-                }
+                var mc = ColumnByHeader(h);
+                if (mc == null) continue;
+                if (mc.DisplayIndex < firstDi) firstDi = mc.DisplayIndex;
+                if (mc.DisplayIndex > lastDi) lastDi = mc.DisplayIndex;
             }
-            if (double.IsNaN(boundaryX))
+
+            if (lastDi >= 0)
             {
-                int gf = IndexOfColumn(g.First);
-                for (int i = gf - 1; i >= 0; i--)
+                // nearest visible column to the RIGHT = smallest DisplayIndex > lastDi
+                DataGridColumnHeader rightHdr = null;
+                int bestRight = int.MaxValue;
+                foreach (var col in FilterGrid.Columns)
                 {
-                    var col = FilterGrid.Columns[i];
-                    if (col.Visibility != System.Windows.Visibility.Visible) continue;
+                    var hdr = col.Header as string;
+                    if (hdr == null || col.Visibility != System.Windows.Visibility.Visible) continue;
                     DataGridColumnHeader hh;
-                    if ((col.Header as string) != null && byText.TryGetValue((string)col.Header, out hh))
-                    { boundaryX = hh.TransformToVisual(this).Transform(new System.Windows.Point(hh.ActualWidth, 0)).X; break; }
+                    if (!byText.TryGetValue(hdr, out hh)) continue;
+                    if (col.DisplayIndex > lastDi && col.DisplayIndex < bestRight) { bestRight = col.DisplayIndex; rightHdr = hh; }
                 }
+                if (rightHdr != null)
+                    boundaryX = rightHdr.TransformToVisual(this).Transform(new System.Windows.Point(0, 0)).X;
+            }
+            if (double.IsNaN(boundaryX) && firstDi != int.MaxValue)
+            {
+                // nearest visible column to the LEFT = largest DisplayIndex < firstDi
+                DataGridColumnHeader leftHdr = null;
+                int bestLeft = int.MinValue;
+                foreach (var col in FilterGrid.Columns)
+                {
+                    var hdr = col.Header as string;
+                    if (hdr == null || col.Visibility != System.Windows.Visibility.Visible) continue;
+                    DataGridColumnHeader hh;
+                    if (!byText.TryGetValue(hdr, out hh)) continue;
+                    if (col.DisplayIndex < firstDi && col.DisplayIndex > bestLeft) { bestLeft = col.DisplayIndex; leftHdr = hh; }
+                }
+                if (leftHdr != null)
+                    boundaryX = leftHdr.TransformToVisual(this).Transform(new System.Windows.Point(leftHdr.ActualWidth, 0)).X;
             }
             if (double.IsNaN(boundaryX))
             {
@@ -766,6 +819,14 @@ namespace wpfTDX
         {
             var row = FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow;
             if (row == null) return;
+
+            // End any in-progress edit before we mutate + Refresh(). Deleting a freshly-added,
+            // still-unsaved row leaves the grid mid-EditItem transaction on that row, and
+            // ICollectionView.Refresh() throws "not allowed during an AddNew or EditItem
+            // transaction" while that's open. Commit the cell/row (cancel if commit is rejected).
+            FilterGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+            if (!FilterGrid.CommitEdit(DataGridEditingUnit.Row, true))
+                FilterGrid.CancelEdit(DataGridEditingUnit.Row);
 
             // Thaw it
             row.Manual = false;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -566,6 +566,76 @@ namespace wpfTDX
                     OnPropertyChanged();
                 }
             }
+        }
+        private bool? _v4;
+        [JsonProperty("v4")]
+        public bool? V4
+        {
+            get { return _v4; }
+            set { if (_v4 != value) { _v4 = value; OnPropertyChanged(); } }
+        }
+        private bool? _v6;
+        [JsonProperty("v6")]
+        public bool? V6
+        {
+            get { return _v6; }
+            set { if (_v6 != value) { _v6 = value; OnPropertyChanged(); } }
+        }
+        private bool? _v8;
+        [JsonProperty("v8")]
+        public bool? V8
+        {
+            get { return _v8; }
+            set { if (_v8 != value) { _v8 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y4;
+        [JsonProperty("y4")]
+        public bool? Y4
+        {
+            get { return _y4; }
+            set { if (_y4 != value) { _y4 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y6;
+        [JsonProperty("y6")]
+        public bool? Y6
+        {
+            get { return _y6; }
+            set { if (_y6 != value) { _y6 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y8;
+        [JsonProperty("y8")]
+        public bool? Y8
+        {
+            get { return _y8; }
+            set { if (_y8 != value) { _y8 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y12;
+        [JsonProperty("y12")]
+        public bool? Y12
+        {
+            get { return _y12; }
+            set { if (_y12 != value) { _y12 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y24;
+        [JsonProperty("y24")]
+        public bool? Y24
+        {
+            get { return _y24; }
+            set { if (_y24 != value) { _y24 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y32;
+        [JsonProperty("y32")]
+        public bool? Y32
+        {
+            get { return _y32; }
+            set { if (_y32 != value) { _y32 = value; OnPropertyChanged(); } }
+        }
+        private bool? _y72;
+        [JsonProperty("y72")]
+        public bool? Y72
+        {
+            get { return _y72; }
+            set { if (_y72 != value) { _y72 = value; OnPropertyChanged(); } }
         }
 
     }

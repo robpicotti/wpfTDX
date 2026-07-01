@@ -27,7 +27,10 @@
                                  TrueText="True"
                                  FalseText="False"
                                  NullText="" />
-        <local:FlagTextOrBlankConverter x:Key="FlagTextOrBlankConverter" TrueText="True" FalseText="False"/>
+        <!-- Interval cells: DISPLAY only. flag==false (interval active) shows "ON";
+             flag==true (filtered out) shows blank. Saving is unaffected (columns are read-only;
+             ToUpsertRow saves the real bool values). No-position cells stay blank. -->
+        <local:FlagTextOrBlankConverter x:Key="FlagTextOrBlankConverter" TrueText="" FalseText="ON"/>
 
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style x:Key="BusyButtonStyle" TargetType="Button">
@@ -828,7 +831,7 @@
                 </DataGridTextColumn>
 
                 <!-- b_n1 (base_n1) -->
-                <DataGridTextColumn Header="b_n1" IsReadOnly="True">
+                <DataGridTextColumn Header="b_n1" Visibility="Collapsed" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="BaseN1"/><Binding Path="PositionBaseN1"/>
@@ -872,7 +875,7 @@
                 </DataGridTextColumn>
 
                 <!-- b_h1 (base_h1) -->
-                <DataGridTextColumn Header="b_h1" IsReadOnly="True">
+                <DataGridTextColumn Header="b_h1" Visibility="Collapsed" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="BaseH1"/><Binding Path="PositionBaseH1"/>
@@ -909,7 +912,8 @@
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
-                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <!-- dark right border = base | intraday group separator -->
+                            <Setter Property="BorderThickness" Value="0,0,2,0"/><Setter Property="BorderBrush" Value="#FF5A6B8C"/>
                             <Style.Triggers><DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -1091,8 +1095,229 @@
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
 
+                <!-- v4 -->
+                <DataGridTextColumn Header="v4" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="V4"/><Binding Path="PositionV4"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding V4Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V4HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V4HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- v6 -->
+                <DataGridTextColumn Header="v6" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="V6"/><Binding Path="PositionV6"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding V6Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V6HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V6HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- v8 -->
+                <DataGridTextColumn Header="v8" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="V8"/><Binding Path="PositionV8"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding V8Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V8HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding V8HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y4 -->
+                <DataGridTextColumn Header="y4" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y4"/><Binding Path="PositionY4"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y4Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y4HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y4HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y6 -->
+                <DataGridTextColumn Header="y6" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y6"/><Binding Path="PositionY6"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y6Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y6HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y6HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y8 -->
+                <DataGridTextColumn Header="y8" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y8"/><Binding Path="PositionY8"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y8Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y8HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y8HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y12 -->
+                <DataGridTextColumn Header="y12" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y12"/><Binding Path="PositionY12"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y12Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y12HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y12HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y24 -->
+                <DataGridTextColumn Header="y24" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y24"/><Binding Path="PositionY24"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y24Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y24HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <!-- dark left border = intraday | daily/weekly group separator -->
+                            <Setter Property="BorderThickness" Value="2,0,0,0"/><Setter Property="BorderBrush" Value="#FF5A6B8C"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y24HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y32 -->
+                <DataGridTextColumn Header="y32" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y32"/><Binding Path="PositionY32"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y32Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y32HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y32HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- y72 -->
+                <DataGridTextColumn Header="y72" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="y72"/><Binding Path="PositionY72"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding Y72Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y72HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding Y72HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
                 <!-- n2 -->
-                <DataGridTextColumn Header="n2" IsReadOnly="True">
+                <DataGridTextColumn Header="n2" Visibility="Collapsed" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="N2"/><Binding Path="PositionN2"/>
@@ -1114,7 +1339,7 @@
                 </DataGridTextColumn>
 
                 <!-- n3 -->
-                <DataGridTextColumn Header="n3" IsReadOnly="True">
+                <DataGridTextColumn Header="n3" Visibility="Collapsed" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="N3"/><Binding Path="PositionN3"/>
@@ -1136,7 +1361,7 @@
                 </DataGridTextColumn>
 
                 <!-- n4 -->
-                <DataGridTextColumn Header="n4" IsReadOnly="True">
+                <DataGridTextColumn Header="n4" Visibility="Collapsed" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
                             <Binding Path="N4"/><Binding Path="PositionN4"/>
@@ -1235,7 +1460,7 @@
                 </DataGridTextColumn>
 
                 <!-- h2 -->
-                <DataGridTextColumn Header="h2"
+                <DataGridTextColumn Header="h2" Visibility="Collapsed"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -1274,7 +1499,7 @@
                 </DataGridTextColumn>
 
                 <!-- h3 -->
-                <DataGridTextColumn Header="h3"
+                <DataGridTextColumn Header="h3" Visibility="Collapsed"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
@@ -1312,7 +1537,7 @@
                 </DataGridTextColumn>
 
                 <!-- h4 -->
-                <DataGridTextColumn Header="h4"
+                <DataGridTextColumn Header="h4" Visibility="Collapsed"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
@@ -1350,7 +1575,7 @@
                 </DataGridTextColumn>
 
                 <!-- h6 -->
-                <DataGridTextColumn Header="h6"
+                <DataGridTextColumn Header="h6" Visibility="Collapsed"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -1389,7 +1614,7 @@
                 </DataGridTextColumn>
 
                 <!-- h12 -->
-                <DataGridTextColumn Header="h12"
+                <DataGridTextColumn Header="h12" Visibility="Collapsed"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -1428,7 +1653,7 @@
                 </DataGridTextColumn>
 
                 <!-- h16 -->
-                <DataGridTextColumn Header="h16"
+                <DataGridTextColumn Header="h16" Visibility="Collapsed"
                     IsReadOnly="True"
                                         >
                     <DataGridTextColumn.Binding>
@@ -1508,7 +1733,7 @@
 
 
                 <!-- h36 -->
-                <DataGridTextColumn Header="h36"
+                <DataGridTextColumn Header="h36" Visibility="Collapsed"
                     IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -720,6 +720,76 @@ namespace wpfTDX
                     OnPropertyChanged(nameof(PositionY3));
                 }
             }
+        }
+        private float? _position_v4;
+        [JsonProperty("position_v4")]
+        public float? PositionV4
+        {
+            get => _position_v4;
+            set { if (value != _position_v4) { _position_v4 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_v6;
+        [JsonProperty("position_v6")]
+        public float? PositionV6
+        {
+            get => _position_v6;
+            set { if (value != _position_v6) { _position_v6 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_v8;
+        [JsonProperty("position_v8")]
+        public float? PositionV8
+        {
+            get => _position_v8;
+            set { if (value != _position_v8) { _position_v8 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y4;
+        [JsonProperty("position_y4")]
+        public float? PositionY4
+        {
+            get => _position_y4;
+            set { if (value != _position_y4) { _position_y4 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y6;
+        [JsonProperty("position_y6")]
+        public float? PositionY6
+        {
+            get => _position_y6;
+            set { if (value != _position_y6) { _position_y6 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y8;
+        [JsonProperty("position_y8")]
+        public float? PositionY8
+        {
+            get => _position_y8;
+            set { if (value != _position_y8) { _position_y8 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y12;
+        [JsonProperty("position_y12")]
+        public float? PositionY12
+        {
+            get => _position_y12;
+            set { if (value != _position_y12) { _position_y12 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y24;
+        [JsonProperty("position_y24")]
+        public float? PositionY24
+        {
+            get => _position_y24;
+            set { if (value != _position_y24) { _position_y24 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y32;
+        [JsonProperty("position_y32")]
+        public float? PositionY32
+        {
+            get => _position_y32;
+            set { if (value != _position_y32) { _position_y32 = value; OnPropertyChanged(); } }
+        }
+        private float? _position_y72;
+        [JsonProperty("position_y72")]
+        public float? PositionY72
+        {
+            get => _position_y72;
+            set { if (value != _position_y72) { _position_y72 = value; OnPropertyChanged(); } }
         }
         private float? _position_h2;
         [JsonProperty("position_h2")]
