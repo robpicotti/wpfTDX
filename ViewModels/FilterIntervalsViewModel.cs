@@ -297,6 +297,38 @@ namespace wpfTDX
             => null;
     }
 
+    /// <summary>
+    /// DISPLAY-ONLY relabelling of interval column headers by their actual duration:
+    /// intervals ≤ 90 min show the minute count (t1→"1" … y3→"90"); the hour-range intervals
+    /// show hours (y4→"h2" … y72→"h36"); days/weeks and every non-interval header pass through
+    /// unchanged. The column's real Header (the interval code) is untouched, so ApplyColumnOrder,
+    /// the collapser groups, IntervalOrder and column-visibility all still key off the code.
+    /// </summary>
+    public sealed class IntervalHeaderLabelConverter : IValueConverter
+    {
+        private static readonly Dictionary<string, string> Map = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            // ≤ 90 minutes → minute count
+            { "t1", "1" }, { "t2", "2" }, { "t3", "3" }, { "t4", "4" }, { "t5", "5" }, { "t8", "8" },
+            { "v2", "10" }, { "v3", "15" }, { "v4", "20" }, { "v6", "30" }, { "v8", "40" },
+            { "y2", "60" }, { "y3", "90" },
+            // hours (> 90 min, below days) → hN
+            { "y4", "h2" }, { "y6", "h3" }, { "y8", "h4" }, { "y12", "h6" },
+            { "y24", "h12" }, { "y32", "h16" }, { "y72", "h36" },
+            // D*, W*, base (b_*) and all other headers pass through unchanged
+        };
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var s = value as string;
+            if (s != null && Map.TryGetValue(s, out var label)) return label;
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => value;
+    }
+
     public sealed class NotEqualConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
@@ -2020,12 +2052,32 @@ namespace wpfTDX
                 tempRows.Add(row);
             }
 
-            // Sort in memory first, then populate collection in one batch
+            // Attach ticker "category" from the already-loaded ticker universe (no extra query),
+            // then sort by category, then tickername.
+            if (TickerUniverse != null && TickerUniverse.Count > 0)
+            {
+                var categoryByTicker = TickerUniverse
+                    .Where(t => t != null && !string.IsNullOrWhiteSpace(t.TickerName))
+                    .GroupBy(t => t.TickerName.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.First().Category, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var r in tempRows)
+                {
+                    if (!string.IsNullOrWhiteSpace(r.Tickername) &&
+                        categoryByTicker.TryGetValue(r.Tickername.Trim(), out var cat))
+                        r.Category = cat;
+                }
+            }
+
+            // Sort in memory first, then populate collection in one batch:
+            // fundgroup, fundname, then category (grouped before ticker), then tickername.
             tempRows.Sort((a, b) =>
             {
                 int c = string.Compare(a.FundGroup, b.FundGroup, StringComparison.OrdinalIgnoreCase);
                 if (c != 0) return c;
                 c = string.Compare(a.FundName, b.FundName, StringComparison.OrdinalIgnoreCase);
+                if (c != 0) return c;
+                c = string.Compare(a.Category, b.Category, StringComparison.OrdinalIgnoreCase);
                 if (c != 0) return c;
                 return string.Compare(a.Tickername, b.Tickername, StringComparison.OrdinalIgnoreCase);
             });
@@ -2301,6 +2353,7 @@ namespace wpfTDX
             public string Tickername { get; set; }
             public string FundGroup { get; set; }
             public string FundName { get; set; }
+            public string Category { get; set; }   // ticker metadata (from tickers table), display + sort only
 
             public bool? OriginalManual { get; private set; }
             private bool? _manual;
@@ -2412,6 +2465,7 @@ namespace wpfTDX
                     {
                         _scaleFactor = value;
                         OnPropertyChanged();
+                        OnPropertyChanged(nameof(ScaleFactorBrush));
                     }
                 }
             }
@@ -3982,6 +4036,7 @@ namespace wpfTDX
                         OnPropertyChanged(nameof(NewDeployment));
                         ReCalcScaledDeployment();
                         OnPropertyChanged(nameof(NewDeploymentBrush));
+                        OnPropertyChanged(nameof(ProposedChangeBrush));
                     }
                 }
             }
@@ -4029,6 +4084,7 @@ namespace wpfTDX
             private static readonly Brush BgIndianRed = Brushes.IndianRed;
             private static readonly Brush BgMediumSeaGreen = Brushes.MediumSeaGreen;
             private static readonly Brush BgTransparent = Brushes.Transparent;
+            private static readonly Brush BgLightOrange = new SolidColorBrush(Color.FromRgb(0xFF, 0xE8, 0xCC));  // scale_f ≠ 1 (distinct from manual)
 
             public Brush BaseY1Brush => ComputeFlagPosBrush(BaseY1, PositionBaseY1);
             public Brush BaseH1Brush => ComputeFlagPosBrush(BaseH1, PositionBaseH1);
@@ -4134,6 +4190,65 @@ namespace wpfTDX
                     return BgTransparent;
                 }
             }
+
+            // Diverging cell colour by deployment: dark red (-100%) → white (0) → dark green
+            // (+100%), intensity scaling with |deployment|. Used for the live (dep) and filtered
+            // (f_dep) triplets — all three cells of a triplet share the one deployment value.
+            private static Color DivergeColor(double dep)
+            {
+                double d = Math.Max(-1.0, Math.Min(1.0, dep));
+                double t = Math.Abs(d);
+                byte tr = d >= 0 ? (byte)0 : (byte)139;    // endpoint: dark green vs dark red
+                byte tg = d >= 0 ? (byte)100 : (byte)0;
+                byte tb = 0;
+                byte r = (byte)Math.Round(255 + (tr - 255) * t);
+                byte g = (byte)Math.Round(255 + (tg - 255) * t);
+                byte b = (byte)Math.Round(255 + (tb - 255) * t);
+                return Color.FromRgb(r, g, b);
+            }
+            private static Brush DeploymentDivergeBrush(float? dep)
+            {
+                if (!dep.HasValue) return BgGrey;   // no data
+                var br = new SolidColorBrush(DivergeColor(dep.Value));
+                br.Freeze();
+                return br;
+            }
+            private static Brush DeploymentForeground(float? dep)
+            {
+                if (!dep.HasValue) return Brushes.Black;
+                var c = DivergeColor(dep.Value);
+                double lum = 0.299 * c.R + 0.587 * c.G + 0.114 * c.B;   // white text on dark bg
+                return lum < 140 ? Brushes.White : Brushes.Black;
+            }
+
+            public Brush LiveDeploymentBrush => DeploymentDivergeBrush(PositionDeployment);
+            public Brush LiveDeploymentForeground => DeploymentForeground(PositionDeployment);
+            public Brush FilteredDeploymentBrush => DeploymentDivergeBrush(FilteredDeployment);
+            public Brush FilteredDeploymentForeground => DeploymentForeground(FilteredDeployment);
+
+            // Proposed triplet (new_t / new_n / n_dep): highlight only when the proposed deployment
+            // differs from the saved filtered deployment — light green if more bullish (higher),
+            // light red if more bearish (lower). One shared signal so all three cells agree
+            // (the previous per-cell brushes compared different metrics and disagreed).
+            public Brush ProposedChangeBrush
+            {
+                get
+                {
+                    if (!NewDeployment.HasValue || !FilteredDeployment.HasValue) return BgTransparent;
+                    // Compare at the displayed precision (P1 = 0.1%). NewDeployment is a double and
+                    // FilteredDeployment is a float, so a raw compare shows spurious float↔double
+                    // noise (~1e-8) as a "change" even when the shown values are identical.
+                    double a = Math.Round(NewDeployment.Value, 3);
+                    double b = Math.Round((double)FilteredDeployment.Value, 3);
+                    if (a == b) return BgTransparent;             // no proposed change
+                    return a > b ? BgPaleGreen : BgMistyRose;     // more bullish : more bearish
+                }
+            }
+
+            // scale_f highlight: very light orange when a scale factor is set and not 1 (i.e. the
+            // ticker is actually being scaled). Blank otherwise. Distinct from the manual column.
+            public Brush ScaleFactorBrush =>
+                (ScaleFactor.HasValue && Math.Abs(ScaleFactor.Value - 1.0) > 1e-9) ? BgLightOrange : BgTransparent;
 
 
             public void AcceptManualAsOriginal()
@@ -4580,6 +4695,70 @@ namespace wpfTDX
 
 
 
+            // Tally one flag/position pair into a group's totals: counts a position interval
+            // (position present, optionally non-zero) and whether it's active (flag == false).
+            private static void Tally(bool? flag, float? pos, bool excludeZero, ref int total, ref int active)
+            {
+                if (!pos.HasValue) return;
+                if (excludeZero && Math.Abs(pos.Value) <= 1e-9) return;
+                total++;
+                if (flag == false) active++;   // flag == false ⇒ not filtered ⇒ active
+            }
+
+            private void CountBaseGroup(bool excludeZero, out int total, out int active)
+            {
+                total = 0; active = 0;
+                Tally(BaseY1, PositionBaseY1, excludeZero, ref total, ref active);
+                Tally(BaseH1, PositionBaseH1, excludeZero, ref total, ref active);
+                Tally(BaseD1, PositionBaseD1, excludeZero, ref total, ref active);
+                Tally(BaseT1, PositionBaseT1, excludeZero, ref total, ref active);
+                Tally(BaseV1, PositionBaseV1, excludeZero, ref total, ref active);
+                Tally(BaseN1, PositionBaseN1, excludeZero, ref total, ref active);
+            }
+
+            private void CountNonBaseGroup(bool excludeZero, out int total, out int active)
+            {
+                total = 0; active = 0;
+                Tally(T1, PositionT1, excludeZero, ref total, ref active);
+                Tally(T2, PositionT2, excludeZero, ref total, ref active);
+                Tally(T3, PositionT3, excludeZero, ref total, ref active);
+                Tally(T4, PositionT4, excludeZero, ref total, ref active);
+                Tally(T5, PositionT5, excludeZero, ref total, ref active);
+                Tally(T8, PositionT8, excludeZero, ref total, ref active);
+                Tally(V2, PositionV2, excludeZero, ref total, ref active);
+                Tally(V3, PositionV3, excludeZero, ref total, ref active);
+                Tally(V4, PositionV4, excludeZero, ref total, ref active);
+                Tally(V6, PositionV6, excludeZero, ref total, ref active);
+                Tally(V8, PositionV8, excludeZero, ref total, ref active);
+                Tally(N2, PositionN2, excludeZero, ref total, ref active);
+                Tally(N3, PositionN3, excludeZero, ref total, ref active);
+                Tally(N4, PositionN4, excludeZero, ref total, ref active);
+                Tally(y1, PositionY1, excludeZero, ref total, ref active);
+                Tally(y2, PositionY2, excludeZero, ref total, ref active);
+                Tally(y3, PositionY3, excludeZero, ref total, ref active);
+                Tally(y4, PositionY4, excludeZero, ref total, ref active);
+                Tally(y6, PositionY6, excludeZero, ref total, ref active);
+                Tally(y8, PositionY8, excludeZero, ref total, ref active);
+                Tally(y12, PositionY12, excludeZero, ref total, ref active);
+                Tally(y24, PositionY24, excludeZero, ref total, ref active);
+                Tally(y32, PositionY32, excludeZero, ref total, ref active);
+                Tally(y72, PositionY72, excludeZero, ref total, ref active);
+                Tally(H2, PositionH2, excludeZero, ref total, ref active);
+                Tally(H3, PositionH3, excludeZero, ref total, ref active);
+                Tally(H4, PositionH4, excludeZero, ref total, ref active);
+                Tally(H6, PositionH6, excludeZero, ref total, ref active);
+                Tally(H12, PositionH12, excludeZero, ref total, ref active);
+                Tally(H16, PositionH16, excludeZero, ref total, ref active);
+                Tally(H36, PositionH36, excludeZero, ref total, ref active);
+                Tally(D1, PositionD1, excludeZero, ref total, ref active);
+                Tally(D2, PositionD2, excludeZero, ref total, ref active);
+                Tally(D3, PositionD3, excludeZero, ref total, ref active);
+                Tally(D4, PositionD4, excludeZero, ref total, ref active);
+                Tally(D8, PositionD8, excludeZero, ref total, ref active);
+                Tally(W1, PositionW1, excludeZero, ref total, ref active);
+                Tally(W2, PositionW2, excludeZero, ref total, ref active);
+            }
+
             public void RecalcRescaledIntervals(bool excludeZeroPositions = false)
             {
                 // AH2: cap (# of position intervals)
@@ -4601,14 +4780,44 @@ namespace wpfTDX
                 }
                 else
                 {
-                    // No rescale → use the full positions cap
-                    x = ah2;
+                    // No rescale: deployment spreads over the FULL position-interval count of each
+                    // group (base, non-base) that still has ≥1 active (unfiltered) interval; a group
+                    // with none active contributes 0. So n = baseTotal (iff any base active)
+                    // + nonBaseTotal (iff any non-base active).
+                    CountBaseGroup(excludeZeroPositions, out int baseTotal, out int baseActive);
+                    CountNonBaseGroup(excludeZeroPositions, out int nonBaseTotal, out int nonBaseActive);
+                    x = (baseActive > 0 ? baseTotal : 0) + (nonBaseActive > 0 ? nonBaseTotal : 0);
                 }
 
                 RescaledIntervals = x;
                 RecalcNewDeployment();
                 OnPropertyChanged(nameof(NewDeploymentBrush));
 
+            }
+
+            // Right-click bulk actions (this row): "off" = filtered = flag true (matching the
+            // ON/blank display where flag==false shows ON). Only the visible interval set is
+            // touched. Each setter already recalcs trades/rescaled/deployment; ReCalcScaledDeployment
+            // is called once at the end so s_dep updates too.
+            public void TurnOffBaseIntervals()
+            {
+                BaseT1 = true; BaseV1 = true; BaseY1 = true; BaseD1 = true;
+                ReCalcScaledDeployment();
+            }
+
+            public void TurnOffNonBaseIntervals()
+            {
+                T1 = true; T2 = true; T3 = true; T4 = true; T5 = true; T8 = true;
+                V2 = true; V3 = true; V4 = true; V6 = true; V8 = true;
+                y2 = true; y3 = true; y4 = true; y6 = true; y8 = true; y12 = true; y24 = true; y32 = true;
+                D1 = true; y72 = true; D2 = true; D3 = true; D4 = true; W1 = true; D8 = true; W2 = true;
+                ReCalcScaledDeployment();
+            }
+
+            public void TurnOffAllIntervals()
+            {
+                TurnOffBaseIntervals();
+                TurnOffNonBaseIntervals();
             }
 
             public bool HasAnyEdits =>
@@ -4995,6 +5204,9 @@ namespace wpfTDX
             // adjust to your table’s schema
             [JsonProperty("description")]
             public string Description { get; set; }
+
+            [JsonProperty("category")]
+            public string Category { get; set; }
 
             [JsonProperty("fundgroupname")]
             public string FundGroupName { get; set; }

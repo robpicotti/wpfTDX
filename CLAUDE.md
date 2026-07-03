@@ -23,6 +23,11 @@ then save back to the server. Three files:
 Data is loaded from the `/filtered_intervals` endpoint, which returns both the saved
 filter flags (`filter_intervals` table) and the latest `tad_positions` snapshot.
 
+> **Planned (not started):** a market-announcements feed will flag tickers affected by upcoming
+> economic events (NFP, FOMC, …) and **highlight their rows here**. Design note lives in the
+> trading repo `CLAUDE.md` → "Planned project — Market announcements feed". The WPF side is part 3
+> (a per-row `IsEventAffected`-style flag + row highlight, kept distinct from the deployment colouring).
+
 ### Interval columns + toggling
 
 Each interval column (`t1`, `h2`, `D1`, …) is read-only; you **toggle it by double-clicking**
@@ -88,9 +93,9 @@ toggle (and feeds the colours). Server-side calcs live in
 | `filt_n` | `NumFiltIntervals` | interval count, filtered | filtered-side cap (`num_filtintervals`) |
 | `f_dep` | `FilteredDeployment` | deployment, filtered | `filt_t ÷ filt_n` — **sizes real orders for customised funds** (`filtered_deployment`) |
 | `new_t` | `NewTrades` | net trades, **live what-if** | `RecalcNewTrades`: Σ positions of un-filtered intervals (buy/sell-only); 0 if `filt_all` on |
-| `new_n` | `RescaledIntervals` | interval count, live | `RecalcRescaledIntervals`: `n − filtered-out` (clamp **0..n**, so an all-filtered row shows 0) if `rescale`, else `n` |
+| `new_n` | `RescaledIntervals` | interval count, live | `RecalcRescaledIntervals`: **rescale=true** → `n − filtered-out` (clamp **0..n**, all-filtered row shows 0). **rescale=false** → per-group full count: `baseTotal (iff ≥1 base active) + nonBaseTotal (iff ≥1 non-base active)`, where a group's total = its position-interval count and "active" = `flag==false` (via `CountBaseGroup`/`CountNonBaseGroup`/`Tally`). i.e. no rescale keeps each group's whole interval count as long as that group has any unfiltered interval, else 0 |
 | `n_dep` | `NewDeployment` | deployment, live | `RecalcNewDeployment`: `new_t ÷ max(new_n, 1)`, long/short clamped — divisor clamped to ≥1 so `new_n = 0` doesn't divide by zero (`new_n` itself is still displayed as 0) |
-| `s_dep` | `ScaledDeployment` | scaled deployment, live | `ReCalcScaledDeployment`: `n_dep × scale factor` (`new_f` else `scale_f` else 1) |
+| `s_dep` | `ScaledDeployment` | scaled deployment, live | `ReCalcScaledDeployment`: `n_dep × scale factor` (`new_f` else `scale_f` else 1). **Hidden on screen** (`Visibility="Collapsed"`, out of `DesiredColumnOrder`) — VM/calc kept, so re-showing = remove the collapse + re-add to the order array |
 
 Key relationships:
 - `dep = trd ÷ n`, `f_dep = filt_t ÷ filt_n`, `n_dep = new_t ÷ new_n`.
@@ -110,11 +115,21 @@ title. (The `b_*` base columns do not have tooltips.)
 
 **On-screen column order is set in code, not by the XAML order.** `ApplyColumnOrder()`
 (called from `FilterGrid_Loaded`) assigns each column's `DisplayIndex` from the
-`DesiredColumnOrder` array — Bill's layout: `ticker, fundgrp, fund, strategy, strategy_b,
-m__int, p__int, c__upd, manual, rescale…filt_all, trd…n_dep, scale_f, new_f, s_dep, pos_lim,
-pos_tgt, s_pos_lim,` then **all intervals at the far right** (`b_t1…b_d1`, then `t1…W2`). To change the
+`DesiredColumnOrder` array — Bill's layout: `category, ticker, fundgrp, fund, strategy, strategy_b,
+m__int, p__int, c__upd, manual, rescale…filt_all, trd…n_dep, scale_f, new_f, pos_lim,
+s_pos_lim, pos_tgt,` then **all intervals at the far right** (`b_t1…b_d1`, then `t1…W2`). `s_dep` is
+`Visibility="Collapsed"` (hidden on screen, ViewModel kept) and dropped from this array. To change the
 on-screen order, edit `DesiredColumnOrder` (not the XAML block order). If you add a column,
 add its header to that array or it'll fall to the end.
+
+**`category` column + row sort.** `category` is ticker metadata from the `tickers` table.
+`get_filtered_intervals` does **not** merge `tickers` (deliberately — avoids an extra per-load
+query); instead the WPF reuses the already-loaded `TickerUniverse` (from `LoadTickerUniverseAsync`,
+which added a `category` field to `TickerRow`). `RebuildMerged` builds a `tickername→category`
+map from it and sets `MergedTickerRow.Category`, then **sorts the grid by `fundgroup → fundname →
+category → tickername`** (category groups within each fund/fundgroup, before ticker). The
+`category` column is read-only display.
+If a filter ticker isn't in the universe (e.g. `valid_tickername=0`) its category is blank.
 
 The interval columns' underlying order (in the XAML Columns collection and within
 `DesiredColumnOrder`) is **chronological (duration)**, e.g. `… v8, y2, y3, y4, y6, y8, y12,
@@ -149,6 +164,43 @@ Each group's `Headers` array MUST be in **display (chronological) order** — th
 first-visible to last-visible entry, and the collapsed `+` marker is placed at `Last`'s boundary.
 Groups must be contiguous in `DesiredColumnOrder` (base, then intraday, then daily/weekly).
 
+**`scale_f` highlight.** The `scale_f` cell shows a very light orange background
+(`ScaleFactorBrush` → `BgLightOrange` `#FFE8CC`) when a scale factor is present and ≠ 1 (the
+ticker is actually being scaled); blank otherwise. The `NewScaleFactorHasChanged` edit trigger
+(Yellow + black border) overrides it while `new_f` is being edited. Distinct from the manual
+column (which uses a border highlight, not a fill).
+
+**Stat-triplet colouring.** live (`trd/n/dep`) and filtered (`filt_t/filt_n/f_dep`) cells get a
+**diverging background** — dark red (−100%) → white (0) → dark green (+100%), intensity by
+magnitude — driven by that triplet's deployment (`PositionDeployment` / `FilteredDeployment`); all
+three cells of a triplet share the one value, so the whole triplet reads as one block.
+`DivergeColor`/`DeploymentDivergeBrush` compute it; `DeploymentForeground` flips text to white on
+dark backgrounds (luminance < 140). Proposed (`new_t/new_n/n_dep`) all bind one
+**`ProposedChangeBrush`**: light green if the proposed deployment is more bullish than the saved
+`FilteredDeployment`, light red if more bearish, transparent if unchanged. (Previously each
+proposed cell used a different brush comparing a different metric — trades vs intervals vs
+deployment — so they disagreed; unified to the deployment delta.) `NewDeployment`'s setter
+notifies `ProposedChangeBrush`; the live/filtered brushes read load-time values and need no notify.
+
+**Non-collapsible label bands (`live` / `filtered` / `proposed`).** The three stat triplets are
+grouped by a labelled band (same bracket style, **no toggle**) via `AddLabelBand(...)` in
+`BuildColumnGroups`: `live` over `trd/n/dep`, `filtered` over `filt_t/filt_n/f_dep`, `proposed`
+over `new_t/new_n/n_dep`. A label band is just a `ColumnGroup` with `LabelOnly=true` / always
+`Expanded` (positioned by `PositionExpandedBand`, never collapses). The columns keep their
+**distinct Header codes** (so `DesiredColumnOrder`, tooltips, bindings are unchanged), but the
+filtered/proposed six are **relabelled display-only** to `trd`/`n`/`dep` via a `ContentTemplate`
+`<TextBlock Text="…"/>` on each column's `HeaderStyle`. So all three triplets read `trd/n/dep`
+and the band says which model. Don't collapse these to shared Header values (would duplicate keys).
+
+**Interval column headers are relabelled by duration for display only.** `IntervalHeaderLabelConverter`
+(applied in the `DataGrid.ColumnHeaderStyle` `ContentTemplate`) maps the interval *code* shown in
+the header to a duration label: ≤ 90 min → the minute count (`t1→1 … v8→40, y2→60, y3→90`), the
+hour range → `hN` (`y4→h2, y6→h3, y8→h4, y12→h6, y24→h12, y32→h16, y72→h36`); `D*`/`W*`, the base
+`b_*` columns, and every non-interval header pass through unchanged. This is **display only** — each
+column's real `Header` stays the interval code, so `ApplyColumnOrder`, the collapser groups,
+`IntervalOrder` and column-visibility all still key off the code (`byText` in `PositionGroupBands`
+reads `Column.Header`, not the rendered text). Don't rename the actual `Header` values.
+
 **Interval cell text is inverted for display only.** All interval/base columns bind their text
 through `FlagTextOrBlankConverter` (`TrueText=""`, `FalseText="ON"` in the XAML resource): an
 **active** interval (`flag == false`, i.e. not filtered out) shows **`ON`**, a **filtered-out**
@@ -156,9 +208,13 @@ one (`flag == true`) shows **blank**, and a cell with no position stays blank. T
 only — the columns are read-only and saving uses the real bool values via `ToUpsertRow`, so the
 stored `true`/`false` semantics are unchanged. (Don't "fix" the converter to show True/False.)
 
-**Group separators (dark vertical gridlines).** The two inter-group boundaries are marked with a
-2px `#FF5A6B8C` cell border on always-visible anchor columns: **right** border on `b_d1`
-(base│intraday) and **left** border on `y24` (intraday│daily). Anchored on `b_d1`/`y24` because
+**Group separators (dark vertical gridlines).** Boundaries are marked with a 2px `#FF5A6B8C`
+single-side cell border on always-visible anchor columns (the DataGrid's own gridlines fill the
+other edges): **right** on `b_d1` (base│intraday), **left** on `y24` (intraday│daily), **left** on
+`b_t1` (s_pos_lim│base), **right** on `filt_all` (filt_all│live-stats — a right border on the
+left column reads bolder/cleaner here than a left border on `trd`, whose deployment-gradient
+background competes), **left** on `c__upd` (p_int│c_upd). Anchor on the column whose displayed edge is the boundary (DisplayIndex order, not
+XAML order — e.g. `c__upd` sits right of `p__int` on screen though declared earlier). Anchored on `b_d1`/`y24` because
 bases and `y24` aren't hidden by the min-`p_int` pass, so the line is always drawn even when the
 adjacent intraday columns are hidden/collapsed. Single-side thickness relies on the DataGrid's
 own gridlines (`GridLinesVisibility` defaults to `All`) for the other edges. The per-cell
@@ -196,6 +252,14 @@ as rows streamed in). Relatedly, `RebuildMerged()` refills `MergedRows` via
 `RangeObservableCollection.ReplaceAll(...)` — one `Reset` notification, not N `Add`s — so the
 grid regenerates/lays out once instead of per row. Keep both patterns if you touch this path.
 
+**Right-click "Turn intervals off" (per selected row).** The row context menu has a *Turn
+intervals off* submenu — *Base intervals* / *Non-base intervals* / *All intervals* — wired to
+`MergedTickerRow.TurnOffBaseIntervals()` / `TurnOffNonBaseIntervals()` / `TurnOffAllIntervals()`.
+"Off" = filtered = flag `true` (so any `ON` cells go blank). Only the visible interval set is
+set; each flag setter recalcs, and `ReCalcScaledDeployment()` runs once at the end so `s_dep`
+updates. It's an edit like any other (highlights, persists on save via `ToUpsertRow`). Cells are
+read-only, so this menu is the bulk-filter path.
+
 **Add/Delete ticker + `Refresh()`.** Delete is a *soft* delete (`row.IsDeleted = true`, hidden by
 `RowFilter`) followed by `MergedRowsView.Refresh()`. `DeleteTickerMenuItem_Click` must first end
 any open grid edit (`FilterGrid.CommitEdit(Cell)` then `CommitEdit(Row)`, cancel if commit is
@@ -214,6 +278,20 @@ through `AttachStrategyOverride` (baseline), `ToStrategyOverrideInsertModel` (sa
 sends `this.StrategyName` / `this.StrategyNameBase`), the clone/snapshot/preserve paths, and
 the save triggers (`affectedStrategyTickers`, the override-payload `.Where`, `HasStrategyEdit`).
 Server-side the upsert maps both into `strategies_override` ([tapi.py](trading/apis/tapi.py) `upsert_filter_intervals` job).
+
+**Changing a strategy offers to turn its side's intervals off.** `FilterGrid_BeginningEdit`
+captures the pre-edit value; `FilterGrid_CellEditEnding` compares on commit and, if the value
+genuinely changed, prompts (deferred via `Dispatcher.BeginInvoke` so the edit fully commits
+first) — Yes calls `TurnOffNonBaseIntervals()` for `strategy` or `TurnOffBaseIntervals()` for
+`strategy_b`. Using the edit lifecycle (not ComboBox `SelectionChanged`) avoids false fires on
+load/scroll/virtualization, since the ComboBox lives in a `CellEditingTemplate`.
+
+The `strategy` / `strategy_b` **column widths are auto-sized** to the widest name in their
+**dropdown list** (`StrategyNames` / `StrategyNamesBase`, plus the bold header) — so whatever the
+user picks fits without clipping. (Sizing to only the currently-shown row values looks tighter but
+clips as soon as a longer name is selected.) `SizeStrategyColumns()` (end of `LoadAllAsync`, after
+the names load) measures with `FormattedText` and sets each column's `Width` (+12px padding). The
+editing ComboBoxes use `MinWidth="0"` so they fill the computed column rather than forcing 140.
 
 Dropdown lists come from **one endpoint**, `/get_strategynames`, which takes an optional JSON
 body — `{"interval_type": "<t>"}` restricts to that type; `{"exclude_interval_type": "<t>"}` drops

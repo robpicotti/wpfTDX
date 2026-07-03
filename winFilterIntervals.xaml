@@ -31,6 +31,7 @@
              flag==true (filtered out) shows blank. Saving is unaffected (columns are read-only;
              ToUpsertRow saves the real bool values). No-position cells stay blank. -->
         <local:FlagTextOrBlankConverter x:Key="FlagTextOrBlankConverter" TrueText="" FalseText="ON"/>
+        <local:IntervalHeaderLabelConverter x:Key="IntervalHeaderLabelConverter"/>
 
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style x:Key="BusyButtonStyle" TargetType="Button">
@@ -164,6 +165,8 @@
                   FrozenColumnCount="0"
                   PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
                   Loaded="FilterGrid_Loaded"
+                  BeginningEdit="FilterGrid_BeginningEdit"
+                  CellEditEnding="FilterGrid_CellEditEnding"
                       SelectionMode="Single"
                         SelectionUnit="FullRow" Grid.ColumnSpan="2"
                   >
@@ -175,8 +178,10 @@
                     <Setter Property="ContentTemplate">
                         <Setter.Value>
                             <DataTemplate>
-                                <!-- Using TextBlock so '_' isn't treated as an access key -->
-                                <TextBlock Text="{Binding}"/>
+                                <!-- Using TextBlock so '_' isn't treated as an access key.
+                                     Converter relabels interval headers by duration (display only;
+                                     the column's real Header/interval code is unchanged). -->
+                                <TextBlock Text="{Binding Converter={StaticResource IntervalHeaderLabelConverter}}"/>
                             </DataTemplate>
                         </Setter.Value>
                     </Setter>
@@ -190,6 +195,12 @@
                     <MenuItem Header="Add ticker..." Click="AddTickerMenuItem_Click"/>
                     <MenuItem Header="Scale Position" Click="ScalePosition_Click" />
                     <MenuItem Header="View all scaled positions" Click="ViewScaledPositions_Click" />
+                    <Separator/>
+                    <MenuItem Header="Turn intervals off">
+                        <MenuItem Header="Base intervals" Click="TurnOffBaseIntervals_Click"/>
+                        <MenuItem Header="Non-base intervals" Click="TurnOffNonBaseIntervals_Click"/>
+                        <MenuItem Header="All intervals" Click="TurnOffAllIntervals_Click"/>
+                    </MenuItem>
                 </ContextMenu>
 
                 <!-- Grid empty-area context menu -->
@@ -240,6 +251,11 @@
                                     Binding="{Binding FundName}"
                                     IsReadOnly="True" />
 
+                <!-- category (from tickers table; read-only metadata, screen is sorted by it) -->
+                <DataGridTextColumn Header="category"
+                                    Binding="{Binding Category}"
+                                    IsReadOnly="True" />
+
                 <DataGridTextColumn Header="scale_f" IsReadOnly="True">
                     <DataGridTextColumn.Binding>
                         <Binding Path="ScaleFactor"
@@ -252,12 +268,14 @@
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- very light orange when a scale factor is set and ≠ 1 -->
+                            <Setter Property="Background" Value="{Binding ScaleFactorBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding NewScaleFactorHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding NewScaleFactorHasChanged}" Value="True">
-                                    <!-- highlight when changed -->
+                                    <!-- edit highlight overrides the scale-factor tint -->
                                     <Setter Property="BorderBrush" Value="Black"/>
                                     <Setter Property="BorderThickness" Value="2"/>
                                     <Setter Property="Background" Value="Yellow"/>
@@ -306,6 +324,9 @@
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- dark left border = p_int | c_upd separator -->
+                            <Setter Property="BorderThickness" Value="2,0,0,0"/>
+                            <Setter Property="BorderBrush" Value="#FF5A6B8C"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding ContUpdHasChanged}" Value="True">
                                     <Setter Property="FontWeight" Value="Bold"/>
@@ -395,7 +416,7 @@
                       ItemsSource="{Binding DataContext.StrategyNames,
                                             RelativeSource={RelativeSource AncestorType=DataGrid}}"
                       SelectedItem="{Binding StrategyName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      MinWidth="140">
+                      MinWidth="0">
                                 <ComboBox.Style>
                                     <Style TargetType="ComboBox">
                                         <Style.Triggers>
@@ -438,7 +459,7 @@
                       ItemsSource="{Binding DataContext.StrategyNamesBase,
                                             RelativeSource={RelativeSource AncestorType=DataGrid}}"
                       SelectedItem="{Binding StrategyNameBase, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      MinWidth="140">
+                      MinWidth="0">
                                 <ComboBox.Style>
                                     <Style TargetType="ComboBox">
                                         <Style.Triggers>
@@ -668,6 +689,9 @@
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="FontWeight" Value="Normal"/>
+                            <!-- dark right border = filt_all | trd (live stats) group separator -->
+                            <Setter Property="BorderThickness" Value="0,0,2,0"/>
+                            <Setter Property="BorderBrush" Value="#FF5A6B8C"/>
                             <Style.Triggers>
                                 <!-- YELLOW: user changed it -->
                                 <DataTrigger Binding="{Binding AllIntervalsHasChanged}" Value="True">
@@ -802,7 +826,8 @@
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
-                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <!-- dark left border = s_pos_lim | base group separator -->
+                            <Setter Property="BorderThickness" Value="2,0,0,0"/><Setter Property="BorderBrush" Value="#FF5A6B8C"/>
                             <Style.Triggers><DataTrigger Binding="{Binding BaseT1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
@@ -2017,6 +2042,8 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
+                            <Setter Property="Background" Value="{Binding LiveDeploymentBrush}"/>
+                            <Setter Property="Foreground" Value="{Binding LiveDeploymentForeground}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2034,6 +2061,8 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
+                            <Setter Property="Background" Value="{Binding LiveDeploymentBrush}"/>
+                            <Setter Property="Foreground" Value="{Binding LiveDeploymentForeground}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2055,6 +2084,8 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Right"/>
+                            <Setter Property="Background" Value="{Binding LiveDeploymentBrush}"/>
+                            <Setter Property="Foreground" Value="{Binding LiveDeploymentForeground}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2067,6 +2098,7 @@
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="trd"/></DataTemplate></Setter.Value></Setter>
                             <Setter Property="ToolTip"
                                     Value="Filtered net trades: the same longs − shorts count as 'trd', but over the fund's filtered interval set and using filter_position values (buy_only / sell_only already applied).&#10;Read-only server baseline — what this fund actually trades after customisation. The live what-if as you toggle is 'new_t'."/>
                         </Style>
@@ -2074,6 +2106,8 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
+                            <Setter Property="Background" Value="{Binding FilteredDeploymentBrush}"/>
+                            <Setter Property="Foreground" Value="{Binding FilteredDeploymentForeground}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2084,6 +2118,7 @@
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="n"/></DataTemplate></Setter.Value></Setter>
                             <Setter Property="ToolTip"
                                     Value="Filtered interval count: how many intervals are in the fund's filtered set on the active side — the denominator for f_dep (f_dep = filt_t ÷ filt_n).&#10;Read-only server baseline. The live count after your toggles is 'new_n' (= n minus the intervals you've filtered out)."/>
                         </Style>
@@ -2091,6 +2126,8 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
+                            <Setter Property="Background" Value="{Binding FilteredDeploymentBrush}"/>
+                            <Setter Property="Foreground" Value="{Binding FilteredDeploymentForeground}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2099,6 +2136,7 @@
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="dep"/></DataTemplate></Setter.Value></Setter>
                             <Setter Property="ToolTip"
                                     Value="Filtered deployment in -100%…+100%: deployment over the fund's filtered interval set (buy_only / sell_only applied). f_dep = filt_t ÷ filt_n.&#10;This is what sizes real orders for a customised fund (falls back to 'dep' when there is no customisation). Read-only server baseline; the live what-if is 'n_dep'."/>
                         </Style>
@@ -2112,6 +2150,8 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Right"/>
+                            <Setter Property="Background" Value="{Binding FilteredDeploymentBrush}"/>
+                            <Setter Property="Foreground" Value="{Binding FilteredDeploymentForeground}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2122,6 +2162,7 @@
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="trd"/></DataTemplate></Setter.Value></Setter>
                             <Setter Property="ToolTip"
                                     Value="Proposed filtered net trades, recomputed live from your toggles: sum of the positions of every interval left un-filtered (buy_only / sell_only applied); forced to 0 when filt_all is on.&#10;Same definition as filt_t, live. Colour vs saved filt_t: green = more trades, red = fewer. On save it becomes the next filt_t."/>
                         </Style>
@@ -2133,7 +2174,7 @@
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="Background" Value="{Binding NewTradesBrush}"/>
+                            <Setter Property="Background" Value="{Binding ProposedChangeBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2143,6 +2184,7 @@
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="n"/></DataTemplate></Setter.Value></Setter>
                             <Setter Property="ToolTip"
                                     Value="Proposed interval count (the denominator for n_dep), recomputed live.&#10;rescale = true: new_n = n minus the intervals you've filtered out (clamped 1..n) — deployment is redistributed over the survivors. rescale = false: new_n stays at n. Colour vs saved filt_n: green = more, red = fewer."/>
                         </Style>
@@ -2154,7 +2196,7 @@
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Center"/>
                             <Setter Property="FontWeight"   Value="SemiBold"/>
-                            <Setter Property="Background"   Value="{Binding RescaledIntervalsBrush}"/>
+                            <Setter Property="Background"   Value="{Binding ProposedChangeBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -2164,6 +2206,7 @@
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="dep"/></DataTemplate></Setter.Value></Setter>
                             <Setter Property="ToolTip"
                                     Value="Proposed deployment in -100%…+100%, recomputed live: n_dep = new_t ÷ new_n (then clamped by long_only / short_only).&#10;The live what-if of f_dep — what the fund's filtered deployment becomes if you save. Colour vs saved f_dep: green = more deployed, red = less."/>
                         </Style>
@@ -2175,13 +2218,13 @@
                         <Style TargetType="TextBlock">
                             <Setter Property="TextAlignment" Value="Right"/>
                             <Setter Property="FontWeight"    Value="SemiBold"/>
-                            <Setter Property="Background"    Value="{Binding NewDeploymentBrush}"/>
+                            <Setter Property="Background"    Value="{Binding ProposedChangeBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
                 <!-- scaled deployment -->
-                <DataGridTextColumn Header="s_dep" IsReadOnly="True">
+                <DataGridTextColumn Header="s_dep" Visibility="Collapsed" IsReadOnly="True">
                     <DataGridTextColumn.HeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="FontWeight" Value="Bold"/>

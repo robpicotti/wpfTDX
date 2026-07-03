@@ -92,8 +92,61 @@ namespace wpfTDX
             await SetStatus("Rendering data on UI...");
             await _viewModel.RebuildMerged();
             UpdateIntervalColumnVisibility();
+            SizeStrategyColumns();
 
             _viewModel.LoadProgress = 100;
+        }
+
+        /// <summary>
+        /// Sizes the strategy / strategy_b columns to fit the widest name in their dropdown list
+        /// (StrategyNames / StrategyNamesBase) plus the header, so whatever the user selects fits
+        /// without clipping. (Sizing to only the currently-shown values clips once a longer name
+        /// is chosen.)
+        /// </summary>
+        private void SizeStrategyColumns()
+        {
+            if (FilterGrid == null || _viewModel == null) return;
+
+            double pixelsPerDip = 1.0;
+            try { pixelsPerDip = System.Windows.Media.VisualTreeHelper.GetDpi(this).PixelsPerDip; } catch { }
+            var tf = new System.Windows.Media.Typeface(FilterGrid.FontFamily, FilterGrid.FontStyle,
+                                                       FilterGrid.FontWeight, FilterGrid.FontStretch);
+            var tfHeader = new System.Windows.Media.Typeface(FilterGrid.FontFamily, FilterGrid.FontStyle,
+                                                       System.Windows.FontWeights.Bold, FilterGrid.FontStretch);
+            double fontSize = FilterGrid.FontSize;
+
+            double Widest(System.Collections.Generic.IEnumerable<string> items, string header)
+            {
+                double max = 0;
+                foreach (var s in (items ?? System.Linq.Enumerable.Empty<string>()))
+                {
+                    if (string.IsNullOrEmpty(s)) continue;
+                    var ft = new System.Windows.Media.FormattedText(
+                        s, System.Globalization.CultureInfo.CurrentCulture, System.Windows.FlowDirection.LeftToRight,
+                        tf, fontSize, System.Windows.Media.Brushes.Black, pixelsPerDip);
+                    if (ft.Width > max) max = ft.Width;
+                }
+                // also fit the (bold) header text
+                var hft = new System.Windows.Media.FormattedText(
+                    header ?? "", System.Globalization.CultureInfo.CurrentCulture, System.Windows.FlowDirection.LeftToRight,
+                    tfHeader, fontSize, System.Windows.Media.Brushes.Black, pixelsPerDip);
+                if (hft.Width > max) max = hft.Width;
+                return max;
+            }
+
+            void SetWidth(string header, double contentWidth)
+            {
+                var col = ColumnByHeader(header);
+                if (col == null) return;
+                // small padding — the cell shows plain text almost always (the edit ComboBox
+                // chevron may sit near the longest value, but the popup still shows it in full).
+                col.Width = new DataGridLength(Math.Ceiling(contentWidth) + 12);
+            }
+
+            // Measure the widest name in each dropdown list, so any value the user can pick fits
+            // (sizing to only the currently-shown values clips once a longer one is selected).
+            SetWidth("strategy", Widest(_viewModel.StrategyNames, "strategy"));
+            SetWidth("strategy_b", Widest(_viewModel.StrategyNamesBase, "strategy_b"));
         }
 
         // Step counter for the determinate load progress bar — set by BeginLoad,
@@ -171,6 +224,7 @@ namespace wpfTDX
             public TextBlock LabelText;
             public Border BracketLine, TickLeft, TickRight;
             public bool Expanded = true;
+            public bool LabelOnly;               // non-collapsible label band (no toggle)
             public string First { get { return Headers[0]; } }
             public string Last { get { return Headers[Headers.Length - 1]; } }
         }
@@ -219,14 +273,14 @@ namespace wpfTDX
             }), System.Windows.Threading.DispatcherPriority.Render);
         }
 
-        // Bill's column order for the filter intervals screen (left → right). ticker stays
-        // first as the row identifier; intervals (base + trading) sit at the far right.
+        // Bill's column order for the filter intervals screen (left → right). category leads,
+        // then the ticker identity columns; intervals (base + trading) sit at the far right.
         private static readonly string[] DesiredColumnOrder =
         {
-            "ticker", "fundgrp", "fund", "strategy", "strategy_b", "m__int", "p__int",
+            "category", "ticker", "fundgrp", "fund", "strategy", "strategy_b", "m__int", "p__int",
             "c__upd", "manual", "rescale", "LO", "SO", "byO", "slO", "filt_all",
             "trd", "n", "dep", "filt_t", "filt_n", "f_dep", "new_t", "new_n", "n_dep",
-            "scale_f", "new_f", "s_dep", "pos_lim", "pos_tgt", "s_pos_lim",
+            "scale_f", "new_f", "pos_lim", "s_pos_lim", "pos_tgt",
             "b_t1", "b_v1", "b_y1", "b_d1",
             "t1", "t2", "t3", "t4", "t5", "t8", "v2", "v3", "v4", "v6", "v8",
             "y2", "y3", "y4", "y6", "y8", "y12", "y24", "y32",
@@ -273,6 +327,14 @@ namespace wpfTDX
             // Daily/weekly block: starts at y24 → W2 (y72 = 36h sits between D1 and D2; W1 before D8).
             AddGroup("daily/weekly", new[] {
                 "y24", "y32", "D1", "y72", "D2", "D3", "D4", "W1", "D8", "W2" });
+
+            // Non-collapsible label bands over the three trd/n/dep stat triplets. The columns
+            // keep distinct Header codes (trd/n/dep, filt_t/filt_n/f_dep, new_t/new_n/n_dep) —
+            // the band tells you which model each triplet is; their display text is relabelled
+            // to trd/n/dep in XAML.
+            AddLabelBand("live", new[] { "trd", "n", "dep" });
+            AddLabelBand("filtered", new[] { "filt_t", "filt_n", "f_dep" });
+            AddLabelBand("proposed", new[] { "new_t", "new_n", "n_dep" });
         }
 
         private void AddGroup(string label, string[] headers)
@@ -314,6 +376,47 @@ namespace wpfTDX
             // Background = null (not Transparent) so the band's empty area is NOT hit-testable
             // — otherwise an expanded band would swallow clicks meant for an overlapping
             // collapsed "+" marker. Only the bracket/chip/+ button are clickable.
+            g.Band = new Border { Height = 22, Background = null,
+                Visibility = System.Windows.Visibility.Collapsed, Child = grid };
+            GroupHeaderCanvas.Children.Add(g.Band);
+
+            _columnGroups.Add(g);
+        }
+
+        /// <summary>
+        /// A non-collapsible band: bracket + centred label above a contiguous column group
+        /// (e.g. live / filtered / proposed over the trd/n/dep triplets). No toggle button —
+        /// it's always shown (Expanded), positioned by PositionExpandedBand like any other band.
+        /// </summary>
+        private void AddLabelBand(string label, string[] headers)
+        {
+            if (IndexOfColumn(headers[0]) < 0) return;   // group not present on this grid
+
+            var g = new ColumnGroup { Label = label, Headers = headers, LabelOnly = true, Expanded = true };
+
+            // Zero side-margins so the bracket + end-ticks sit exactly on the group's column
+            // span (first column's left edge → last column's right edge), i.e. trd → dep.
+            g.BracketLine = new Border { Height = 2, VerticalAlignment = VerticalAlignment.Center,
+                Background = BandBracketBrush, Margin = new Thickness(0, 0, 0, 0) };
+            g.TickLeft = new Border { Width = 2, Height = 8, HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Background = BandBracketBrush };
+            g.TickRight = new Border { Width = 2, Height = 8, HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 0), Background = BandBracketBrush };
+
+            g.LabelText = new TextBlock { Text = label, FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 4, 0) };
+
+            var chip = new StackPanel { Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Background = BandChipBrush };
+            chip.Children.Add(g.LabelText);   // no toggle — this band never collapses
+
+            var grid = new Grid();
+            grid.Children.Add(g.BracketLine);
+            grid.Children.Add(g.TickLeft);
+            grid.Children.Add(g.TickRight);
+            grid.Children.Add(chip);
+
             g.Band = new Border { Height = 22, Background = null,
                 Visibility = System.Windows.Visibility.Collapsed, Child = grid };
             GroupHeaderCanvas.Children.Add(g.Band);
@@ -842,6 +945,77 @@ namespace wpfTDX
 
             // Refresh UI to hide it immediately
             _viewModel.MergedRowsView?.Refresh();
+        }
+
+        // Right-click bulk "turn intervals off" for the selected row — sets the chosen interval
+        // flags to filtered (true), i.e. any "ON" cells go blank. Cells are read-only, so this
+        // is the way to bulk-filter; edits highlight and persist on save like any other change.
+        private void TurnOffBaseIntervals_Click(object sender, RoutedEventArgs e)
+        {
+            (FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow)?.TurnOffBaseIntervals();
+        }
+
+        private void TurnOffNonBaseIntervals_Click(object sender, RoutedEventArgs e)
+        {
+            (FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow)?.TurnOffNonBaseIntervals();
+        }
+
+        private void TurnOffAllIntervals_Click(object sender, RoutedEventArgs e)
+        {
+            (FilterGrid.SelectedItem as FilterIntervalsViewModel.MergedTickerRow)?.TurnOffAllIntervals();
+        }
+
+        // Changing strategy / strategy_b offers to turn off that side's intervals. Captured on
+        // BeginningEdit and compared on CellEditEnding so it only fires on a genuine user change
+        // (not load/scroll/virtualization). strategy → non-base intervals; strategy_b → base.
+        private string _editOldStrategy;
+        private string _editOldStrategyBase;
+
+        private void FilterGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            var row = e.Row?.Item as FilterIntervalsViewModel.MergedTickerRow;
+            if (row == null) return;
+            switch (e.Column?.Header as string)
+            {
+                case "strategy": _editOldStrategy = row.StrategyName; break;
+                case "strategy_b": _editOldStrategyBase = row.StrategyNameBase; break;
+            }
+        }
+
+        private void FilterGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit) return;
+            var row = e.Row?.Item as FilterIntervalsViewModel.MergedTickerRow;
+            if (row == null) return;
+
+            // strategy → non-base intervals; strategy_b → base intervals.
+            bool? baseSide = null;
+            switch (e.Column?.Header as string)
+            {
+                case "strategy":
+                    if (!string.Equals(row.StrategyName, _editOldStrategy, StringComparison.Ordinal))
+                        baseSide = false;
+                    break;
+                case "strategy_b":
+                    if (!string.Equals(row.StrategyNameBase, _editOldStrategyBase, StringComparison.Ordinal))
+                        baseSide = true;
+                    break;
+            }
+            if (baseSide == null) return;   // not a strategy column, or value unchanged
+
+            bool isBase = baseSide.Value;
+            // Defer the dialog until after the edit fully commits (showing a modal mid-commit is
+            // reentrant/focus-unsafe).
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var which = isBase ? "base" : "non-base";
+                var result = MessageBox.Show(this,
+                    $"Strategy changed for {row.Tickername}.\n\nTurn off all {which} intervals?",
+                    "Turn intervals off?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result != MessageBoxResult.Yes) return;
+                if (isBase) row.TurnOffBaseIntervals();
+                else row.TurnOffNonBaseIntervals();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
 
