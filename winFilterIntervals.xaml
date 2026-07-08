@@ -295,16 +295,18 @@
                             ValidatesOnExceptions="True"
                             NotifyOnValidationError="True">
                             <Binding.ValidationRules>
+                                <!-- upper bound = server Scale.max_scale (via ScaleLimits), not hardcoded -->
                                 <local:RangeValidationRule
-                                    Min="0" Max="3" ValidationStep="ConvertedProposedValue" />
+                                    Min="0" UseScaleMax="True" ValidationStep="ConvertedProposedValue" />
                             </Binding.ValidationRules>
                         </Binding>
                     </DataGridTextColumn.Binding>
                     <DataGridTextColumn.EditingElementStyle>
                         <Style TargetType="TextBox">
+                            <!-- live-typing guard: block negatives only; the RangeValidationRule
+                                 enforces the (server-driven) upper bound on commit -->
                             <Setter Property="local:NumericRangeBehavior.Enable" Value="True"/>
                             <Setter Property="local:NumericRangeBehavior.Min" Value="0"/>
-                            <Setter Property="local:NumericRangeBehavior.Max" Value="3"/>
                             <!-- optional: right-align numbers -->
                             <Setter Property="HorizontalContentAlignment" Value="Right"/>
                         </Style>

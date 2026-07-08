@@ -38,6 +38,13 @@ A cell is **grey and non-clickable when its `Position…` value is null** — i.
 has no position for that interval, so filtering it is moot. This is intentional and applies
 to every interval column.
 
+The double-click maps a column → `MergedTickerRow` property via `TryMapToggleTarget` (a switch on
+the **real Header code**, not the displayed label). **Every interval code must have a case there**
+or that column silently won't toggle. Gotcha: the duration relabel shows `y4…y72` as `h2…h36`, so a
+missing `y*` case looks like "the h columns don't toggle" (the 2026-06 bug — `v4/v6/v8/y4/y6/y8/y12/y24/y32/y72`
+had been added as columns but not to `TryMapToggleTarget`). Note `TryMap` (a second, similar switch)
+is dead code — the live path is `TryMapToggleTarget`.
+
 ### Base interval columns (`b_t1`, `b_v1`, `b_n1`, `b_y1`, `b_h1`, `b_d1`)
 
 **Six independent columns, one per `filter_intervals` base flag** — same set as the
@@ -330,6 +337,65 @@ Applied at both join sites (TAD-positions rows and FI-only rows).
 
 ⚠️ Don't revert this to an exact composite-key dictionary lookup (`ticker|group|fund`): that was
 the old bug — a `fundname='*'` scaling silently failed to appear on a fund-specific filter row.
+
+## Scaled Positions screen (`winScaledPositions`)
+
+Views `scaled_positions` (`/get_scaled_positions`, all scale types) with fund-group/fund/ticker
+text filters, plus **manual scaling entry**:
+- **"Show manual scaled types only"** checkbox → `ScaledPositionsViewModel.ManualOnly` (filters to
+  `scaled_type=="manual"`; **off by default**). The filter also always **hides trivial manual rows**
+  (both `scaled_percent` and `scaled_target` == 1).
+- **All scaling actions live on the right-click menu** (there is no toolbar "Add new" button):
+  - **"Edit scale…"** edits the right-clicked row and **preserves its `scale_type`** (manual,
+    filtered, out, in, …). Enabled whenever a row is selected (`Grid_ContextMenuOpening` →
+    `miScaleIn.IsEnabled`). Passes the row's `scaled_type` + `scaled_timestep` through to `winScale`.
+  - **"Add new manual scale…"** opens the shared `winAddTicker` picker (ticker+fundgroup+fund) to
+    start a brand-new scale. **Adding is manual-only** (always `scale_type="manual"`,
+    `scaled_percent=1.0`).
+  Both open the shared **`winScale`** popup via `OpenScale(...)` and reload on success.
+- **Editing routes through the API for ANY type** (`winScale.UseApiInsert = true`), because this
+  screen has no `SqlConnection`. `winScale.Button_Click` inserts via `ScaleService` when
+  `UseApiInsert` **or** `scale_type=="manual"`; the row carries the actual `scale_type` and the
+  preserved `scaled_timestep` (`winScale.ExistingTimeStep`, default 5). The server `Scale.insert`
+  honours the per-row `scaled_type`. `winScale.validate_scaling` caps the target at `ScaleLimits.Max`
+  for **scale-in types** (`manual`/`filtered`/`in`) and at `1.0` for scale-out types; `LoadForm` shows
+  the current `scaled_percent` for any type being edited. The effect-aware confirm (`ScaleResolver`,
+  see below) is passed the `scale_type` so its wording matches ("This *filtered* scale …").
+- **`winScale` manual mode** inserts via **`ScaleService`** → `/insert_scaled_positions` (server-side
+  `Scale` class: validation, stepping, overlap checks) — **not** the direct-SQL `Position.scale_position`
+  used by the filtered/positions paths. So the scaled-positions screen needs no `SqlConnection`
+  (`winScale` is constructed with `conn: null` for manual). This is the preferred path for new scaling.
+- **Effect-aware confirm (manual only) — `ScaleResolver`.** Scales **never compound**: for a given
+  fund exactly **one** `scaled_positions` row applies per ticker, chosen by specificity then target.
+  So a new manual scale may be superseded by (or supersede) an existing scale (e.g. a filtered one).
+  Before inserting, `winScale` calls `ScaleResolver.Resolve(...)` with the current rows (passed in via
+  `winScale.ExistingScales`, set by `OpenManualScale` from `ScaledPositionsViewModel.Rows`) and shows a
+  confirm stating the **concrete outcome**: either "WILL take effect / take precedence over the existing
+  *type* scale (target n%)", or "will be stored but WILL NOT take effect: the existing *type* scale …
+  takes precedence" (dialog defaults to **No** + warning icon in the no-effect case). `ScaleResolver`
+  **mirrors the server precedence** in `hoover/scale.py` (`specificity_sort_cols` / `_wildcard_rank`):
+  rank `= 4·(ticker≠'*') + 2·(fundname≠'*') + 1·(fundgroupname≠'*')`, higher wins; **tie → lower
+  `scaled_target`** (most conservative). It excludes the exact same `(group,fund,ticker)` key (a re-scale
+  just replaces it via `select_latest`, not a rival) and trivial 1/1 rows. Keep it in sync if the
+  server precedence changes.
+- Scaling roles across screens: **positions** = scale out, **filter-intervals** = scale in (filtered
+  tickers), **scaled-positions** = scale in (`manual`).
+- **Scale-factor cap = server `Scale.max_scale`, fetched (not hardcoded).** The endpoint
+  `/get_scale_limits` returns `Scale.min_scale`/`Scale.max_scale`; the client caches it in the static
+  `ScaleLimits` (`EnsureLoadedAsync`, fallback 0..2). Both scaling screens validate against it, so
+  **changing `Scale.max_scale` server-side needs zero client edits** (just a service restart):
+  - scaled-positions `winScale` manual: `validate_scaling` caps a manual target at `ScaleLimits.Max`
+    (non-manual stays ≤ 1); the API is the backstop.
+  - filter-intervals `new_f`: `RangeValidationRule UseScaleMax="True"` reads `ScaleLimits.Max` (was a
+    hardcoded `Max="3"`, which mismatched the server's 2.0 and only failed at save). Its
+    `NumericRangeBehavior` now only blocks negatives live; the rule enforces the upper bound on commit.
+  Load it wherever scaling can happen (`LoadAllAsync`; `OpenManualScale`).
+- **`fundname` vs `scaled_fundname`:** `fundname` is a PK column and may be a wildcard `*` (one scaling
+  row for all funds in a group; used by `Scale.load`'s `fundname IN ('*', fund)` matching).
+  `scaled_fundname` was a **write-only provenance** column (the concrete fund behind a wildcard) that
+  **nothing ever read**; it has been **removed from `dbmodels.Scaled_positions`**. The API/`Scale`
+  insert path does not write it (so manual inserts show it blank); only the legacy direct-SQL
+  `Position.scale_position` still references it. Treat it as deprecated — don't rely on or re-add it.
 
 ## Ticker Freezer screen (`ucTickerFreezer`)
 

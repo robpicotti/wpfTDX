@@ -68,6 +68,7 @@ namespace wpfTDX
 
             await SetStatus("Loading host env...");
             await _viewModel.LoadHostEnvAsync();
+            await ScaleLimits.EnsureLoadedAsync();   // server-driven scale cap for new_f validation
 
             await SetStatus("Loading freeze definitions...");
             await _viewModel.LoadManualFreezeDefsAsync();
@@ -764,6 +765,9 @@ namespace wpfTDX
                 case "t8": flagProp = "T8"; posProp = "PositionT8"; return true;
                 case "v2": flagProp = "V2"; posProp = "PositionV2"; return true;
                 case "v3": flagProp = "V3"; posProp = "PositionV3"; return true;
+                case "v4": flagProp = "V4"; posProp = "PositionV4"; return true;
+                case "v6": flagProp = "V6"; posProp = "PositionV6"; return true;
+                case "v8": flagProp = "V8"; posProp = "PositionV8"; return true;
                 case "n2": flagProp = "N2"; posProp = "PositionN2"; return true;
                 case "n3": flagProp = "N3"; posProp = "PositionN3"; return true;
                 case "n4": flagProp = "N4"; posProp = "PositionN4"; return true;
@@ -772,6 +776,13 @@ namespace wpfTDX
                 case "y1": flagProp = "y1"; posProp = "PositionY1"; return true;
                 case "y2": flagProp = "y2"; posProp = "PositionY2"; return true;
                 case "y3": flagProp = "y3"; posProp = "PositionY3"; return true;
+                case "y4": flagProp = "y4"; posProp = "PositionY4"; return true;
+                case "y6": flagProp = "y6"; posProp = "PositionY6"; return true;
+                case "y8": flagProp = "y8"; posProp = "PositionY8"; return true;
+                case "y12": flagProp = "y12"; posProp = "PositionY12"; return true;
+                case "y24": flagProp = "y24"; posProp = "PositionY24"; return true;
+                case "y32": flagProp = "y32"; posProp = "PositionY32"; return true;
+                case "y72": flagProp = "y72"; posProp = "PositionY72"; return true;
 
                 // h* timeframes
                 case "h2": flagProp = "H2"; posProp = "PositionH2"; return true;

@@ -50,9 +50,32 @@ namespace wpfTDX
             }
         }
 
+        // When set, overrides the default status text (used for one-off busy messages
+        // like fetching the ticker universe for "Add new manual scale").
+        private string _statusOverride;
+
         public string StatusText
         {
-            get { return IsLoading ? "Loading…" : "Rows: " + Rows.Count; }
+            get
+            {
+                if (!string.IsNullOrEmpty(_statusOverride)) return _statusOverride;
+                return IsLoading ? "Loading…" : "Rows: " + Rows.Count;
+            }
+        }
+
+        // Show the shared progress bar + a custom status message during an async action.
+        public void BeginBusy(string message)
+        {
+            _statusOverride = message;
+            IsLoading = true;                        // drives the ProgressBar visibility
+            OnPropertyChanged(nameof(StatusText));
+        }
+
+        public void EndBusy()
+        {
+            _statusOverride = null;
+            IsLoading = false;
+            OnPropertyChanged(nameof(StatusText));
         }
 
         private string _fundGroupFilter;
@@ -100,11 +123,29 @@ namespace wpfTDX
             }
         }
 
+        // "Show manual scaled types only" — this screen is the manual-scaling screen.
+        private bool _manualOnly;
+        public bool ManualOnly
+        {
+            get { return _manualOnly; }
+            set
+            {
+                if (_manualOnly != value)
+                {
+                    _manualOnly = value;
+                    if (RowsView != null) RowsView.Refresh();
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(StatusText));
+                }
+            }
+        }
+
         private static bool Contains(string hay, string needle)
         {
             if (string.IsNullOrWhiteSpace(needle)) return true;
             return (hay ?? string.Empty).IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
         }
+        private static bool IsOne(double? v) { return v.HasValue && Math.Abs(v.Value - 1.0) < 1e-9; }
         private static readonly string apiKey = ConfigurationManager.AppSettings["TradingApiKey"];
         private static readonly string baseUrl = ConfigurationManager.AppSettings["TradingApiBaseUrl"];
         private bool FilterRow(object o)
@@ -112,9 +153,45 @@ namespace wpfTDX
             var r = o as ScaledPositionsDataModel;
             if (r == null) return false;
 
+            bool isManual = string.Equals(r.ScaleType, "manual", StringComparison.OrdinalIgnoreCase);
+
+            // Optional "manual only" toggle.
+            if (ManualOnly && !isManual) return false;
+
+            // Never show trivial manual rows (scaled percent AND target both == 1).
+            if (isManual && IsOne(r.ScaledPercent) && IsOne(r.ScaledTarget)) return false;
+
             return Contains(r.FundGroupName, FundGroupFilter)
                 && Contains(r.FundName, FundNameFilter)
                 && Contains(r.TickerName, TickerFilter);
+        }
+
+        // Ticker universe for the Add-new picker (winAddTicker), fetched on demand and cached.
+        private List<FilterIntervalsViewModel.TickerRow> _tickerUniverse;
+        public async Task<List<FilterIntervalsViewModel.TickerRow>> GetTickerUniverseAsync()
+        {
+            if (_tickerUniverse != null && _tickerUniverse.Count > 0) return _tickerUniverse;
+
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                var request = new
+                {
+                    table_name = "tickers",
+                    where_dict = new Dictionary<string, object> { { "valid_tickername", 1 } }
+                };
+                var content = new StringContent(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                var resp = await client.PostAsync($"{baseUrl}/select_table", content);
+                resp.EnsureSuccessStatusCode();
+                var json = await resp.Content.ReadAsStringAsync();
+                var rows = Newtonsoft.Json.JsonConvert
+                    .DeserializeObject<List<FilterIntervalsViewModel.TickerRow>>(json)
+                    ?? new List<FilterIntervalsViewModel.TickerRow>();
+                foreach (var r in rows) r.TickerName = r.TickerName != null ? r.TickerName.Trim() : null;
+                _tickerUniverse = rows.OrderBy(r => r.TickerName, StringComparer.OrdinalIgnoreCase).ToList();
+                return _tickerUniverse;
+            }
         }
 
         public async Task LoadAsync()

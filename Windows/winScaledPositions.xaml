@@ -36,6 +36,10 @@
                     </Style>
                 </Button.Style>
             </Button>
+            <CheckBox Content="Show manual scaled types only" VerticalAlignment="Center"
+                      Margin="16,0,0,0" IsChecked="{Binding ManualOnly}"/>
+            <TextBlock Margin="16,0,0,0" VerticalAlignment="Center" FontStyle="Italic" Foreground="Gray"
+                       Text="(right-click to edit or add scaling)"/>
             <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Text="{Binding StatusText}"/>
             <ProgressBar Width="140" Height="14" Margin="10,0,0,0" IsIndeterminate="True">
                 <ProgressBar.Style>
@@ -52,13 +56,30 @@
         </StackPanel>
 
         <!-- Grid -->
-        <DataGrid Grid.Row="2"
+        <DataGrid Grid.Row="2" x:Name="Grid"
                   ItemsSource="{Binding RowsView}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   IsReadOnly="True"
+                  SelectionMode="Single"
                   EnableRowVirtualization="True"
-                  EnableColumnVirtualization="True">
+                  EnableColumnVirtualization="True"
+                  ContextMenuOpening="Grid_ContextMenuOpening">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <!-- right-click selects the row so the context menu acts on it -->
+                    <EventSetter Event="PreviewMouseRightButtonDown" Handler="Row_PreviewMouseRightButtonDown"/>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <!-- Edit the selected row's scale — any scale_type (see Grid_ContextMenuOpening) -->
+                    <MenuItem x:Name="miScaleIn" Header="Edit scale…" Click="ScaleInManual_Click"/>
+                    <Separator/>
+                    <!-- Start a brand-new manual scale (picks any ticker from the universe) -->
+                    <MenuItem Header="Add new manual scale…" Click="AddNew_Click"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Fund Group" Binding="{Binding FundGroupName}" Width="*" />
                 <DataGridTextColumn Header="Fund"       Binding="{Binding FundName}"      Width="*" />

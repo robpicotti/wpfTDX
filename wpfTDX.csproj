@@ -117,6 +117,9 @@
     <Compile Include="Classes\NumericRangeBehaviour.cs" />
     <Compile Include="Classes\RangeValidationRule.cs" />
     <Compile Include="Classes\ScaledPositionsInsertRow.cs" />
+    <Compile Include="Classes\ScaleService.cs" />
+    <Compile Include="Classes\ScaleLimits.cs" />
+    <Compile Include="Classes\ScaleResolver.cs" />
     <Compile Include="DataModels\LivePositionsDataModel.cs" />
     <Compile Include="DataModels\ProcessRunDataModel.cs" />
     <Compile Include="DataModels\PortfolioDataModel.cs" />

@@ -11,8 +11,14 @@ namespace wpfTDX
         public double Min { get; set; }
         public double Max { get; set; }
 
+        // When true, the upper bound comes from the server-driven ScaleLimits.Max (Scale.max_scale)
+        // rather than the static Max above — so scaling limits track the server with no client edit.
+        public bool UseScaleMax { get; set; }
+
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
+            double max = UseScaleMax ? ScaleLimits.Max : Max;
+
             // Allow nulls (empty cell) — remove this if you want to require a value
             if (value == null || value == System.Windows.DependencyProperty.UnsetValue)
                 return ValidationResult.ValidResult;
@@ -36,8 +42,8 @@ namespace wpfTDX
                     return new ValidationResult(false, "Invalid number.");
             }
 
-            if (d < Min || d > Max)
-                return new ValidationResult(false, string.Format("Value must be between {0} and {1}.", Min, Max));
+            if (d < Min || d > max)
+                return new ValidationResult(false, string.Format("Value must be between {0} and {1}.", Min, max));
 
             return ValidationResult.ValidResult;
         }
