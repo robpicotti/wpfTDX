@@ -47,6 +47,14 @@ namespace wpfTDX
         // Auto-refresh timer (its own dedicated timer; the process monitor has none).
         private DispatcherTimer _autoRefreshTimer;
         private bool _isAutoRefreshing;
+
+        /// <summary>Raised after each refresh (initial load, auto-refresh tick, manual)
+        /// so a host (e.g. MainWindow's announcements banner) can update in lockstep.</summary>
+        public event EventHandler Refreshed;
+        private void RaiseRefreshed()
+        {
+            try { Refreshed?.Invoke(this, EventArgs.Empty); } catch { }
+        }
         public ucTickerFreezer(SqlConnection conn,string default_fund)
         {
             InitializeComponent();
@@ -155,11 +163,13 @@ namespace wpfTDX
 
                 // Begin the background auto-refresh once the initial load is done.
                 StartAutoRefresh();
+                RaiseRefreshed();
             }
         }
         public void Refresh()
         {
              this.viewmodel?.Refresh();
+             RaiseRefreshed();
         }
 
         /// <summary>
@@ -211,6 +221,7 @@ namespace wpfTDX
             finally
             {
                 _isAutoRefreshing = false;
+                RaiseRefreshed();
             }
         }
 

@@ -1438,11 +1438,70 @@ namespace wpfTDX
             // If you still want the UC to be able to request removal, keep this:
             newUserControl.RemoveControlRequested += YourUserControl_RemoveControlRequested;
 
+            // Refresh the "today's announcements" banner whenever the ticker freezer refreshes.
+            newUserControl.Refreshed += async (s, e) => await RefreshAnnouncementsBanner();
+
             // Add to the WrapPanel
             userControlsWrapPanel.Children.Add(userControlBorder);
 
             // remember it so we don't add it twice
             _tickerFreezerBorder = userControlBorder;
+        }
+
+        /// <summary>
+        /// Refresh the "today's announcements" banner from /todays_announcements. Called in
+        /// lockstep with the ticker-freezer refresh. Best-effort: a transient API blip just
+        /// shows "announcements unavailable", never disrupts the main screen.
+        /// </summary>
+        private async Task RefreshAnnouncementsBanner()
+        {
+            try
+            {
+                string json;
+                using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) })
+                {
+                    client.DefaultRequestHeaders.Add("X-Api-Key", _apiKey);
+                    var content = new StringContent("{\"min_importance\":\"Medium\"}",
+                        System.Text.Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await client.PostAsync(
+                        $"{_baseUrl}/todays_announcements", content);
+                    response.EnsureSuccessStatusCode();
+                    json = await response.Content.ReadAsStringAsync();
+                }
+
+                JObject root = JObject.Parse(json);
+                int count = root.Value<int?>("count") ?? 0;
+                JArray events = root["events"] as JArray ?? new JArray();
+
+                if (count > 0)
+                {
+                    var titles = events.Select(ev =>
+                    {
+                        string t = ev.Value<string>("event_time_utc");
+                        string hhmm = (t != null && t.Length >= 16) ? t.Substring(11, 5) + " UTC" : "";
+                        string imp = ev.Value<string>("importance");
+                        string bits = string.Join(", ", new[] { imp, hhmm }
+                            .Where(x => !string.IsNullOrEmpty(x)));
+                        return ev.Value<string>("title") + (bits.Length > 0 ? $" ({bits})" : "");
+                    }).ToList();
+
+                    txtAnnouncement.Text = $"{count} announcement(s) today:  " + string.Join("   |   ", titles);
+                    txtAnnouncement.ToolTip = string.Join("\n", titles);
+                    announcementBanner.Background = new SolidColorBrush(Color.FromRgb(255, 214, 102)); // amber
+                }
+                else
+                {
+                    txtAnnouncement.Text = "no known announcements today";
+                    txtAnnouncement.ToolTip = null;
+                    announcementBanner.Background = new SolidColorBrush(Color.FromRgb(0xDD, 0xDD, 0xDD));
+                }
+            }
+            catch
+            {
+                txtAnnouncement.Text = "announcements unavailable";
+                txtAnnouncement.ToolTip = null;
+                announcementBanner.Background = new SolidColorBrush(Color.FromRgb(0xDD, 0xDD, 0xDD));
+            }
         }
 
     }
