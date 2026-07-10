@@ -99,6 +99,25 @@ namespace wpfTDX
         }
 
         /// <summary>
+        /// Event-importance toggle changed: re-highlight rows via the lightweight
+        /// /event_affected endpoint (no full reload). Ignores the selection set during
+        /// initial load; only reacts once the window is loaded and rows exist.
+        /// </summary>
+        private async void EventImportanceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded || _viewModel == null) return;
+            if (_viewModel.MergedRows == null || _viewModel.MergedRows.Count == 0) return;
+            try
+            {
+                await _viewModel.RefreshEventAffectedAsync();
+            }
+            catch
+            {
+                // highlight refresh is best-effort; never disrupt the screen
+            }
+        }
+
+        /// <summary>
         /// Sizes the strategy / strategy_b columns to fit the widest name in their dropdown list
         /// (StrategyNames / StrategyNamesBase) plus the header, so whatever the user selects fits
         /// without clipping. (Sizing to only the currently-shown values clips once a longer name

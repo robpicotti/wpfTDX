@@ -23,10 +23,24 @@ then save back to the server. Three files:
 Data is loaded from the `/filtered_intervals` endpoint, which returns both the saved
 filter flags (`filter_intervals` table) and the latest `tad_positions` snapshot.
 
-> **Planned (not started):** a market-announcements feed will flag tickers affected by upcoming
-> economic events (NFP, FOMC, …) and **highlight their rows here**. Design note lives in the
-> trading repo `CLAUDE.md` → "Planned project — Market announcements feed". The WPF side is part 3
-> (a per-row `IsEventAffected`-style flag + row highlight, kept distinct from the deployment colouring).
+### Market-announcement highlight (BUILT 2026-07-08)
+
+Tickers with a market-moving announcement still to come **this week** get an amber left **stripe**
+on the ticker cell + a row **tooltip** naming the event(s)/time. Backed by the trading repo's
+announcements feed (`Calendar.Events`); design note in trading `CLAUDE.md` → "Market announcements feed".
+
+- **Data**: `/filtered_intervals` returns an extra `event_affected` section
+  `{ ticker: [ {title, event_time_utc, importance, categories} ] }`. `PopulateEventAffectedFromJson`
+  parses it into `_eventTooltipByTicker`; `ApplyEventAffected` (called at the end of `RebuildMerged`)
+  stamps `MergedTickerRow.IsEventAffected` + `EventTooltip`.
+- **View**: `winFilterIntervals.xaml` — ticker column `CellStyle` `DataTrigger` on `IsEventAffected`
+  (amber `#FFB300` left border, kept distinct from the scale/deployment colouring); row `ToolTip`
+  bound to `EventTooltip`.
+- **Toggle**: an **Events: High/Medium/Low** ComboBox on the toolbar (default High) → 
+  `EventImportanceCombo_SelectionChanged` → `FilterIntervalsViewModel.RefreshEventAffectedAsync()`,
+  which POSTs the on-screen tickers + importance to the lightweight **`/event_affected`** endpoint and
+  re-stamps rows (no full reload). Note: Crude Oil Inventories is *Medium* — set the toggle to
+  Medium/Low to see it stripe.
 
 ### Interval columns + toggling
 

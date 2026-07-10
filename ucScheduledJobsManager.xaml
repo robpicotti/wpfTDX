@@ -1,205 +1,161 @@
-﻿<UserControl x:Class="wpfTDX.ucScheduledJobsManager"
+<UserControl x:Class="wpfTDX.ucScheduledJobsManager"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:wpfTDX"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" Width="889">
+             mc:Ignorable="d" d:DesignHeight="820" Width="1180">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+    <DockPanel Margin="8">
 
-    <StackPanel Margin="2">
-        <TextBox x:Name="txtProcess" Visibility="Hidden"/>
-        <!-- Top Section for Existing Jobs -->
-        <Expander Header="Current Jobs" IsExpanded="True" FontWeight="Bold">
-            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="2">
-                        <DataGrid  x:Name="dgAllJobs"
-                                  ItemsSource="{Binding ScheduledJobs, Mode=TwoWay}"
-                                  SelectedItem="{Binding SelectedJob, Mode=TwoWay}" 
-                                  AutoGenerateColumns="False" SelectionMode="Single">
-                            <!-- Define Columns for Job List -->
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Job Name" Binding="{Binding JobName}" />
+        <!-- toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Scheduled Jobs" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" Padding="12,3" Margin="16,0,0,0"/>
+            <ProgressBar Width="120" Height="14" IsIndeterminate="True" VerticalAlignment="Center" Margin="16,0,0,0"
+                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="{Binding Status}" Foreground="#555" VerticalAlignment="Center" Margin="12,0,0,0"/>
+        </StackPanel>
 
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
-                    <StackPanel  Grid.Column="1" Margin="2">
-                        <Button Content="Save" Command="{Binding SaveCommand}" />
-                    </StackPanel>
-      
-                </Grid>
-            </Border>
-        </Expander>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
 
-        <!-- Job Details Section -->
-        <Expander Header="Add/Edit Job" IsExpanded="True" FontWeight="Bold">
-            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
-                <Grid>
-
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <!-- First Row -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Second Row -->
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="3*" />
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Column="0" Grid.Row="0" Margin="5" Text="Job Name" FontWeight="Bold"/>
-                    <TextBox Grid.Column="1"  Margin="5" x:Name="txtJobName" Text="{Binding SelectedJob.JobName, Mode=TwoWay}"  Grid.Row="0" />
-
-        <!-- Frequency -->
-                    <TextBlock Grid.Column="2" Margin="5" Text="Frequency" FontWeight="Bold" Grid.Row="0"/>
-                    <ComboBox Grid.Column="3" Margin="5" x:Name="cboFrequency"  Grid.Row="0"
-                          ItemsSource="{Binding ScheduleFrequencies}"
-                          DisplayMemberPath="FrequencyName" 
-                          SelectedValuePath="FrequencyId" 
-                          SelectedValue="{Binding SelectedJob.FrequencyId, Mode=TwoWay}" />
-
-
-                    <TextBlock Grid.Column="4" Margin="5" Text="Days" FontWeight="Bold"  Grid.Row="0"/>
-                    <ComboBox Grid.Column="5" Margin="5" x:Name="cboDays"   Grid.Row="0"
-                              ItemsSource="{Binding ScheduleDays}"
-                                DisplayMemberPath="DayName" 
-                                SelectedValuePath="DayId" 
-                                SelectedValue="{Binding SelectedJob.DayId, Mode=TwoWay}" />
-                    <TextBlock Grid.Column="6" Margin="5" Text="Closing Time Delta" FontWeight="Bold" Grid.Row="0"/>
-                    <TextBox Grid.Column="7" Margin="5" x:Name="txtClosingTimeDelta" Grid.Row="0"
-                             Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}" />
-                    <TextBlock Grid.Column="8" Margin="5" Text="Enabled" FontWeight="Bold" Grid.Row="0"/>
-                    <CheckBox Grid.Column="9" Margin="5" x:Name="chkEnabled" Grid.Row="0"
-                            IsChecked="{Binding SelectedJob.Enabled, Mode=TwoWay, FallbackValue=False}" />
-
-                    <!--<ComboBox Grid.Column="9" Margin="5" ItemsSource="{Binding TrueFalseOptions}" 
-                            SelectedItem="{Binding SelectedJob.Enabled, Mode=TwoWay}"  Grid.Row="0"/>-->
-                    <!-- Python Module and Class -->
-                <TextBlock Grid.Column="0" Margin="5" Text="Python Module" FontWeight="Bold" Grid.Row="1" />
-                <TextBox Grid.Column="1" Margin="5" Text="{Binding SelectedJob.PythonModule, Mode=TwoWay}" Grid.Row="1" />
-
-                <TextBlock Grid.Column="2" Margin="5" Text="Python Class" FontWeight="Bold"  Grid.Row="1" />
-                <TextBox Grid.Column="3" Margin="5" Text="{Binding SelectedJob.PythonClass, Mode=TwoWay}"   Grid.Row="1"/>
-
-                <!-- Method and Backfill -->
-                <TextBlock Grid.Column="4" Margin="5" Text="Execute Method" FontWeight="Bold"  Grid.Row="1"/>
-                <TextBox Grid.Column="5" Margin="5" Text="{Binding SelectedJob.ExecuteMethod, Mode=TwoWay}"  Grid.Row="1"/>
-
-                <TextBlock Grid.Column="6" Margin="5" Text="Backfill" FontWeight="Bold"  Grid.Row="1"/>
-                <ComboBox Grid.Column="7" Margin="5" ItemsSource="{Binding TrueFalseOptions}" 
-                            SelectedItem="{Binding SelectedJob.BackFill, Mode=TwoWay}"  Grid.Row="1"/>
-                </Grid>
-            </Border>
-        </Expander>
-
-        <!-- Job Parameters Section -->
-        <Expander Header="Configure Job Parameters" IsExpanded="False" FontWeight="Bold">
-            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="2*" />
-                    </Grid.ColumnDefinitions>
-
-                    <DataGrid Grid.Row="0" ItemsSource="{Binding JobParameters}" 
-                              AutoGenerateColumns="False" 
-                              SelectedItem="{Binding SelectedJobParameter, Mode=TwoWay}"
-                              CanUserAddRows="True">
-                        <!-- Define the columns based on the properties of JobParametersDataModel -->
+                <!-- JOB LIST -->
+                <GroupBox Header="Current jobs" Margin="0,0,0,8">
+                    <DataGrid ItemsSource="{Binding Jobs}" SelectedItem="{Binding SelectedJob, Mode=TwoWay}"
+                              AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                              HeadersVisibility="Column" MaxHeight="240">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Parameter Name" Binding="{Binding ParameterName}" Width="*" />
+                            <DataGridTextColumn Header="id"        Binding="{Binding JobId}" Width="40"/>
+                            <DataGridTextColumn Header="job"       Binding="{Binding JobName}" Width="Auto"/>
+                            <DataGridCheckBoxColumn Header="on"    Binding="{Binding Enabled}" Width="40"/>
+                            <DataGridCheckBoxColumn Header="backfill" Binding="{Binding Backfill}" Width="Auto"/>
+                            <DataGridTextColumn Header="freq"      Binding="{Binding FreqName}" Width="Auto"/>
+                            <DataGridTextColumn Header="day"       Binding="{Binding DayName}" Width="Auto"/>
+                            <DataGridTextColumn Header="next run"  Binding="{Binding NextRuntime}" Width="Auto"/>
+                            <DataGridTextColumn Header="last run"  Binding="{Binding LastRuntime}" Width="Auto"/>
+                            <DataGridTextColumn Header="status"    Binding="{Binding LastStatus}" Width="Auto"/>
+                            <DataGridTextColumn Header="class"     Binding="{Binding PythonClass}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                </GroupBox>
 
-                    <!-- Add Parameter Button -->
-                    <Button 
-                        Grid.Row="0" 
-                        Grid.Column="1" 
-                        Margin="2" 
-                        Content="Add Parameter" 
-                        Width="100"
-                        Height="20"
-                        Command="{Binding AddParameterCommand}"
-                        HorizontalAlignment="Left"/>
-                </Grid>
-            </Border>
-        </Expander>
-        <Expander Header="Configure Job Parameter Values" IsExpanded="False" FontWeight="Bold">
-            <Border BorderBrush="Black" Background="White" BorderThickness="1" Padding="5" Margin="5">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <!-- EDIT SELECTED -->
+                <GroupBox Header="Edit selected job" Margin="0,0,0,8">
+                    <Grid Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/><ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="Auto"/><ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="Auto"/><ColumnDefinition Width="1.5*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.8*" />
-                        <ColumnDefinition Width="1.5*" />
-                        <ColumnDefinition Width="1.5*"/>
-                        <ColumnDefinition Width="1.5*" />
-                        <ColumnDefinition Width="1.5*" />
-                        <ColumnDefinition Width="1.5*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="2" >
-                        <DataGrid ItemsSource="{Binding JobParameterValues}" 
-                                  AutoGenerateColumns="False"
-                                  SelectedItem="{Binding SelectedJobParameterValue, Mode=TwoWay}"
-                                  >
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="4" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Margin="4" Text="{Binding SelectedJob.JobName}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Module" Margin="4" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="0" Grid.Column="3" Margin="4" Text="{Binding SelectedJob.PythonModule}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="4" Text="Enabled" Margin="4" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Row="0" Grid.Column="5" Margin="4" VerticalAlignment="Center" IsChecked="{Binding SelectedJob.Enabled}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Class" Margin="4" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Margin="4" Text="{Binding SelectedJob.PythonClass}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Method" Margin="4" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="3" Margin="4" Text="{Binding SelectedJob.ExecuteMethod}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="4" Text="Backfill" Margin="4" VerticalAlignment="Center"/>
+                        <CheckBox Grid.Row="1" Grid.Column="5" Margin="4" VerticalAlignment="Center" IsChecked="{Binding SelectedJob.Backfill}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Frequency" Margin="4" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="2" Grid.Column="1" Margin="4" ItemsSource="{Binding Frequencies}"
+                                  DisplayMemberPath="FreqName" SelectedValuePath="FreqId"
+                                  SelectedValue="{Binding SelectedJob.FreqId}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="Day" Margin="4" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="2" Grid.Column="3" Margin="4" ItemsSource="{Binding Days}"
+                                  DisplayMemberPath="DayName" SelectedValuePath="DayId"
+                                  SelectedValue="{Binding SelectedJob.DayId}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="4" Text="GC delta" Margin="4" VerticalAlignment="Center"
+                                   ToolTip="Delta in minutes relative to the global closing time"/>
+                        <TextBox Grid.Row="2" Grid.Column="5" Margin="4" Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}"/>
+                    </Grid>
+                </GroupBox>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+                    <TextBlock Text="Force-run date (optional):" VerticalAlignment="Center" Margin="0,0,6,0"
+                               ToolTip="Leave blank to run now. Set a date to run the job for that for_date (date-driven jobs)."/>
+                    <DatePicker SelectedDate="{Binding ForceRunDate}" Width="130" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Content="Force run" Command="{Binding ForceRunCommand}" Padding="14,4" Margin="0,0,16,0"
+                            ToolTip="Run the selected job now (in the API process). Refresh afterwards to see its status."/>
+                    <Button Content="Update job" Command="{Binding UpdateCommand}" Padding="14,4" Margin="0,0,8,0"/>
+                    <Button Content="Delete job" Command="{Binding DeleteCommand}" Padding="14,4"/>
+                </StackPanel>
+
+                <!-- NEW JOB -->
+                <GroupBox Header="New job">
+                    <StackPanel Margin="4">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="1.5*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="4" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Margin="4" Text="{Binding NewJob.JobName}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Module" Margin="4" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="3" Margin="4" Text="{Binding NewJob.PythonModule}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="4" Text="Enabled" Margin="4" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="0" Grid.Column="5" Margin="4" VerticalAlignment="Center" IsChecked="{Binding NewJob.Enabled}"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Class" Margin="4" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="4" Text="{Binding NewJob.PythonClass}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Method" Margin="4" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="3" Margin="4" Text="{Binding NewJob.ExecuteMethod}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="4" Text="Backfill" Margin="4" VerticalAlignment="Center"/>
+                            <CheckBox Grid.Row="1" Grid.Column="5" Margin="4" VerticalAlignment="Center" IsChecked="{Binding NewJob.Backfill}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Frequency" Margin="4" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="2" Grid.Column="1" Margin="4" ItemsSource="{Binding Frequencies}"
+                                      DisplayMemberPath="FreqName" SelectedValuePath="FreqId"
+                                      SelectedValue="{Binding NewJob.FreqId}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Day" Margin="4" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="2" Grid.Column="3" Margin="4" ItemsSource="{Binding Days}"
+                                      DisplayMemberPath="DayName" SelectedValuePath="DayId"
+                                      SelectedValue="{Binding NewJob.DayId}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="4" Text="GC delta" Margin="4" VerticalAlignment="Center"
+                                   ToolTip="Delta in minutes relative to the global closing time"/>
+                            <TextBox Grid.Row="2" Grid.Column="5" Margin="4" Text="{Binding NewJob.GlobalClosingDeltaMinutes}"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Start from" Margin="4" VerticalAlignment="Center"/>
+                            <DatePicker Grid.Row="3" Grid.Column="1" Margin="4" SelectedDate="{Binding NewJobStartFrom}"/>
+                            <TextBlock Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="4" Margin="4" Foreground="#777"
+                                       Text="(first-run anchor — backfill jobs run from this date; others first fire at/after it)"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <TextBlock Text="Parameters (one row per value; group by name)" FontWeight="Bold" Margin="4,10,4,2"/>
+                        <DataGrid ItemsSource="{Binding NewParams}" AutoGenerateColumns="False"
+                                  CanUserAddRows="True" MaxHeight="160">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Value" Binding="{Binding ParameterValue}" />
-                                <DataGridTextColumn Header="Environment" Binding="{Binding Environment}" />
-                                <!-- Add this column -->
+                                <DataGridTextColumn Header="param_name"  Binding="{Binding ParamName}"  Width="*"/>
+                                <DataGridTextColumn Header="param_value" Binding="{Binding ParamValue}" Width="*"/>
+                                <DataGridTextColumn Header="environment" Binding="{Binding Environment}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="2">
-                        <Button 
-                        Grid.Row="0" 
-                        Grid.Column="1" 
-                        Margin="2" 
-                        Content="Add Parameter Value" 
-                        Width="130"
-                        Height="20"
-                        Command="{Binding AddParameterValueCommand}"
-                        HorizontalAlignment="Left"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="2">
-                        <Button
-                            Grid.Row="0"
-                            Grid.Column="3"
-                            Margin="2"
-                            Content="Delete Parameter Value"
-                            Width="150"
-                            Height="20"
-                            Command="{Binding DeleteParameterValueCommand}"
-                            HorizontalAlignment="Left"
-                            />
 
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                            <Button Content="Clear" Command="{Binding ClearNewCommand}" Padding="14,4" Margin="0,0,8,0"/>
+                            <Button Content="Create job" Command="{Binding CreateCommand}" Padding="14,4"/>
+                        </StackPanel>
                     </StackPanel>
-                </Grid>
-            </Border>
-        </Expander>
-    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
 </UserControl>
-

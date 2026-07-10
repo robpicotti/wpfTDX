@@ -412,6 +412,28 @@ namespace wpfTDX
 
         public RangeObservableCollection<MergedTickerRow> MergedRows { get; } = new RangeObservableCollection<MergedTickerRow>();
 
+        // ticker -> tooltip text for the market-announcement highlight (from the
+        // /filtered_intervals "event_affected" section). Presence => affected.
+        private Dictionary<string, string> _eventTooltipByTicker =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // Importance floor for the event highlight, driven by the on-screen toggle.
+        // Defaults to "High"; changing it re-queries via RefreshEventAffectedAsync.
+        private string _eventImportance = "High";
+        public string EventImportance
+        {
+            get => _eventImportance;
+            set
+            {
+                var v = string.IsNullOrWhiteSpace(value) ? "High" : value;
+                if (_eventImportance != v)
+                {
+                    _eventImportance = v;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
 
         private ObservableCollection<TadPositionsDataModel> _tadPositionsData;
         
@@ -1351,7 +1373,8 @@ namespace wpfTDX
                 using (HttpClient client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
-                    var content = new StringContent("{}", Encoding.UTF8, "application/json");
+                    var body = new JObject { ["min_importance"] = EventImportance };
+                    var content = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
                     var response = await client.PostAsync($"{baseUrl}/filtered_intervals", content).ConfigureAwait(false);
                     response.EnsureSuccessStatusCode();
 
@@ -1362,6 +1385,7 @@ namespace wpfTDX
 
             PopulateFilterIntervalsFromJson(root);
             PopulateTadPositionsFromJson(root);
+            PopulateEventAffectedFromJson(root);
         }
 
 
@@ -1389,6 +1413,7 @@ namespace wpfTDX
             var root = JObject.Parse(json);
 
             PopulateTadPositionsFromJson(root);
+            PopulateEventAffectedFromJson(root);
         }
 
         private void PopulateTadPositionsFromJson(JObject root)
@@ -1580,6 +1605,96 @@ namespace wpfTDX
             TadPositionsData.Clear();
             foreach (var m in merged.Values.OrderBy(x => x.Tickername))
                 TadPositionsData.Add(m);
+        }
+
+        /// <summary>
+        /// Parse the "event_affected" section (ticker -> [ {title, event_time_utc,
+        /// importance, categories} ]) into a ticker -> tooltip map. Presence of a
+        /// ticker means it is affected. Applied to MergedRows in RebuildMerged.
+        /// </summary>
+        private void PopulateEventAffectedFromJson(JObject root)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var affected = root?["event_affected"] as JObject;
+            if (affected != null)
+            {
+                foreach (var kv in affected)
+                {
+                    var events = kv.Value as JArray;
+                    if (events == null || events.Count == 0) continue;
+
+                    var lines = new List<string>();
+                    foreach (var ev in events)
+                    {
+                        var title = ev.Value<string>("title");
+                        var imp = ev.Value<string>("importance");
+                        var time = ev.Value<string>("event_time_utc") ?? "";
+                        // backend sends e.g. "2026-07-08 18:00:00+00:00" -> date + HH:mm
+                        if (time.Length >= 16) time = time.Substring(0, 16);
+                        lines.Add($"{title}  ({imp}, {time} UTC)");
+                    }
+                    dict[kv.Key] = string.Join("\n", lines);
+                }
+            }
+            _eventTooltipByTicker = dict;
+        }
+
+        /// <summary>
+        /// Re-fetch ONLY the event highlight for the current on-screen tickers at the
+        /// selected EventImportance and re-stamp the rows — no full /filtered_intervals
+        /// reload. Called when the importance toggle changes.
+        /// </summary>
+        public async Task RefreshEventAffectedAsync()
+        {
+            var tickernames = MergedRows
+                .Select(r => r.Tickername)
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            JObject root = await Task.Run(async () =>
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                    var payload = new JObject
+                    {
+                        ["min_importance"] = EventImportance,
+                        ["tickernames"] = new JArray(tickernames),
+                    };
+                    var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync($"{baseUrl}/event_affected", content).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    return JObject.Parse(json);
+                }
+            });
+
+            PopulateEventAffectedFromJson(root);
+            ApplyEventAffected();
+        }
+
+        /// <summary>
+        /// Stamp IsEventAffected / EventTooltip onto the current MergedRows from the
+        /// last-parsed event_affected map. Called at the end of RebuildMerged.
+        /// </summary>
+        private void ApplyEventAffected()
+        {
+            foreach (var row in MergedRows)
+            {
+                if (row == null) continue;
+                if (row.Tickername != null &&
+                    _eventTooltipByTicker.TryGetValue(row.Tickername, out var tip))
+                {
+                    row.EventTooltip = tip;
+                    row.IsEventAffected = true;
+                }
+                else
+                {
+                    row.EventTooltip = null;
+                    row.IsEventAffected = false;
+                }
+            }
         }
         private static string NormalizeLevel(string s)
         {
@@ -2086,6 +2201,9 @@ namespace wpfTDX
             // DataGrid regenerates containers and lays out once rather than per row.
             MergedRows.ReplaceAll(tempRows);
 
+            // stamp the market-announcement highlight onto the freshly built rows
+            ApplyEventAffected();
+
             if (MergedRowsView != null)
             {
                 MergedRowsView.SortDescriptions.Clear();
@@ -2354,6 +2472,38 @@ namespace wpfTDX
             public string FundGroup { get; set; }
             public string FundName { get; set; }
             public string Category { get; set; }   // ticker metadata (from tickers table), display + sort only
+
+            // --- Market-announcement highlight (from /filtered_intervals "event_affected") ---
+            // True when a market-moving announcement is still to come this week for this
+            // ticker's category; EventTooltip names the event(s). Drives the row accent
+            // stripe + tooltip on the Filter Intervals grid (display only, not persisted).
+            private bool _isEventAffected;
+            public bool IsEventAffected
+            {
+                get => _isEventAffected;
+                set
+                {
+                    if (_isEventAffected != value)
+                    {
+                        _isEventAffected = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            private string _eventTooltip;
+            public string EventTooltip
+            {
+                get => _eventTooltip;
+                set
+                {
+                    if (_eventTooltip != value)
+                    {
+                        _eventTooltip = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
 
             public bool? OriginalManual { get; private set; }
             private bool? _manual;

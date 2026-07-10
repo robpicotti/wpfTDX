@@ -103,6 +103,21 @@
             IsEnabled="{Binding IsSaveEnabled}"
         />
 
+            <Separator Margin="10,0" Width="1" />
+
+            <!-- Event highlight importance floor. Defaults to High; changing it
+                 re-queries /event_affected and re-highlights rows (no full reload). -->
+            <TextBlock Text="Events:" VerticalAlignment="Center" Margin="8,0,6,0"/>
+            <ComboBox x:Name="EventImportanceCombo" Width="90"
+                      VerticalAlignment="Center"
+                      SelectedValuePath="Content"
+                      SelectedValue="{Binding EventImportance, Mode=TwoWay}"
+                      SelectionChanged="EventImportanceCombo_SelectionChanged"
+                      ToolTip="Stripe tickers with an upcoming announcement this week at or above this importance">
+                <ComboBoxItem Content="High"/>
+                <ComboBoxItem Content="Medium"/>
+                <ComboBoxItem Content="Low"/>
+            </ComboBox>
 
         </StackPanel>
 
@@ -227,6 +242,9 @@
                          Handler="DataGridRow_PreviewMouseRightButtonDown"/>
                     <!-- Important: assign a *ContextMenu*, not a MenuItem -->
                     <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
+                    <!-- Market-announcement tooltip; null (no tooltip) unless the
+                         row is event-affected this week. Stripe is on the ticker cell. -->
+                    <Setter Property="ToolTip" Value="{Binding EventTooltip}"/>
                 </Style>
             </DataGrid.RowStyle>
 
@@ -238,10 +256,24 @@
 
             <DataGrid.Columns>
 
-                <!-- Ticker (read-only) -->
+                <!-- Ticker (read-only). Amber left stripe when a market-moving
+                     announcement is still to come this week (IsEventAffected);
+                     hover the row for the event name/time. -->
                 <DataGridTextColumn Header="ticker"
                                     Binding="{Binding Tickername}"
-                                    IsReadOnly="True" />
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsEventAffected}" Value="True">
+                                    <Setter Property="BorderBrush" Value="#FFB300"/>
+                                    <Setter Property="BorderThickness" Value="4,0,0,0"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
 
                 <DataGridTextColumn Header="fundgrp"
                                     Binding="{Binding FundGroup}"
