@@ -1469,7 +1469,15 @@ namespace wpfTDX
                     json = await response.Content.ReadAsStringAsync();
                 }
 
-                JObject root = JObject.Parse(json);
+                // DateParseHandling.None: keep event_time_utc as the raw UTC string so
+                // Newtonsoft doesn't auto-parse the ISO datetime and shift it to local time
+                // (that was showing 13:30 BST for a 12:30 UTC event).
+                JObject root = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(
+                    json,
+                    new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        DateParseHandling = Newtonsoft.Json.DateParseHandling.None
+                    });
                 int count = root.Value<int?>("count") ?? 0;
                 JArray events = root["events"] as JArray ?? new JArray();
 
