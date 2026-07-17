@@ -1631,7 +1631,11 @@ namespace wpfTDX
                         var time = ev.Value<string>("event_time_utc") ?? "";
                         // backend sends e.g. "2026-07-08 18:00:00+00:00" -> date + HH:mm
                         if (time.Length >= 16) time = time.Substring(0, 16);
-                        lines.Add($"{title}  ({imp}, {time} UTC)");
+                        // lead with country/currency so it's clear whose data it is (e.g. CA vs US)
+                        var loc = ev.Value<string>("country");
+                        if (string.IsNullOrEmpty(loc) || loc == "NONE") loc = ev.Value<string>("currency");
+                        var head = string.IsNullOrEmpty(loc) ? title : $"{loc}  {title}";
+                        lines.Add($"{head}  ({imp}, {time} UTC)");
                     }
                     dict[kv.Key] = string.Join("\n", lines);
                 }

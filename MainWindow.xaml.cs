@@ -10,6 +10,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -1490,7 +1491,12 @@ namespace wpfTDX
                         string imp = ev.Value<string>("importance");
                         string bits = string.Join(", ", new[] { imp, hhmm }
                             .Where(x => !string.IsNullOrEmpty(x)));
-                        return ev.Value<string>("title") + (bits.Length > 0 ? $" ({bits})" : "");
+                        // lead with the country/currency so US data isn't confused with e.g. CA
+                        string loc = ev.Value<string>("country");
+                        if (string.IsNullOrEmpty(loc) || loc == "NONE") loc = ev.Value<string>("currency");
+                        string title = ev.Value<string>("title");
+                        string head = string.IsNullOrEmpty(loc) ? title : $"{loc}  {title}";
+                        return head + (bits.Length > 0 ? $" ({bits})" : "");
                     }).ToList();
 
                     txtAnnouncement.Text = $"{count} announcement(s) today:  " + string.Join("   |   ", titles);
@@ -1510,6 +1516,54 @@ namespace wpfTDX
                 txtAnnouncement.ToolTip = null;
                 announcementBanner.Background = new SolidColorBrush(Color.FromRgb(0xDD, 0xDD, 0xDD));
             }
+
+            // (re)start the news-ticker marquee for whatever text we just set
+            StartAnnouncementMarquee();
+        }
+
+        private void announcementBanner_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // width changed (window resize) -> recompute whether/how far to scroll
+            StartAnnouncementMarquee();
+        }
+
+        private void StartAnnouncementMarquee()
+        {
+            if (txtAnnouncement == null || announcementBanner == null) return;
+
+            // make sure ActualWidth/ActualHeight reflect the text we just set
+            txtAnnouncement.UpdateLayout();
+
+            double textWidth = txtAnnouncement.ActualWidth;
+            double viewWidth = announcementBanner.ActualWidth;
+            double viewHeight = announcementBanner.ActualHeight;
+            if (textWidth <= 0 || viewWidth <= 0) return;
+
+            // vertically centre the line within the banner
+            Canvas.SetTop(txtAnnouncement, Math.Max(0, (viewHeight - txtAnnouncement.ActualHeight) / 2));
+
+            // stop any animation already running before we decide what to do
+            txtAnnouncement.BeginAnimation(Canvas.LeftProperty, null);
+
+            // if the whole line fits there's nothing to scroll — pin it left and stop
+            if (textWidth <= viewWidth)
+            {
+                Canvas.SetLeft(txtAnnouncement, 8);
+                return;
+            }
+
+            // news-ticker: scroll the whole line right-to-left, forever, at a steady speed
+            const double pixelsPerSecond = 60.0;
+            double from = viewWidth;      // start just off the right edge
+            double to = -textWidth;       // finish once it's fully off the left edge
+            var anim = new DoubleAnimation
+            {
+                From = from,
+                To = to,
+                Duration = TimeSpan.FromSeconds((from - to) / pixelsPerSecond),
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            txtAnnouncement.BeginAnimation(Canvas.LeftProperty, anim);
         }
 
     }
