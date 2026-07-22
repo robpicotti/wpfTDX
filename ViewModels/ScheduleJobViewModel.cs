@@ -29,6 +29,11 @@ namespace wpfTDX
         public ObservableCollection<JobRow> Jobs { get; } = new ObservableCollection<JobRow>();
         public ObservableCollection<FreqOption> Frequencies { get; } = new ObservableCollection<FreqOption>();
         public ObservableCollection<DayOption> Days { get; } = new ObservableCollection<DayOption>();
+        // half-hourly UTC clock times (00:00 .. 23:30) for the calendar-mode run-time picker
+        public ObservableCollection<string> HalfHourTimes { get; } = new ObservableCollection<string>();
+        // day-mode options for the picker
+        public ObservableCollection<string> DayModes { get; } =
+            new ObservableCollection<string> { "business", "calendar" };
 
         // buffered editor for a new job + its parameter rows (flat: name/value/environment)
         public JobRow NewJob { get; private set; } = JobRow.Blank();
@@ -79,6 +84,9 @@ namespace wpfTDX
 
         public ScheduleJobViewModel()
         {
+            for (int m = 0; m < 24 * 60; m += 30)
+                HalfHourTimes.Add($"{m / 60:D2}:{m % 60:D2}");
+
             RefreshCommand = new RelayCommand(async () => await LoadAsync());
             CreateCommand = new RelayCommand(async () => await CreateAsync());
             UpdateCommand = new RelayCommand(async () => await UpdateAsync());
@@ -155,6 +163,14 @@ namespace wpfTDX
                 return;
             }
 
+            if (string.Equals(NewJob.DayMode, "calendar", StringComparison.OrdinalIgnoreCase)
+                && string.IsNullOrWhiteSpace(NewJob.RunTimeUtc))
+            {
+                MessageBox.Show("Calendar day-mode needs a Run time (UTC).",
+                    "Missing run time", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             var parameters = NewParams
                 .Where(p => !string.IsNullOrWhiteSpace(p.ParamName))
                 .GroupBy(p => p.ParamName.Trim())
@@ -178,7 +194,9 @@ namespace wpfTDX
                     freq_id = NewJob.FreqId,
                     global_closing_delta_minutes = NewJob.GlobalClosingDeltaMinutes,
                     backfill = NewJob.Backfill,
-                    enabled = NewJob.Enabled
+                    enabled = NewJob.Enabled,
+                    day_mode = NewJob.DayMode,
+                    run_time_utc = NewJob.RunTimeUtc
                 },
                 parameters,
                 start_from = NewJobStartFrom?.ToString("yyyy-MM-dd")
@@ -204,7 +222,9 @@ namespace wpfTDX
                     freq_id = SelectedJob.FreqId,
                     global_closing_delta_minutes = SelectedJob.GlobalClosingDeltaMinutes,
                     backfill = SelectedJob.Backfill,
-                    enabled = SelectedJob.Enabled
+                    enabled = SelectedJob.Enabled,
+                    day_mode = SelectedJob.DayMode,
+                    run_time_utc = SelectedJob.RunTimeUtc
                 }
             };
             await PostAndRefresh("/update_schedule_job", body, "Updated job.");
@@ -323,6 +343,10 @@ namespace wpfTDX
         public int? GlobalClosingDeltaMinutes { get; set; }
         public bool Backfill { get; set; }
         public bool Enabled { get; set; } = true;
+        // day_mode: "business" (default, close+GC-delta, business-day gated) or
+        // "calendar" (absolute RunTimeUtc, runs every calendar day incl. weekends).
+        public string DayMode { get; set; } = "business";
+        public string RunTimeUtc { get; set; }   // "HH:MM" UTC, used in calendar mode
         // read-only display (from schedule_jobs_log / lookups)
         public string FreqName { get; set; }
         public string DayName { get; set; }
@@ -330,7 +354,7 @@ namespace wpfTDX
         public string LastRuntime { get; set; }
         public string LastStatus { get; set; }
 
-        public static JobRow Blank() => new JobRow { Enabled = true, Backfill = false };
+        public static JobRow Blank() => new JobRow { Enabled = true, Backfill = false, DayMode = "business" };
 
         public static JobRow FromJson(JObject j) => new JobRow
         {
@@ -344,6 +368,8 @@ namespace wpfTDX
             GlobalClosingDeltaMinutes = j.Value<int?>("global_closing_delta_minutes"),
             Backfill = j.Value<bool?>("backfill") ?? false,
             Enabled = j.Value<bool?>("enabled") ?? true,
+            DayMode = string.IsNullOrWhiteSpace(j.Value<string>("day_mode")) ? "business" : j.Value<string>("day_mode"),
+            RunTimeUtc = j.Value<string>("run_time_utc"),
             FreqName = j.Value<string>("freq_name"),
             DayName = j.Value<string>("day_name"),
             NextRuntime = j.Value<string>("next_runtime"),

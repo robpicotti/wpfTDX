@@ -51,7 +51,8 @@
                             <ColumnDefinition Width="Auto"/><ColumnDefinition Width="1.5*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="4" VerticalAlignment="Center"/>
@@ -77,8 +78,60 @@
                                   DisplayMemberPath="DayName" SelectedValuePath="DayId"
                                   SelectedValue="{Binding SelectedJob.DayId}"/>
                         <TextBlock Grid.Row="2" Grid.Column="4" Text="GC delta" Margin="4" VerticalAlignment="Center"
-                                   ToolTip="Delta in minutes relative to the global closing time"/>
-                        <TextBox Grid.Row="2" Grid.Column="5" Margin="4" Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}"/>
+                                   ToolTip="Delta in minutes relative to the global closing time (business mode only)">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbEditDayMode}" Value="calendar">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBox Grid.Row="2" Grid.Column="5" Margin="4" Text="{Binding SelectedJob.GlobalClosingDeltaMinutes}">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbEditDayMode}" Value="calendar">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Day mode" Margin="4" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cmbEditDayMode" Grid.Row="3" Grid.Column="1" Margin="4"
+                                  ItemsSource="{Binding DayModes}" SelectedItem="{Binding SelectedJob.DayMode}"
+                                  ToolTip="business = time relative to market close (GC delta), business days only. calendar = fixed UTC time, runs every calendar day incl. weekends."/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="Run time (UTC)" Margin="4" VerticalAlignment="Center"
+                                   ToolTip="Fixed UTC time. During British Summer Time the local clock time shifts by an hour (this time floats in local terms).">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbEditDayMode}" Value="calendar">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ComboBox Grid.Row="3" Grid.Column="3" Margin="4"
+                                  ItemsSource="{Binding HalfHourTimes}" SelectedItem="{Binding SelectedJob.RunTimeUtc}"
+                                  ToolTip="Fixed UTC time. During BST the local clock time shifts by an hour.">
+                            <ComboBox.Style>
+                                <Style TargetType="ComboBox">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbEditDayMode}" Value="calendar">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.Style>
+                        </ComboBox>
                     </Grid>
                 </GroupBox>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
@@ -103,6 +156,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="4" VerticalAlignment="Center"/>
@@ -128,12 +182,64 @@
                                       DisplayMemberPath="DayName" SelectedValuePath="DayId"
                                       SelectedValue="{Binding NewJob.DayId}"/>
                             <TextBlock Grid.Row="2" Grid.Column="4" Text="GC delta" Margin="4" VerticalAlignment="Center"
-                                   ToolTip="Delta in minutes relative to the global closing time"/>
-                            <TextBox Grid.Row="2" Grid.Column="5" Margin="4" Text="{Binding NewJob.GlobalClosingDeltaMinutes}"/>
+                                   ToolTip="Delta in minutes relative to the global closing time (business mode only)">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbNewDayMode}" Value="calendar">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBox Grid.Row="2" Grid.Column="5" Margin="4" Text="{Binding NewJob.GlobalClosingDeltaMinutes}">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbNewDayMode}" Value="calendar">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
 
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Start from" Margin="4" VerticalAlignment="Center"/>
-                            <DatePicker Grid.Row="3" Grid.Column="1" Margin="4" SelectedDate="{Binding NewJobStartFrom}"/>
-                            <TextBlock Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="4" Margin="4" Foreground="#777"
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Day mode" Margin="4" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="cmbNewDayMode" Grid.Row="3" Grid.Column="1" Margin="4"
+                                      ItemsSource="{Binding DayModes}" SelectedItem="{Binding NewJob.DayMode}"
+                                      ToolTip="business = time relative to market close (GC delta), business days only. calendar = fixed UTC time, runs every calendar day incl. weekends."/>
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="Run time (UTC)" Margin="4" VerticalAlignment="Center"
+                                       ToolTip="Fixed UTC time. During British Summer Time the local clock time shifts by an hour (this time floats in local terms).">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbNewDayMode}" Value="calendar">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ComboBox Grid.Row="3" Grid.Column="3" Margin="4"
+                                      ItemsSource="{Binding HalfHourTimes}" SelectedItem="{Binding NewJob.RunTimeUtc}"
+                                      ToolTip="Fixed UTC time. During BST the local clock time shifts by an hour.">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedItem, ElementName=cmbNewDayMode}" Value="calendar">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Start from" Margin="4" VerticalAlignment="Center"/>
+                            <DatePicker Grid.Row="4" Grid.Column="1" Margin="4" SelectedDate="{Binding NewJobStartFrom}"/>
+                            <TextBlock Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="4" Margin="4" Foreground="#777"
                                        Text="(first-run anchor — backfill jobs run from this date; others first fire at/after it)"
                                        VerticalAlignment="Center"/>
                         </Grid>
