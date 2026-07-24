@@ -1,0 +1,82 @@
+<Window x:Class="wpfTDX.winTickerStatusMonitor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RTU Ticker Status Monitor" Height="700" Width="1150"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+            <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox x:Name="cboStatus" Width="120" SelectedIndex="0"
+                      SelectionChanged="cboStatus_SelectionChanged">
+                <ComboBoxItem Content="(all)"/>
+                <ComboBoxItem Content="queued"/>
+                <ComboBoxItem Content="running"/>
+                <ComboBoxItem Content="done"/>
+                <ComboBoxItem Content="failed"/>
+                <ComboBoxItem Content="timeout"/>
+            </ComboBox>
+
+            <Button x:Name="cmdRefresh" Content="Refresh" Width="80" Margin="12,0,0,0"
+                    Click="cmdRefresh_Click"/>
+            <CheckBox x:Name="chkAuto" Content="Auto-refresh (10s)" VerticalAlignment="Center"
+                      Margin="12,0,0,0" Checked="chkAuto_Changed" Unchecked="chkAuto_Changed"/>
+
+            <TextBlock x:Name="txtSummary" Margin="20,0,0,0" VerticalAlignment="Center"
+                       FontWeight="SemiBold"/>
+        </StackPanel>
+
+        <!-- Grid -->
+        <DataGrid x:Name="grid" Grid.Row="1"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserSortColumns="True" HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal" FrozenColumnCount="1"
+                  EnableRowVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ticker" Binding="{Binding Tickername}" Width="90"/>
+                <DataGridTextColumn Header="status" Binding="{Binding Status}" Width="80">
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="queued">
+                                    <Setter Property="Background" Value="#EEEEEE"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="running">
+                                    <Setter Property="Background" Value="#FFE082"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="done">
+                                    <Setter Property="Background" Value="#C8E6C9"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="failed">
+                                    <Setter Property="Background" Value="#EF9A9A"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="timeout">
+                                    <Setter Property="Background" Value="#FFCC80"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="dur (s)" Binding="{Binding DurationS, StringFormat=N1}" Width="70"/>
+                <DataGridTextColumn Header="start (UTC)" Binding="{Binding StartUtc, StringFormat='HH:mm:ss'}" Width="90"/>
+                <DataGridTextColumn Header="end (UTC)" Binding="{Binding EndUtc, StringFormat='HH:mm:ss'}" Width="90"/>
+                <DataGridTextColumn Header="last processed" Binding="{Binding LastProcessed, StringFormat='dd-MMM HH:mm'}" Width="110"/>
+                <DataGridTextColumn Header="stale (min)" Binding="{Binding StaleMinutes, StringFormat=N1}" Width="80"/>
+                <DataGridTextColumn Header="try" Binding="{Binding Attempt}" Width="45"/>
+                <DataGridTextColumn Header="pid" Binding="{Binding Pid}" Width="60"/>
+                <DataGridTextColumn Header="host" Binding="{Binding Hostname}" Width="120"/>
+                <DataGridTextColumn Header="error" Binding="{Binding Error}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock x:Name="txtStatus" Grid.Row="2" Margin="0,6,0,0" Foreground="Gray"/>
+    </Grid>
+</Window>

@@ -177,7 +177,7 @@
                          VirtualizingPanel.CacheLength="2"
                     VirtualizingPanel.CacheLengthUnit="Item"
                     EnableColumnVirtualization="False"
-                  FrozenColumnCount="0"
+                  FrozenColumnCount="1"
                   PreviewMouseDoubleClick="DataGrid_PreviewMouseDoubleClick"
                   Loaded="FilterGrid_Loaded"
                   BeginningEdit="FilterGrid_BeginningEdit"

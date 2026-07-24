@@ -1277,6 +1277,20 @@ namespace wpfTDX
             BringToFront(win);
         }
 
+        private void TextBlock_MouseLeftButtonDown_TickerStatus(object sender, MouseButtonEventArgs e)
+        {
+            OpenTickerStatusMonitor();
+        }
+
+        public void OpenTickerStatusMonitor()
+        {
+            // Reads live RTU per-ticker status via the tapi /ticker_process_status
+            // route (no direct SQL), so no connection is passed.
+            winTickerStatusMonitor win = new winTickerStatusMonitor();
+            win.Show();
+            BringToFront(win);
+        }
+
 
         private Border _tickerFreezerBorder;   // keep reference so we don't add duplicates
 

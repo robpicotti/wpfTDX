@@ -188,10 +188,11 @@ dur AS (
         CASE
             WHEN avg_pos > 0
                  AND CHARINDEX(' per ticker', log, avg_pos) > avg_pos + 19
-                 AND SUBSTRING(log, avg_pos + 19,
-                     CHARINDEX(' per ticker', log, avg_pos) - avg_pos - 19) NOT IN ('nan', 'inf', '-inf')
             THEN
-                CAST(SUBSTRING(log, avg_pos + 19,
+                -- TRY_CAST returns NULL (not an error) for any non-numeric token
+                -- the log can carry here: 'None' (no duration data), 'nan',
+                -- 'inf', '-inf', etc. A plain CAST would abort the whole query.
+                TRY_CAST(SUBSTRING(log, avg_pos + 19,
                     CHARINDEX(' per ticker', log, avg_pos) - avg_pos - 19) AS FLOAT)
             ELSE NULL
         END AS avg_per_ticker

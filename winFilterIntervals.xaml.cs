@@ -293,11 +293,13 @@ namespace wpfTDX
             }), System.Windows.Threading.DispatcherPriority.Render);
         }
 
-        // Bill's column order for the filter intervals screen (left → right). category leads,
-        // then the ticker identity columns; intervals (base + trading) sit at the far right.
+        // Bill's column order for the filter intervals screen (left → right). ticker leads
+        // (and is frozen via DataGrid.FrozenColumnCount=1 so it stays visible when scrolling
+        // horizontally), then category and the other identity columns; intervals (base +
+        // trading) sit at the far right.
         private static readonly string[] DesiredColumnOrder =
         {
-            "category", "ticker", "fundgrp", "fund", "strategy", "strategy_b", "m__int", "p__int",
+            "ticker", "category", "fundgrp", "fund", "strategy", "strategy_b", "m__int", "p__int",
             "c__upd", "manual", "rescale", "LO", "SO", "byO", "slO", "filt_all",
             "trd", "n", "dep", "filt_t", "filt_n", "f_dep", "new_t", "new_n", "n_dep",
             "scale_f", "new_f", "pos_lim", "s_pos_lim", "pos_tgt",

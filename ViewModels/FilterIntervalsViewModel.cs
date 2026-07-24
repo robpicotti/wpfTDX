@@ -467,29 +467,17 @@ namespace wpfTDX
         public ObservableCollection<string> StrategyNames { get; } = new ObservableCollection<string>();
         public ObservableCollection<string> StrategyNamesBase { get; } = new ObservableCollection<string>();
 
-        // min_intvl options for the dropdown — "default" + all trading intervals from t1 upwards
-        public ObservableCollection<string> MinIntvlOptions { get; } = new ObservableCollection<string>(new[]
-        {
-            "default",
-            "t1", "t2", "t3", "t4", "t5", "t8",
-            "v2", "v3",
-            "n2", "n3", "n4",
-            "y2", "y3",
-            "h2", "h3", "h4", "h6", "h12", "h16",
-            "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
-        });
+        // min_intvl options for the dropdown — "default" + every trading interval.
+        // Derived from IntervalOrder (the single source of truth also used for the
+        // grid columns) so the list can never drift from the actual intervals.
+        // Previously a hand-maintained copy that still listed the pre-migration
+        // n*/h* codes (h->y, n->v) and so no longer matched the model's intervals.
+        public ObservableCollection<string> MinIntvlOptions { get; } =
+            new ObservableCollection<string>(new[] { "default" }.Concat(IntervalOrder));
 
-        // p_int options for the dropdown — "default" + all trading intervals
-        public ObservableCollection<string> PosIntvlOptions { get; } = new ObservableCollection<string>(new[]
-        {
-            "default",
-            "t1", "t2", "t3", "t4", "t5", "t8",
-            "v2", "v3",
-            "n2", "n3", "n4",
-            "y2", "y3",
-            "h2", "h3", "h4", "h6", "h12", "h16",
-            "D1", "h36", "D2", "D3", "D4", "W1", "D8", "W2"
-        });
+        // p_int options for the dropdown — same source as MinIntvlOptions.
+        public ObservableCollection<string> PosIntvlOptions { get; } =
+            new ObservableCollection<string>(new[] { "default" }.Concat(IntervalOrder));
 
         // ordered list of interval column headers for visibility calculation
         public static readonly string[] IntervalOrder = new[]
@@ -3930,6 +3918,7 @@ namespace wpfTDX
                         OnPropertyChanged(nameof(D2HasChanged));
                         OnPropertyChanged(nameof(D2Brush));       // <—
                         RecalcNewTrades();
+                        RecalcRescaledIntervals();
                     }
                 }
             }

@@ -9,6 +9,17 @@ Build: `MSBuild.exe wpfTDX.sln /t:Build /p:Configuration=Debug`. If the build fa
 with `MSB3027/MSB3021` "file locked by … wpfTDX", that's the app still running holding
 `bin\Debug\wpfTDX.exe` — the code compiled fine; close the running instance and rebuild.
 
+## RTU Status screen (`winTickerStatusMonitor`)
+
+Live per-ticker `run_ticker_update` progress, opened from MainWindow's **"RTU Status"**. Polls
+`POST /ticker_process_status` (10s auto-refresh) — no direct SQL. `TickerProcessStatusModel` maps the
+route's per-ticker object (Tickername is the map key, assigned on build). The DataGrid is coloured by
+`Status` (queued/running/done/failed/timeout) and frozen on the ticker column; a **client-side status
+filter** (`Show:` dropdown) narrows the grid without re-fetching, while the summary keeps the full
+counts. `stale (min)` = `UtcNow − last_processed` (last successful `tad_positions` runtime).
+Backed by the Python `ticker_process_status` feature — see the trading repo's CLAUDE.md
+"RTU per-ticker status monitor".
+
 ## Filter Intervals screen ("Adjust Intervals")
 
 Lets you customise, per ticker/fund, which intervals are filtered and how positions scale,
@@ -136,12 +147,17 @@ title. (The `b_*` base columns do not have tooltips.)
 
 **On-screen column order is set in code, not by the XAML order.** `ApplyColumnOrder()`
 (called from `FilterGrid_Loaded`) assigns each column's `DisplayIndex` from the
-`DesiredColumnOrder` array — Bill's layout: `category, ticker, fundgrp, fund, strategy, strategy_b,
+`DesiredColumnOrder` array — Bill's layout: `ticker, category, fundgrp, fund, strategy, strategy_b,
 m__int, p__int, c__upd, manual, rescale…filt_all, trd…n_dep, scale_f, new_f, pos_lim,
 s_pos_lim, pos_tgt,` then **all intervals at the far right** (`b_t1…b_d1`, then `t1…W2`). `s_dep` is
 `Visibility="Collapsed"` (hidden on screen, ViewModel kept) and dropped from this array. To change the
 on-screen order, edit `DesiredColumnOrder` (not the XAML block order). If you add a column,
 add its header to that array or it'll fall to the end.
+
+**`ticker` is frozen (Excel-style).** The DataGrid sets `FrozenColumnCount="1"`, so the first
+display column stays pinned when scrolling horizontally. `ticker` leads `DesiredColumnOrder`
+(so `ApplyColumnOrder` gives it `DisplayIndex=0`), which is what makes it the frozen one. If you
+reorder, keep whatever should stay pinned first in the array, or the wrong column will freeze.
 
 **`category` column + row sort.** `category` is ticker metadata from the `tickers` table.
 `get_filtered_intervals` does **not** merge `tickers` (deliberately — avoids an extra per-load
