@@ -21,6 +21,7 @@ namespace wpfTDX
         [JsonProperty("base_y1")] public bool? BaseY1 { get; set; }
         [JsonProperty("base_h1")] public bool? BaseH1 { get; set; }
         [JsonProperty("base_D1")] public bool? BaseD1 { get; set; }
+        [JsonProperty("base_W1")] public bool? BaseW1 { get; set; }
         [JsonProperty("base_t1")] public bool? BaseT1 { get; set; }
         [JsonProperty("base_v1")] public bool? BaseV1 { get; set; }
         [JsonProperty("base_n1")] public bool? BaseN1 { get; set; }

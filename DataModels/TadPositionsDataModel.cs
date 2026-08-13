@@ -119,6 +119,20 @@ namespace wpfTDX
                 }
             }
         }
+        private float _view_position_base_W1;
+        [JsonProperty("view_position_base_W1")]
+        public float ViewPositionBaseW1
+        {
+            get => _view_position_base_W1;
+            set
+            {
+                if(value != _view_position_base_W1)
+                {
+                    _view_position_base_W1 = value;
+                    OnPropertyChanged(nameof(ViewPositionBaseW1));
+                }
+            }
+        }
         private float _view_position_base_y1;
         [JsonProperty("view_position_base_y1")]
         public float ViewPositionBaseY1
@@ -578,6 +592,20 @@ namespace wpfTDX
                 {
                     _position_base_D1 = value;
                     OnPropertyChanged(nameof(PositionBaseD1));
+                }
+            }
+        }
+        private float? _position_base_W1;
+        [JsonProperty("position_base_W1")]
+        public float? PositionBaseW1
+        {
+            get => _position_base_W1;
+            set
+            {
+                if(value != _position_base_W1)
+                {
+                    _position_base_W1 = value;
+                    OnPropertyChanged(nameof(PositionBaseW1));
                 }
             }
         }
@@ -1130,6 +1158,20 @@ namespace wpfTDX
                 {
                     _filter_position_base_D1 = value;
                     OnPropertyChanged(nameof(FilterPositionBaseD1));
+                }
+            }
+        }
+        private float _filter_position_base_W1;
+        [JsonProperty("filter_position_base_W1")]
+        public float FilterPositionBaseW1
+        {
+            get => _filter_position_base_W1;
+            set
+            {
+                if(value != _filter_position_base_W1)
+                {
+                    _filter_position_base_W1 = value;
+                    OnPropertyChanged(nameof(FilterPositionBaseW1));
                 }
             }
         }

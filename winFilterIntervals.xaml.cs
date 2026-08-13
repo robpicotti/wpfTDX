@@ -303,7 +303,7 @@ namespace wpfTDX
             "c__upd", "manual", "rescale", "LO", "SO", "byO", "slO", "filt_all",
             "trd", "n", "dep", "filt_t", "filt_n", "f_dep", "new_t", "new_n", "n_dep",
             "scale_f", "new_f", "pos_lim", "s_pos_lim", "pos_tgt",
-            "b_t1", "b_v1", "b_y1", "b_d1",
+            "b_t1", "b_v1", "b_y1", "b_d1", "b_w1",
             "t1", "t2", "t3", "t4", "t5", "t8", "v2", "v3", "v4", "v6", "v8",
             "y2", "y3", "y4", "y6", "y8", "y12", "y24", "y32",
             "D1", "y72", "D2", "D3", "D4", "W1", "D8", "W2",
@@ -339,7 +339,7 @@ namespace wpfTDX
         {
             if (_columnGroups.Count > 0) return;
 
-            AddGroup("base", new[] { "b_t1", "b_v1", "b_y1", "b_d1" });
+            AddGroup("base", new[] { "b_t1", "b_v1", "b_y1", "b_d1", "b_w1" });
             // Intraday block: t1 → y12 (all sub-daily trading intervals). Contiguous, sits
             // between the base group and the daily/weekly group.
             AddGroup("intraday", new[] {
@@ -776,6 +776,7 @@ namespace wpfTDX
                 case "b_y1": flagProp = "BaseY1"; posProp = "PositionBaseY1"; return true;
                 case "b_h1": flagProp = "BaseH1"; posProp = "PositionBaseH1"; return true;
                 case "b_d1": flagProp = "BaseD1"; posProp = "PositionBaseD1"; return true;
+                case "b_w1": flagProp = "BaseW1"; posProp = "PositionBaseW1"; return true;
 
                 // short-term intervals
                 case "t1": flagProp = "T1"; posProp = "PositionT1"; return true;

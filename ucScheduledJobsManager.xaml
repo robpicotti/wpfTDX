@@ -134,6 +134,24 @@
                         </ComboBox>
                     </Grid>
                 </GroupBox>
+
+                <!-- PARAMETERS OF SELECTED JOB (editable; synced on "Update job") -->
+                <GroupBox Header="Parameters (selected job)" Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="Edit / add / delete rows, then click &quot;Update job&quot; to save. (Del removes a row.)"
+                                   Margin="4,2,4,4" Foreground="Gray" FontSize="11"/>
+                        <DataGrid ItemsSource="{Binding SelectedJob.Parameters}" AutoGenerateColumns="False"
+                                  IsReadOnly="False" CanUserAddRows="True" CanUserDeleteRows="True"
+                                  HeadersVisibility="Column" MaxHeight="160">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="param_name"  Binding="{Binding ParamName}"  Width="*"/>
+                                <DataGridTextColumn Header="param_value" Binding="{Binding ParamValue}" Width="*"/>
+                                <DataGridTextColumn Header="environment" Binding="{Binding Environment}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </GroupBox>
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
                     <TextBlock Text="Force-run date (optional):" VerticalAlignment="Center" Margin="0,0,6,0"
                                ToolTip="Leave blank to run now. Set a date to run the job for that for_date (date-driven jobs)."/>

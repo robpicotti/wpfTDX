@@ -200,6 +200,20 @@ namespace wpfTDX
                 }
             }
         }
+        private bool? _base_W1;
+        [JsonProperty("base_W1")]
+        public bool? BaseW1
+        {
+            get { return _base_W1; }
+            set
+            {
+                if (_base_W1 != value)
+                {
+                    _base_W1 = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         private bool? _base_t1;
         [JsonProperty("base_t1")]
         public bool? BaseT1

@@ -209,6 +209,20 @@ namespace wpfTDX
         private async Task UpdateAsync()
         {
             if (SelectedJob == null) { Status = "Select a job first."; return; }
+            // Flat parameter rows (param_name/param_value/environment). Sent as the
+            // COMPLETE desired set so the API reconciles: rows removed here are
+            // deleted, new rows inserted, unchanged rows kept (preserving their
+            // run-log/next-runtime). Blank-name rows (e.g. the grid's new-row
+            // placeholder) are dropped.
+            var parameters = (SelectedJob.Parameters ?? new ObservableCollection<ParamRow>())
+                .Where(p => !string.IsNullOrWhiteSpace(p.ParamName))
+                .Select(p => new
+                {
+                    param_name = p.ParamName.Trim(),
+                    param_value = p.ParamValue,
+                    environment = p.Environment
+                }).ToList();
+
             var body = new
             {
                 job = new
@@ -225,7 +239,8 @@ namespace wpfTDX
                     enabled = SelectedJob.Enabled,
                     day_mode = SelectedJob.DayMode,
                     run_time_utc = SelectedJob.RunTimeUtc
-                }
+                },
+                parameters
             };
             await PostAndRefresh("/update_schedule_job", body, "Updated job.");
         }
@@ -353,8 +368,28 @@ namespace wpfTDX
         public string NextRuntime { get; set; }
         public string LastRuntime { get; set; }
         public string LastStatus { get; set; }
+        // parameters + values for this job (from /get_schedule_jobs), shown and
+        // editable when the job is selected. Flat: one row per (param_name, value,
+        // environment). Editing + Update job reconciles these via /update_schedule_job.
+        public ObservableCollection<ParamRow> Parameters { get; set; } = new ObservableCollection<ParamRow>();
 
         public static JobRow Blank() => new JobRow { Enabled = true, Backfill = false, DayMode = "business" };
+
+        private static ObservableCollection<ParamRow> ParseParams(JArray arr)
+        {
+            var list = new ObservableCollection<ParamRow>();
+            if (arr == null) return list;
+            foreach (var p in arr)
+            {
+                list.Add(new ParamRow
+                {
+                    ParamName = p.Value<string>("param_name"),
+                    ParamValue = p.Value<string>("param_value"),
+                    Environment = p.Value<string>("environment"),
+                });
+            }
+            return list;
+        }
 
         public static JobRow FromJson(JObject j) => new JobRow
         {
@@ -375,6 +410,7 @@ namespace wpfTDX
             NextRuntime = j.Value<string>("next_runtime"),
             LastRuntime = j.Value<string>("last_runtime"),
             LastStatus = j.Value<string>("last_status"),
+            Parameters = ParseParams(j["parameters"] as JArray),
         };
     }
 

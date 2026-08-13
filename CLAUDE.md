@@ -70,11 +70,13 @@ missing `y*` case looks like "the h columns don't toggle" (the 2026-06 bug — `
 had been added as columns but not to `TryMapToggleTarget`). Note `TryMap` (a second, similar switch)
 is dead code — the live path is `TryMapToggleTarget`.
 
-### Base interval columns (`b_t1`, `b_v1`, `b_n1`, `b_y1`, `b_h1`, `b_d1`)
+### Base interval columns (`b_t1`, `b_v1`, `b_n1`, `b_y1`, `b_h1`, `b_d1`, `b_w1`)
 
-**Six independent columns, one per `filter_intervals` base flag** — same set as the
+**Independent columns, one per `filter_intervals` base flag** — same set as the
 data model / `FilterIntervalsUpsertRow`. No grouping: each is just its own flag bound to
-its own `Base*` / `PositionBase*`, behaving exactly like every other interval column.
+its own `Base*` / `PositionBase*`, behaving exactly like every other interval column. The
+**active** bases are `b_t1, b_v1, b_y1, b_d1, b_w1` (`b_n1`/`b_h1` are retired/collapsed —
+see the 2026-06 change note below).
 
 | Column | Field | Position |
 |---|---|---|
@@ -84,15 +86,26 @@ its own `Base*` / `PositionBase*`, behaving exactly like every other interval co
 | `b_y1` | `BaseY1` | `PositionBaseY1` |
 | `b_h1` | `BaseH1` | `PositionBaseH1` |
 | `b_d1` | `BaseD1` | `PositionBaseD1` |
+| `b_w1` | `BaseW1` | `PositionBaseW1` |
+
+`base_W1` (weekly) was added 2026-07 — it's a *derived* base in the model (`base_W1 ← base_D1`
+at the W1 view, `Interval.parameters["BASE_DERIVED"]`) and slots as the **5th active base
+after `b_d1`**, so it's the last base column and now carries the **base│intraday group
+separator** (dark right border moved off `b_d1` onto `b_w1`). It's wired everywhere the other
+bases are (flag/Position/Original/Brush/HasChanged on `MergedTickerRow`, `FilterIntervalsDataModel`,
+`TadPositionsDataModel`, `FilterIntervalsUpsertRow`, both merge loops, parse, counts
+[`CountBaseGroup`/`CountCurrentFiltered`/`CountBaselineFiltered`/`CountFiOnly*`], `RecalcNewTrades`,
+`ToUpsertRow` [static + `PickForSave`], `DesiredColumnOrder`, base group band, `TryMapToggleTarget`,
+XAML) — so it participates in the trade/deployment calcs exactly like `b_d1`.
 
 The Python side decides per-ticker which base belongs to each group (e.g. the hourly base
 is `base_y1` **or** `base_h1` depending on `trading_hours`), so for any given ticker only
 the relevant base columns will carry a position and light up — the rest stay grey. No
 app-side grouping/guessing.
 
-> **Gotcha:** the daily base position column is `position_base_D1` (capital D, like the
-> regular `position_D1`), not `position_base_d1`. Reading the wrong casing makes `b_d1`
-> grey for every ticker.
+> **Gotcha:** the daily/weekly base position columns are `position_base_D1` / `position_base_W1`
+> (capital D/W, like the regular `position_D1`/`position_W1`), not `position_base_d1`/`_w1`.
+> Reading the wrong casing makes `b_d1`/`b_w1` grey for every ticker.
 
 #### When a base column is toggleable
 
@@ -149,7 +162,7 @@ title. (The `b_*` base columns do not have tooltips.)
 (called from `FilterGrid_Loaded`) assigns each column's `DisplayIndex` from the
 `DesiredColumnOrder` array — Bill's layout: `ticker, category, fundgrp, fund, strategy, strategy_b,
 m__int, p__int, c__upd, manual, rescale…filt_all, trd…n_dep, scale_f, new_f, pos_lim,
-s_pos_lim, pos_tgt,` then **all intervals at the far right** (`b_t1…b_d1`, then `t1…W2`). `s_dep` is
+s_pos_lim, pos_tgt,` then **all intervals at the far right** (`b_t1…b_w1`, then `t1…W2`). `s_dep` is
 `Visibility="Collapsed"` (hidden on screen, ViewModel kept) and dropped from this array. To change the
 on-screen order, edit `DesiredColumnOrder` (not the XAML block order). If you add a column,
 add its header to that array or it'll fall to the end.
@@ -191,7 +204,7 @@ The live set is whatever `Interval.filter(groupname="trading")` emits server-sid
 
 Three **collapsible group bands** (Excel-style outline brackets) sit in a row above the grid,
 generated in code by `BuildColumnGroups()` ([winFilterIntervals.xaml.cs](winFilterIntervals.xaml.cs)):
-- **`base`** → the `b_*` columns (`b_t1, b_v1, b_y1, b_d1`).
+- **`base`** → the `b_*` columns (`b_t1, b_v1, b_y1, b_d1, b_w1`).
 - **`intraday`** → the contiguous `t1 → y12` block (all sub-daily trading intervals:
   `t1 t2 t3 t4 t5 t8 v2 v3 v4 v6 v8 y2 y3 y4 y6 y8 y12`).
 - **`daily/weekly`** → the contiguous `y24 → W2` block (`y24, y32, D1, y72, D2, D3, D4, W1,
@@ -247,11 +260,12 @@ stored `true`/`false` semantics are unchanged. (Don't "fix" the converter to sho
 
 **Group separators (dark vertical gridlines).** Boundaries are marked with a 2px `#FF5A6B8C`
 single-side cell border on always-visible anchor columns (the DataGrid's own gridlines fill the
-other edges): **right** on `b_d1` (base│intraday), **left** on `y24` (intraday│daily), **left** on
+other edges): **right** on `b_w1` (base│intraday — `b_w1` is the last base after `base_W1` was
+added; the separator moved off `b_d1`), **left** on `y24` (intraday│daily), **left** on
 `b_t1` (s_pos_lim│base), **right** on `filt_all` (filt_all│live-stats — a right border on the
 left column reads bolder/cleaner here than a left border on `trd`, whose deployment-gradient
 background competes), **left** on `c__upd` (p_int│c_upd). Anchor on the column whose displayed edge is the boundary (DisplayIndex order, not
-XAML order — e.g. `c__upd` sits right of `p__int` on screen though declared earlier). Anchored on `b_d1`/`y24` because
+XAML order — e.g. `c__upd` sits right of `p__int` on screen though declared earlier). Anchored on `b_w1`/`y24` because
 bases and `y24` aren't hidden by the min-`p_int` pass, so the line is always drawn even when the
 adjacent intraday columns are hidden/collapsed. Single-side thickness relies on the DataGrid's
 own gridlines (`GridLinesVisibility` defaults to `All`) for the other edges. The per-cell

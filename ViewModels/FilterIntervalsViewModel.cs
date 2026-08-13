@@ -1440,6 +1440,7 @@ namespace wpfTDX
                     model.PositionBaseY1 = row.Value<float?>("position_base_y1");
                     model.PositionBaseH1 = row.Value<float?>("position_base_h1");
                     model.PositionBaseD1 = row.Value<float?>("position_base_D1");
+                    model.PositionBaseW1 = row.Value<float?>("position_base_W1");
                     model.PositionBaseT1 = row.Value<float?>("position_base_t1");
                     model.PositionBaseV1 = row.Value<float?>("position_base_v1");
                     model.PositionBaseN1 = row.Value<float?>("position_base_n1");
@@ -1871,6 +1872,7 @@ namespace wpfTDX
                     BaseY1 = fi?.BaseY1,
                     BaseH1 = fi?.BaseH1,
                     BaseD1 = fi?.BaseD1,
+                    BaseW1 = fi?.BaseW1,
                     BaseT1 = fi?.BaseT1,
                     BaseV1 = fi?.BaseV1,
                     BaseN1 = fi?.BaseN1,
@@ -1918,6 +1920,7 @@ namespace wpfTDX
                     PositionBaseY1 = tp.PositionBaseY1,
                     PositionBaseH1 = tp.PositionBaseH1,
                     PositionBaseD1 = tp.PositionBaseD1,
+                    PositionBaseW1 = tp.PositionBaseW1,
                     PositionBaseT1 = tp.PositionBaseT1,
                     PositionBaseV1 = tp.PositionBaseV1,
                     PositionBaseN1 = tp.PositionBaseN1,
@@ -2004,6 +2007,7 @@ namespace wpfTDX
                     row.BaseY1 = old.BaseY1;
                     row.BaseH1 = old.BaseH1;
                     row.BaseD1 = old.BaseD1;
+                    row.BaseW1 = old.BaseW1;
                     row.BaseT1 = old.BaseT1;
                     row.BaseV1 = old.BaseV1;
                     row.BaseN1 = old.BaseN1;
@@ -2070,6 +2074,7 @@ namespace wpfTDX
                     BaseY1 = fiOnly.BaseY1,
                     BaseH1 = fiOnly.BaseH1,
                     BaseD1 = fiOnly.BaseD1,
+                    BaseW1 = fiOnly.BaseW1,
                     BaseT1 = fiOnly.BaseT1,
                     BaseV1 = fiOnly.BaseV1,
                     BaseN1 = fiOnly.BaseN1,
@@ -2219,6 +2224,7 @@ namespace wpfTDX
             BaseY1 = r.BaseY1,
             BaseH1 = r.BaseH1,
             BaseD1 = r.BaseD1,
+            BaseW1 = r.BaseW1,
             Y1 = r.y1,
             Y2 = r.y2,
             Y3 = r.y3,
@@ -2818,6 +2824,40 @@ namespace wpfTDX
                         _positionBaseD1 = value;
                         OnPropertyChanged(nameof(PositionBaseD1));
                         OnPropertyChanged(nameof(BaseD1Brush));       // <—
+                    }
+                }
+            }
+
+            public bool? OriginalBaseW1 { get; private set; }
+            private bool? _baseW1;
+            public bool? BaseW1
+                {
+                get => _baseW1;
+                set
+                {
+                    if (_baseW1 != value)
+                    {
+                        _baseW1 = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(BaseW1HasChanged));
+                        OnPropertyChanged(nameof(BaseW1Brush));
+                        RecalcNewTrades();
+                        RecalcRescaledIntervals();
+                    }
+                }
+            }
+            public bool BaseW1HasChanged => _isInitialized && _baseW1 != OriginalBaseW1;
+            private float? _positionBaseW1;
+            public float? PositionBaseW1
+            {
+                get => _positionBaseW1;
+                set
+                {
+                    if (_positionBaseW1 != value)
+                    {
+                        _positionBaseW1 = value;
+                        OnPropertyChanged(nameof(PositionBaseW1));
+                        OnPropertyChanged(nameof(BaseW1Brush));       // <—
                     }
                 }
             }
@@ -4232,6 +4272,7 @@ namespace wpfTDX
             public Brush BaseY1Brush => ComputeFlagPosBrush(BaseY1, PositionBaseY1);
             public Brush BaseH1Brush => ComputeFlagPosBrush(BaseH1, PositionBaseH1);
             public Brush BaseD1Brush => ComputeFlagPosBrush(BaseD1, PositionBaseD1);
+            public Brush BaseW1Brush => ComputeFlagPosBrush(BaseW1, PositionBaseW1);
             public Brush BaseT1Brush => ComputeFlagPosBrush(BaseT1, PositionBaseT1);
             public Brush BaseV1Brush => ComputeFlagPosBrush(BaseV1, PositionBaseV1);
             public Brush BaseN1Brush => ComputeFlagPosBrush(BaseN1, PositionBaseN1);
@@ -4498,6 +4539,7 @@ namespace wpfTDX
                 OriginalBaseY1 = src.OriginalBaseY1;
                 OriginalBaseH1 = src.OriginalBaseH1;
                 OriginalBaseD1 = src.OriginalBaseD1;
+                OriginalBaseW1 = src.OriginalBaseW1;
                 OriginalBaseT1 = src.OriginalBaseT1;
                 OriginalBaseV1 = src.OriginalBaseV1;
                 OriginalBaseN1 = src.OriginalBaseN1;
@@ -4562,6 +4604,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(BaseY1HasChanged));
                 OnPropertyChanged(nameof(BaseH1HasChanged));
                 OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(BaseW1HasChanged));
                 OnPropertyChanged(nameof(BaseT1HasChanged));
                 OnPropertyChanged(nameof(BaseV1HasChanged));
                 OnPropertyChanged(nameof(BaseN1HasChanged));
@@ -4621,6 +4664,7 @@ namespace wpfTDX
                 if (BaseY1 == true) c++;
                 if (BaseH1 == true) c++;
                 if (BaseD1 == true) c++;
+                if (BaseW1 == true) c++;
                 if (BaseT1 == true) c++;
                 if (BaseV1 == true) c++;
                 if (BaseN1 == true) c++;
@@ -4677,6 +4721,7 @@ namespace wpfTDX
                 if (OriginalBaseY1 == false) c++;
                 if (OriginalBaseH1 == false) c++;
                 if (OriginalBaseD1 == false) c++;
+                if (OriginalBaseW1 == false) c++;
                 if (OriginalBaseT1 == false) c++;
                 if (OriginalBaseV1 == false) c++;
                 if (OriginalBaseN1 == false) c++;
@@ -4740,6 +4785,7 @@ namespace wpfTDX
                 CountIfFiltered(BaseY1, PositionBaseY1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseH1, PositionBaseH1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(BaseW1, PositionBaseW1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseT1, PositionBaseT1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseV1, PositionBaseV1, ref c, excludeZeroPositions);
                 CountIfFiltered(BaseN1, PositionBaseN1, ref c, excludeZeroPositions);
@@ -4791,6 +4837,7 @@ namespace wpfTDX
                 CountIfFiltered(OriginalBaseY1, PositionBaseY1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseH1, PositionBaseH1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseD1, PositionBaseD1, ref c, excludeZeroPositions);
+                CountIfFiltered(OriginalBaseW1, PositionBaseW1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseT1, PositionBaseT1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseV1, PositionBaseV1, ref c, excludeZeroPositions);
                 CountIfFiltered(OriginalBaseN1, PositionBaseN1, ref c, excludeZeroPositions);
@@ -4854,6 +4901,7 @@ namespace wpfTDX
                 Tally(BaseY1, PositionBaseY1, excludeZero, ref total, ref active);
                 Tally(BaseH1, PositionBaseH1, excludeZero, ref total, ref active);
                 Tally(BaseD1, PositionBaseD1, excludeZero, ref total, ref active);
+                Tally(BaseW1, PositionBaseW1, excludeZero, ref total, ref active);
                 Tally(BaseT1, PositionBaseT1, excludeZero, ref total, ref active);
                 Tally(BaseV1, PositionBaseV1, excludeZero, ref total, ref active);
                 Tally(BaseN1, PositionBaseN1, excludeZero, ref total, ref active);
@@ -4944,7 +4992,7 @@ namespace wpfTDX
             // is called once at the end so s_dep updates too.
             public void TurnOffBaseIntervals()
             {
-                BaseT1 = true; BaseV1 = true; BaseY1 = true; BaseD1 = true;
+                BaseT1 = true; BaseV1 = true; BaseY1 = true; BaseD1 = true; BaseW1 = true;
                 ReCalcScaledDeployment();
             }
 
@@ -4966,7 +5014,7 @@ namespace wpfTDX
             public bool HasAnyEdits =>
                 RescaleHasChanged
                 || LongOnlyHasChanged || ShortOnlyHasChanged || BuyOnlyHasChanged || SellOnlyHasChanged || AllIntervalsHasChanged
-                || BaseY1HasChanged || BaseH1HasChanged || BaseD1HasChanged
+                || BaseY1HasChanged || BaseH1HasChanged || BaseD1HasChanged || BaseW1HasChanged
                 || BaseT1HasChanged || BaseV1HasChanged || BaseN1HasChanged
                 || T1HasChanged || T2HasChanged || T3HasChanged || T4HasChanged || T5HasChanged || T8HasChanged
                 || V2HasChanged || V3HasChanged || V4HasChanged || V6HasChanged || V8HasChanged || N2HasChanged || N3HasChanged || N4HasChanged
@@ -5008,6 +5056,7 @@ namespace wpfTDX
                 AddIfNotFiltered(BaseY1, PositionBaseY1,BuyOnly,SellOnly, ref sum); // if you expose PositionBaseH1 as H1's "H1" bucket (optional)
                 AddIfNotFiltered(BaseH1, PositionBaseH1, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(BaseD1, PositionBaseD1, BuyOnly, SellOnly, ref sum);
+                AddIfNotFiltered(BaseW1, PositionBaseW1, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(BaseT1, PositionBaseT1, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(BaseV1, PositionBaseV1, BuyOnly, SellOnly, ref sum);
                 AddIfNotFiltered(BaseN1, PositionBaseN1, BuyOnly, SellOnly, ref sum);
@@ -5129,6 +5178,7 @@ namespace wpfTDX
                 OriginalD1 = _D1;
                 OriginalBaseH1 = _baseH1;
                 OriginalBaseD1 = _baseD1;
+                OriginalBaseW1 = _baseW1;
                 OriginalBaseT1 = _baseT1;
                 OriginalBaseV1 = _baseV1;
                 OriginalBaseN1 = _baseN1;
@@ -5195,6 +5245,7 @@ namespace wpfTDX
                 OnPropertyChanged(nameof(D1HasChanged));
                 OnPropertyChanged(nameof(BaseH1HasChanged));
                 OnPropertyChanged(nameof(BaseD1HasChanged));
+                OnPropertyChanged(nameof(BaseW1HasChanged));
                 OnPropertyChanged(nameof(BaseT1HasChanged));
                 OnPropertyChanged(nameof(BaseV1HasChanged));
                 OnPropertyChanged(nameof(BaseN1HasChanged));
@@ -5283,6 +5334,7 @@ namespace wpfTDX
                     BaseY1 = PickForSave(this.BaseY1, this.OriginalBaseY1, this.BaseY1HasChanged),
                     BaseH1 = PickForSave(this.BaseH1, this.OriginalBaseH1, this.BaseH1HasChanged),
                     BaseD1 = PickForSave(this.BaseD1, this.OriginalBaseD1, this.BaseD1HasChanged),
+                    BaseW1 = PickForSave(this.BaseW1, this.OriginalBaseW1, this.BaseW1HasChanged),
                     BaseT1 = PickForSave(this.BaseT1, this.OriginalBaseT1, this.BaseT1HasChanged),
                     BaseV1 = PickForSave(this.BaseV1, this.OriginalBaseV1, this.BaseV1HasChanged),
                     BaseN1 = PickForSave(this.BaseN1, this.OriginalBaseN1, this.BaseN1HasChanged),

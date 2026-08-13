@@ -971,9 +971,31 @@
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.CellStyle>
                         <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0.5"/><Setter Property="BorderBrush" Value="#FFBFBFBF"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
+
+                <!-- b_w1 (base_W1) -->
+                <DataGridTextColumn Header="b_w1" IsReadOnly="True">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource FlagTextOrBlankConverter}">
+                            <Binding Path="BaseW1"/><Binding Path="PositionBaseW1"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" Value="{Binding BaseW1Brush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseW1HasChanged}" Value="True"><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
                             <!-- dark right border = base | intraday group separator -->
                             <Setter Property="BorderThickness" Value="0,0,2,0"/><Setter Property="BorderBrush" Value="#FF5A6B8C"/>
-                            <Style.Triggers><DataTrigger Binding="{Binding BaseD1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
+                            <Style.Triggers><DataTrigger Binding="{Binding BaseW1HasChanged}" Value="True"><Setter Property="BorderBrush" Value="Black"/><Setter Property="BorderThickness" Value="3"/></DataTrigger></Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
                 </DataGridTextColumn>
