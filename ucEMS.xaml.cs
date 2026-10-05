@@ -58,15 +58,15 @@ namespace wpfTDX
             RemoveControlRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void cmdRun_Click(object sender, RoutedEventArgs e)
+        private async void cmdRun_Click(object sender, RoutedEventArgs e)
         {
             Cursor = Cursors.Wait;
             try
             {
-                this.ViewModel.GetExecutions();
+                await this.ViewModel.GetExecutions();
                 //GetExecutions();
                 GetTransactions();
-                RefreshOrdersData();
+                await RefreshOrdersData();
                 MessageBox.Show("ems data retrieved", "ems data", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch(Exception ex)
@@ -79,9 +79,9 @@ namespace wpfTDX
             }
         }
         
-        private void RefreshOrdersData()
+        private async Task RefreshOrdersData()
         {
-            GetOrders();
+            await GetOrders();
         }
         
         private void GetExecutions()
@@ -107,18 +107,28 @@ namespace wpfTDX
             tabiTransactions.Header = "Transactions - " + dgTransactions.Items.Count.ToString();
         }
 
-        private void GetOrders()
+        private async Task GetOrders()
         {
             DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
             endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
             DateTime startDate = (DateTime)dtPickerFrom.SelectedDate;
             Order ord = new Order(cboFundname.Text, startDate , endDate, gbl_conn);
-            ord.Get("fundname");
+            ord.Get("fundname", includeOpenOrders: false);
             //get filled orders
             dtOrders = ord.dtOrders;
             dgOrders.ItemsSource = dtOrders.DefaultView;
-            //get open orders all
-            dtOpenOrders = ord.dtOpenOrders;
+            // Apply the selected dates as TEMS trading dates. The API converts
+            // them to previous/current global-close boundaries.
+            dtOpenOrders = await this.ViewModel.GetOpenOrders(
+                cboFundname.Text, startDate, endDate);
+            var proposedRows = dtOpenOrders.AsEnumerable()
+                .Where(row => string.Equals(
+                    row.Field<string>("status"),
+                    "PROPOSED",
+                    StringComparison.OrdinalIgnoreCase));
+            dtOpenOrdersProposed = proposedRows.Any()
+                ? proposedRows.CopyToDataTable()
+                : dtOpenOrders.Clone();
             //add the selected column
             DataColumn selectedColumn = new DataColumn("Selected", typeof(bool));
             selectedColumn.DefaultValue = false;
@@ -140,7 +150,6 @@ namespace wpfTDX
                 btnCancel.Visibility = Visibility.Hidden;
             }
             // get only proposed open orders
-            dtOpenOrdersProposed = ord.dtOpenOrdersProposed;
             DataColumn approvedColumn = new DataColumn("Approved", typeof(bool));
             approvedColumn.DefaultValue = false;
             // Add the "Approved" column as the first column
@@ -158,7 +167,7 @@ namespace wpfTDX
             tabiOpenOrders.Header = "Open Orders - " + dgOpenOrders.Items.Count.ToString();
         }
 
-        private void btnApprove_Click(object sender, RoutedEventArgs e)
+        private async void btnApprove_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -203,7 +212,7 @@ namespace wpfTDX
             }
             finally
             {
-                RefreshOrdersData();
+                await RefreshOrdersData();
             }
         }
 
@@ -305,7 +314,7 @@ namespace wpfTDX
             SelectAllButton();
         }
 
-        private void btnFreeze_Click(object sender, RoutedEventArgs e)
+        private async void btnFreeze_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -341,12 +350,11 @@ namespace wpfTDX
             }
             finally
             {
-                RefreshOrdersData();
+                await RefreshOrdersData();
             }
         }
 
-        //for now can only cancel TAD broker trades
-        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        private async void btnCancel_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -356,40 +364,41 @@ namespace wpfTDX
                 DateTime endDate = (DateTime)dtPickerTo.SelectedDate;
                 endDate = endDate.AddHours(23).AddMinutes(59).AddSeconds(59);
                 Order ord = new Order(cboFundname.SelectedValue.ToString(), startDate, endDate, this.gbl_conn);
-                bool blnNonTadBroker = false;
-                foreach(DataRowView rowView in dgOpenOrders.Items)
+
+                bool cancelExternalOrders = false;
+                bool hasSelectedExternalOrder = dgOpenOrders.Items
+                    .Cast<DataRowView>()
+                    .Any(rowView =>
+                        (bool)rowView.Row["selected"] &&
+                        !(bool)rowView.Row["cancel_tdx"] &&
+                        rowView.Row["broker"].ToString() != "TAD");
+
+                if (hasSelectedExternalOrder)
+                {
+                    string question = "Be aware that cancelling an order while running RTL could create a flip-flop trade. Are you sure you want to cancel this order?";
+                    MessageBoxResult result = MessageBox.Show(
+                        question,
+                        "cancel external order",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+                    cancelExternalOrders = result == MessageBoxResult.Yes;
+                }
+
+                foreach (DataRowView rowView in dgOpenOrders.Items)
                 {
                     DataRow row = rowView.Row;
                     bool blnSelected = (bool)row["selected"];
                     string broker = row["broker"].ToString();
-                    string status = row["status"].ToString();
                     bool cancel_tdx = (bool)row["cancel_tdx"];
-                    if(blnSelected)
+                    if (blnSelected && !cancel_tdx)
                     {
-                        // can only cancel tad broker trades and 
-                        if (broker == "TAD"  )
+                        if (broker == "TAD" || cancelExternalOrders)
                         {
-                            // trades that havent already been flagged as CANCEL TDX
-                            if (!cancel_tdx)
-                            {
-                                string tad_order_id = row["tad_order_id"].ToString();
-                                string orders_key = row["orders_key"].ToString();
-                                ord.UpdateCancelTDXStatus(tad_order_id, true, orders_key);
-                            }
-                        }
-                        else
-                        {
-                            if(!blnNonTadBroker)
-                            {
-                                blnNonTadBroker = true;
-                            }
+                            string tad_order_id = row["tad_order_id"].ToString();
+                            string orders_key = row["orders_key"].ToString();
+                            ord.UpdateCancelTDXStatus(tad_order_id, true, orders_key);
                         }
                     }
-                }
-                if (blnNonTadBroker)
-                {
-                    string msg = "Non TAD execution brokers cannot be cancelled at this point. You selected some orders to cancel that were not executed by TAD";
-                    MessageBox.Show(msg, "cancel order auto", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch(Exception ex)
@@ -398,7 +407,7 @@ namespace wpfTDX
             }
             finally
             {
-                RefreshOrdersData();
+                await RefreshOrdersData();
             }
         }
     

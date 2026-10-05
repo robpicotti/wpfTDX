@@ -35,23 +35,26 @@ namespace wpfTDX
         /// 
         /// </summary>
         /// <param name="type">select from subaccountname, fundname</param>
-        public void Get(string type)
+        public void Get(string type, bool includeOpenOrders = true)
         {
             if(type.ToLower()=="fundname" && (this.FundName !=null && this.FundName!=""))
             {
                 dtOrders = GetOrdersByFundName(this.FundName);
-                dtOpenOrders = GetOpenOrdersByFundName(this.FundName);
-                dtOpenOrdersProposed = dtOpenOrders.Copy();
-                // Filter out the "ALL_FUNDS" row
-                var filteredRows = dtOpenOrdersProposed.AsEnumerable()
-                    .Where(row => row.Field<string>("status") == "PROPOSED");
-                if (filteredRows.Count()>0)
+                if (includeOpenOrders)
                 {
-                    dtOpenOrdersProposed = filteredRows.CopyToDataTable();
-                }
-                else
-                {
-                    dtOpenOrdersProposed = dtOpenOrders.Clone();
+                    dtOpenOrders = GetOpenOrdersByFundName(this.FundName);
+                    dtOpenOrdersProposed = dtOpenOrders.Copy();
+                    // Filter out the "ALL_FUNDS" row
+                    var filteredRows = dtOpenOrdersProposed.AsEnumerable()
+                        .Where(row => row.Field<string>("status") == "PROPOSED");
+                    if (filteredRows.Count()>0)
+                    {
+                        dtOpenOrdersProposed = filteredRows.CopyToDataTable();
+                    }
+                    else
+                    {
+                        dtOpenOrdersProposed = dtOpenOrders.Clone();
+                    }
                 }
             }
         }

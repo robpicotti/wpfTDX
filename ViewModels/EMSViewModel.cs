@@ -135,6 +135,27 @@ namespace wpfTDX
         {
             await ProcessFundsDataSync();
         }
+        public async Task<DataTable> GetOpenOrders(
+            string fundName, DateTime fromDate, DateTime toDate)
+        {
+            string url = $"{baseUrl}/get_ems_open_orders";
+            string body = JsonConvert.SerializeObject(new
+            {
+                fundname = fundName,
+                from_date = fromDate.ToString("yyyy-MM-dd"),
+                to_date = toDate.ToString("yyyy-MM-dd")
+            });
+
+            using (HttpClient client = new HttpClient())
+            using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+            {
+                client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+                HttpResponseMessage response = await client.PostAsync(url, content);
+                response.EnsureSuccessStatusCode();
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<DataTable>(jsonResponse) ?? new DataTable();
+            }
+        }
         private async Task ProcessTransactionsData()
         {
             DateTime enddate = this.ToDate.AddHours(23).AddMinutes(59).AddSeconds(59);

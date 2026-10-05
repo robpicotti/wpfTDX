@@ -9,6 +9,16 @@ Build: `MSBuild.exe wpfTDX.sln /t:Build /p:Configuration=Debug`. If the build fa
 with `MSB3027/MSB3021` "file locked by … wpfTDX", that's the app still running holding
 `bin\Debug\wpfTDX.exe` — the code compiled fine; close the running instance and rebuild.
 
+## EMS screen (`ucEMS`)
+
+The open and proposed grids load from `POST /get_ems_open_orders` with the selected `fundname`,
+`from_date`, and `to_date`. The endpoint delegates classification to Python
+`TEMSdata.openorders()`, scopes the result to the fund's subaccounts, and interprets the picker
+dates as global-close trading dates (previous close through selected close), not UTC-midnight
+calendar ranges. The server uses those explicit dates instead of its normal live rolling lookback,
+so historical picker dates work. The date pickers also continue to bound filled orders,
+executions, and transactions.
+
 ## RTU Status screen (`winTickerStatusMonitor`)
 
 Live per-ticker `run_ticker_update` progress, opened from MainWindow's **"RTU Status"**. Polls
