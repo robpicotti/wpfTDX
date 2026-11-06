@@ -2490,6 +2490,21 @@ namespace wpfTDX
             }
 
             private string _eventTooltip;
+            public string RowTooltip
+            {
+                get
+                {
+                    string tooltip =
+                        $"tickername: {Tickername}\n" +
+                        $"strategyname: {StrategyName}\n" +
+                        $"strategy_b: {StrategyNameBase}";
+
+                    if (!string.IsNullOrWhiteSpace(EventTooltip))
+                        tooltip += $"\n\n{EventTooltip}";
+
+                    return tooltip;
+                }
+            }
             public string EventTooltip
             {
                 get => _eventTooltip;

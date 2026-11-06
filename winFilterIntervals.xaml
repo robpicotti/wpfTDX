@@ -236,15 +236,31 @@
             </DataGrid.Resources>
 
             <!-- Select the row under cursor on right-click -->
-            <DataGrid.RowStyle>
+            <!--<DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <EventSetter Event="PreviewMouseRightButtonDown"
                          Handler="DataGridRow_PreviewMouseRightButtonDown"/>
-                    <!-- Important: assign a *ContextMenu*, not a MenuItem -->
+                    --><!-- Important: assign a *ContextMenu*, not a MenuItem --><!--
                     <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
-                    <!-- Market-announcement tooltip; null (no tooltip) unless the
-                         row is event-affected this week. Stripe is on the ticker cell. -->
+                    --><!-- Market-announcement tooltip; null (no tooltip) unless the
+                         row is event-affected this week. Stripe is on the ticker cell. --><!--
                     <Setter Property="ToolTip" Value="{Binding EventTooltip}"/>
+                </Style>
+            </DataGrid.RowStyle>-->
+            <!-- Select the row under cursor on right-click -->
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <EventSetter Event="PreviewMouseRightButtonDown"
+                     Handler="DataGridRow_PreviewMouseRightButtonDown"/>
+
+                    <Setter Property="ContextMenu"
+                Value="{StaticResource RowContextMenu}"/>
+
+                    <Setter Property="ToolTip"
+                Value="{Binding RowTooltip}"/>
+
+                    <Setter Property="ToolTipService.ShowDuration"
+                Value="30000"/>
                 </Style>
             </DataGrid.RowStyle>
 
