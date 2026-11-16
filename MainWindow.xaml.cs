@@ -1282,6 +1282,13 @@ namespace wpfTDX
             OpenTickerStatusMonitor();
         }
 
+        private void OpenFundRisk(object sender, MouseButtonEventArgs e)
+        {
+            var window = new winFundRisk();
+            window.Show();
+            BringToFront(window);
+        }
+
         public void OpenTickerStatusMonitor()
         {
             // Reads live RTU per-ticker status via the tapi /ticker_process_status

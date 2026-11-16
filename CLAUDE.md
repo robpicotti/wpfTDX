@@ -479,3 +479,21 @@ The plotly chart JSON (`trading/hoover/plotdata.py::extract_chart_data`, mirrore
 `trading/test_scripts/test_plotly_chart.py`) labels trade-exit markers WINNING/LOSING by
 pairing each exit with its **true entry**, tracked over full history (not the previous
 visible marker). This also drives the arrow colour and the dashed connector.
+
+
+## Fund Risk & Performance (`winFundRisk`)
+
+MainWindow's Fund Risk opens a read-only LiveCharts dashboard. It uses POST `/fund_risk_funds` and `/fund_risk_history` in TAPI; deploy/restart the API before using the screen. Fund choices come from risk_metrics. Daily mode selects the latest runtime per valuationDate; intraday selects the latest runtime per Dates observation within a trading date. Limits come from each historical row. Headline cards show VaR, stress, drawdown, gross leverage and daily P&L; MTM/cumulative return appear in a secondary strip. Liquidity/concentration/allocation are in expandable details. Money is labelled in fund accounting units because risk_metrics has no currency column. Auto-refresh is optional at 60 seconds; it never creates risk observations. Missing metrics remain unavailable.
+
+Date parsing: Json.NET converts ISO API timestamps into JTokenType.Date. Read these directly with Value<DateTime>(); converting a date token through ToString() and reparsing invariantly rejects UK dates with days above 12 and swaps month/day for other dates. This previously hid valid funds and misdated charts on en-GB Windows. Keep the invariant string fallback for unparsed ISO string tokens.
+
+
+## MainWindow navigation
+
+Keep screen links in MainWindow's navigation WrapPanel in alphabetical order by their displayed label, case-insensitively, when adding or renaming screens.
+
+Daily P&L combines one-day columns with fixed-size observation dots: zero-height columns and columns across sparse date ranges can be invisible. The dots preserve the recorded values without interpolating across gaps; missing observations are not plotted. X-axis BarUnit is one day, independent of date-label spacing. All-zero P&L uses a symmetric range around zero.
+
+Fund Risk defaults to month-to-date (first of the current London month through today). The existing `/get_hostenv` endpoint supplies the machine environment: `prod` selects TenDSelect, case-insensitively, when it is in the available risk funds; otherwise the first fund is selected. Switching funds preserves the chosen dates. No new Python endpoint is needed.
+
+VaR and stress headline cards show both their stored percentage and the currency amount (percentage times the same row's mtm_day1). risk_metrics has no currency code, so amounts are labelled in fund currency without guessing a symbol. Daily chart axes use weekday indices: Saturday/Sunday valuation dates are omitted and Friday/Monday are adjacent; missing weekdays still retain gaps. Intraday timestamps and raw observation/export data are unchanged.

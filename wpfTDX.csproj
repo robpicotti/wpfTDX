@@ -141,6 +141,13 @@
     <Compile Include="DataModels\TargetPositionsDataModel.cs" />
     <Compile Include="DataModels\TickerDataModel.cs" />
     <Compile Include="DataModels\TickerFreezerDataModel.cs" />
+    <Compile Include="Windows\winFundRisk.xaml.cs">
+      <DependentUpon>winFundRisk.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Windows\winFundRisk.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="Fund.cs" />
     <Compile Include="DataModels\FundsDataModel.cs" />
     <Compile Include="Limits.cs" />
