@@ -21,7 +21,7 @@
     <DockPanel Margin="22">
         <StackPanel DockPanel.Dock="Top">
             <TextBlock Text="Fund Risk &amp; Performance" FontSize="25" FontWeight="SemiBold" Foreground="#17253D"/>
-            <TextBlock Text="Risk, limits and performance from recorded fund snapshots" Foreground="#607089" Margin="0,4,0,18"/>
+            <TextBlock Text="Recorded risk and limits, with daily P&amp;L reconciled to MTM" Foreground="#607089" Margin="0,4,0,18"/>
             <WrapPanel x:Name="Filters" VerticalAlignment="Center">
                 <TextBlock Text="Fund" VerticalAlignment="Center"/>
                 <ComboBox x:Name="FundPicker" Width="190" SelectionChanged="FilterChanged"/>
@@ -43,6 +43,28 @@
                 <Border Background="White" Padding="14,10" CornerRadius="6" Margin="0,0,0,14">
                     <TextBlock x:Name="PerformanceStrip" Foreground="#394B66" TextWrapping="Wrap"/>
                 </Border>
+                <Expander x:Name="PnlBreakdown" IsExpanded="True" Header="Daily P&amp;L breakdown by ticker / TAD ID" Background="White" Padding="14" Margin="5,5,5,14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,8">
+                            <TextBlock Text="Trading date" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="PnlDatePicker" Width="160" SelectionChanged="PnlDateChanged">
+                                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding StringFormat={}{0:dd MMM yyyy}}"/></DataTemplate></ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        <TextBlock x:Name="PnlNote" TextWrapping="Wrap" Foreground="#394B66" Margin="0,4,0,12"/>
+                        <DataGrid x:Name="PnlDetails" Height="285" IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" FrozenColumnCount="2">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Ticker" Binding="{Binding [tickername]}" Width="140"/>
+                                <DataGridTextColumn Header="TAD ID" Binding="{Binding [tad_id]}" Width="220"/>
+                                <DataGridTextColumn Header="Buy &amp; hold" Binding="{Binding [buyandhold], StringFormat={}{0:N2}}" Width="140"/>
+                                <DataGridTextColumn Header="New deals" Binding="{Binding [newdeals], StringFormat={}{0:N2}}" Width="140"/>
+                                <DataGridTextColumn Header="Commissions" Binding="{Binding [commissions], StringFormat={}{0:N2}}" Width="140"/>
+                                <DataGridTextColumn Header="Net P&amp;L" Binding="{Binding [net_pnl], StringFormat={}{0:N2}}" Width="140"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Expander>
+                <ContentControl x:Name="PnlChart"/>
                 <UniformGrid x:Name="Charts" Columns="2"/>
                 <Border Background="White" CornerRadius="6" Margin="5,5,5,14" Padding="14">
                     <StackPanel>
