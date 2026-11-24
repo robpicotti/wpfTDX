@@ -237,12 +237,18 @@ namespace wpfTDX
             }
         }
 
+        private bool _closeoutInProgress;
+
         private async void MenuItem_Click_7(object sender, RoutedEventArgs e)
         {
+            if (_closeoutInProgress) return;
+            var position = ViewModel.SelectedPosition;
+            if (position == null) return;
+            _closeoutInProgress = true;
             try
             {
                 DateTime today = DateTime.UtcNow;
-                if ((ViewModel.SelectedPosition.BbgLastTradeDate > today.Date))
+                if ((position.BbgLastTradeDate > today.Date))
                 {
                     MessageBox.Show("This position has not expired yet. You cannot use this function to closeout the position",
                         "closeout expired", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -257,7 +263,7 @@ namespace wpfTDX
                     }
                     else
                     {
-                        string message = "Are you sure you want to proceed closing out this tad_id " + ViewModel.SelectedPosition.TadId + "?";
+                        string message = "Are you sure you want to proceed closing out this tad_id " + position.TadId + "?";
                         MessageBoxResult result = MessageBox.Show(
                                 message,
                                 "Confirmation",
@@ -266,7 +272,7 @@ namespace wpfTDX
 
                         if (result == MessageBoxResult.Yes)
                         {
-                            double posnlive = ViewModel.SelectedPosition.PositionLive;
+                            double posnlive = position.PositionLive;
                             string action = "";
                             if (posnlive > 0)
                             {
@@ -276,20 +282,20 @@ namespace wpfTDX
                             {
                                 action = "BUY";
                             }
-                            bool isSuccess = await ViewModel.CloseoutExpiredAsync("TAD", "2", "12", ViewModel.SelectedPosition.FundName,
-                                ViewModel.SelectedPosition.SubaccountName, action, ViewModel.SelectedPosition.TadId, ViewModel.SelectedPosition.TickerName,
-                                ViewModel.SelectedPosition.PriceLive, Math.Abs(posnlive),
-                                ViewModel.SelectedPosition.Multiplier, ViewModel.SelectedPosition.ExchangeCurrency, ViewModel.SelectedPosition.BbgLastTradeDate,
-                                ViewModel.SelectedPosition.RollDate,ViewModel.SelectedPosition.Instrument,ViewModel.SelectedPosition.ReportCategory,
-                                ViewModel.SelectedPosition.Category,ViewModel.SelectedPosition.ContractIncrement,ViewModel.SelectedPosition.BbgSymbolExp,
-                                ViewModel.SelectedPosition.SubTickerName);
+                            bool isSuccess = await ViewModel.CloseoutExpiredAsync("TAD", "2", "12", position.FundName,
+                                position.SubaccountName, action, position.TadId, position.TickerName,
+                                position.PriceLive, Math.Abs(posnlive),
+                                position.Multiplier, position.ExchangeCurrency, position.BbgLastTradeDate,
+                                position.RollDate,position.Instrument,position.ReportCategory,
+                                position.Category,position.ContractIncrement,position.BbgSymbolExp,
+                                position.SubTickerName);
                             if (isSuccess)
                             {
                                 string msg = "Closeout Expired successfully completed!";
                                 msg += "VERY IMPORTANT: broker_id = 2 has been used for this transaction, which is TAD.";
                                 msg += "Find this transaction in the transactions table and change the broker_id to the relevant broker_id for this subaccount";
                                 MessageBox.Show("Closeout Expired successfully completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                                ViewModel.PositionsData.Remove(ViewModel.SelectedPosition);
+                                ViewModel.PositionsData.Remove(position);
                                 //ViewModel.GetPosition();
                             }
                             else
@@ -303,6 +309,10 @@ namespace wpfTDX
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "closeout expired position error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                _closeoutInProgress = false;
             }
         }
 

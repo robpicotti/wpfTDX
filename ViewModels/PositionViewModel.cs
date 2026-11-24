@@ -366,34 +366,17 @@ namespace wpfTDX
                 };
 
                 string jsonRequest = JsonConvert.SerializeObject(requestData);
-                var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json");
-
-                try
+                using (var content = new StringContent(jsonRequest, System.Text.Encoding.UTF8, "application/json"))
+                using (var response = await client.PostAsync($"{baseUrl}/closeout_expired", content))
                 {
-                    HttpResponseMessage response = await client.PostAsync($"{baseUrl}/closeout_expired", content);
-                    string jsonResponse = await response.Content.ReadAsStringAsync();
-
-                    var responseDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonResponse);
-
-                    if (responseDict.ContainsKey("success") && (bool)responseDict["success"] == true)
+                    string body = await response.Content.ReadAsStringAsync();
+                    var result = Newtonsoft.Json.Linq.JObject.Parse(body);
+                    if (!response.IsSuccessStatusCode || result.Value<bool?>("success") != true)
                     {
-                        return true; 
+                        string error = (string)result["error"] ?? "The server did not confirm the closing transaction.";
+                        throw new InvalidOperationException("Closeout expired failed: " + error);
                     }
-                    else
-                    {
-                        Console.WriteLine($"[ERROR] API responded with an error: {jsonResponse}");
-                        return false; 
-                    }
-                }
-                catch (HttpRequestException httpEx)
-                {
-                    Console.WriteLine($"[ERROR] HTTP Request failed: {httpEx.Message}");
-                    return false;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[ERROR] Unexpected error: {ex.Message}");
-                    return false;
+                    return true;
                 }
             }
         }
