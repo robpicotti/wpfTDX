@@ -1282,6 +1282,13 @@ namespace wpfTDX
             OpenTickerStatusMonitor();
         }
 
+        private void OpenSystemTrades(object sender, MouseButtonEventArgs e)
+        {
+            var window = new winSystemTrades();
+            window.Show();
+            BringToFront(window);
+        }
+
         private void OpenFundRisk(object sender, MouseButtonEventArgs e)
         {
             var window = new winFundRisk();

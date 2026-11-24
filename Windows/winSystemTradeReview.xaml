@@ -1,0 +1,140 @@
+<Window x:Class="wpfTDX.winSystemTradeReview"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Review System Trade" Width="940" Height="850" MinWidth="780" MinHeight="650"
+        Background="#F3F5F8" Foreground="#17253D" WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="7,5"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="7,5"/>
+        </Style>
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#607089"/>
+            <Setter Property="Margin" Value="0,12,0,5"/>
+        </Style>
+        <Style x:Key="Detail" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Margin="0,0,0,16">
+            <TextBlock Text="Review system trade" FontSize="24" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding Current.SelectionTitle}" FontSize="16" Margin="0,5,0,0"/>
+            <TextBlock Text="This decision records a review. It does not submit an order or change deployment."
+                       Foreground="#607089" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="18"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+                <Border Background="White" BorderBrush="#DCE2EA" BorderThickness="1" Padding="14" CornerRadius="4">
+                    <StackPanel DataContext="{Binding Current}">
+                        <TextBlock Text="Currently saved" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding ReviewLabel}" FontSize="17" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding DecisionBy, StringFormat=Reviewer: {0}, TargetNullValue=Reviewer: Unavailable}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding ReviewTimeLabel}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding RejectionReason}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding DecisionVersion, StringFormat=Review version: {0}}" Style="{StaticResource Detail}"/>
+                        <Separator Margin="0,6,0,12"/>
+                        <TextBlock Text="{Binding Fundname}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding Strategyname}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding EntryUtc, StringFormat=Entry: {0:yyyy-MM-dd HH:mm} UTC}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding ExitUtc, StringFormat=System exit: {0:yyyy-MM-dd HH:mm:ss} UTC}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding ExitPrice, StringFormat=System exit price: {0:G10}}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding ExitDecisionLabel, StringFormat=Exit decision: {0}}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding DiscretionaryExitUtc, StringFormat=Discretionary exit: {0:yyyy-MM-dd HH:mm:ss} UTC}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding DiscretionaryExitPrice, StringFormat=Discretionary price: {0:G10}}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding DiscretionaryExitReason}" Style="{StaticResource Detail}"/>
+                        <TextBlock Text="{Binding QualificationText}" Style="{StaticResource Detail}"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Background="White" BorderBrush="#DCE2EA" BorderThickness="1" Padding="14" CornerRadius="4">
+                    <StackPanel IsEnabled="{Binding CanEdit}">
+                        <TextBlock Text="Your review" FontWeight="SemiBold"/>
+                        <TextBlock Text="Reviewer name" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Reviewer, UpdateSourceTrigger=PropertyChanged}" MaxLength="100"/>
+                        <TextBlock Text="This name is recorded in the review history." Foreground="#607089" Margin="0,4,0,0"/>
+                        <TextBlock Text="Decision" Style="{StaticResource Label}"/>
+                        <ComboBox ItemsSource="{Binding Decisions}" SelectedItem="{Binding Decision}"/>
+                        <StackPanel Visibility="{Binding IsRejected, Converter={StaticResource BoolVisibility}}">
+                            <TextBlock Text="Rejection reason" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding Reasons}" SelectedItem="{Binding Reason}"/>
+                        </StackPanel>
+                        <StackPanel Visibility="{Binding IsCustom, Converter={StaticResource BoolVisibility}}">
+                            <TextBlock Text="Custom reason (required, up to 1,000 characters)" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding CustomReason, UpdateSourceTrigger=PropertyChanged}" MaxLength="1000"
+                                     AcceptsReturn="True" TextWrapping="Wrap" Height="105" VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+                        <StackPanel Visibility="{Binding IsAccepted, Converter={StaticResource BoolVisibility}}">
+                            <Separator Margin="0,16,0,0"/>
+                            <TextBlock Text="Exit decision" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding ExitDecisions}" SelectedItem="{Binding ExitDecision}"/>
+                            <TextBlock Text="System exit fields remain unchanged. Changing to System clears the current discretionary details; earlier saves remain in the audit history."
+                                       TextWrapping="Wrap" Foreground="#607089" Margin="0,6,0,0"/>
+                            <StackPanel Visibility="{Binding IsDiscretionary, Converter={StaticResource BoolVisibility}}">
+                                <TextBlock Text="Reason for discretionary exit / take profit" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding ExitReason, UpdateSourceTrigger=PropertyChanged}" MaxLength="1000"
+                                         AcceptsReturn="True" TextWrapping="Wrap" Height="70" VerticalScrollBarVisibility="Auto"/>
+                                <TextBlock Text="Discretionary exit price" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding ExitPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DockPanel Margin="0,12,0,5">
+                                    <Button DockPanel.Dock="Right" Content="Use now (UTC)" Click="ExitNowClick" Padding="8,3"/>
+                                    <TextBlock Text="Discretionary exit date and time (UTC)" Foreground="#607089" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <WrapPanel>
+                                    <StackPanel Margin="0,0,12,0">
+                                        <TextBlock Text="Date (dd/mm/yyyy)" Foreground="#607089" FontSize="11" Margin="0,0,0,3"/>
+                                        <DatePicker SelectedDate="{Binding ExitDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="155" SelectedDateFormat="Short" Language="en-GB" ToolTip="Choose the exit date using the calendar"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <StackPanel>
+                                            <TextBlock Text="Hour" Foreground="#607089" FontSize="11" Margin="0,0,0,3"/>
+                                            <ComboBox Width="64" ItemsSource="{Binding ExitHours}" SelectedItem="{Binding ExitHour}"/>
+                                        </StackPanel>
+                                        <TextBlock Text=":" VerticalAlignment="Bottom" Margin="4,0,4,7"/>
+                                        <StackPanel>
+                                            <TextBlock Text="Minute" Foreground="#607089" FontSize="11" Margin="0,0,0,3"/>
+                                            <ComboBox Width="64" ItemsSource="{Binding ExitMinutes}" SelectedItem="{Binding ExitMinute}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="UTC" VerticalAlignment="Bottom" Foreground="#607089" Margin="8,0,0,7"/>
+                                    </StackPanel>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding ExitValidationMessage}" Foreground="#A94442" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+        <Border Grid.Row="2" Background="#E8EEF7" CornerRadius="4" Padding="12" Margin="0,14,0,12">
+            <StackPanel>
+                <ProgressBar x:Name="ReviewLoadProgress" Height="7" IsIndeterminate="True" Foreground="#3168C6"
+                             Margin="0,0,0,8" Visibility="{Binding IsBusy, Converter={StaticResource BoolVisibility}}"/>
+                <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+        <DockPanel Grid.Row="3">
+            <Button DockPanel.Dock="Left" Content="Reload saved review" Click="ReloadClick" IsEnabled="{Binding CanEdit}"
+                    Padding="12,7" ToolTip="Replace the draft with the current saved review"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Click="CancelClick" IsEnabled="{Binding CanEdit}" Padding="18,7" Margin="0,0,10,0"/>
+                <Button Content="Save review" Click="SaveClick" IsEnabled="{Binding CanSave}" Padding="18,7"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

@@ -118,6 +118,24 @@
     <Compile Include="Classes\RangeValidationRule.cs" />
     <Compile Include="Classes\ScaledPositionsInsertRow.cs" />
     <Compile Include="Classes\ScaleService.cs" />
+    <Compile Include="Classes\SystemTradesService.cs" />
+    <Compile Include="DataModels\SystemTradeDataModel.cs" />
+    <Compile Include="ViewModels\SystemTradesViewModel.cs" />
+    <Compile Include="ViewModels\SystemTradeReviewViewModel.cs" />
+    <Compile Include="Windows\winSystemTradeReview.xaml.cs">
+      <DependentUpon>winSystemTradeReview.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Windows\winSystemTradeReview.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="Windows\winSystemTrades.xaml.cs">
+      <DependentUpon>winSystemTrades.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Windows\winSystemTrades.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="Classes\ScaleLimits.cs" />
     <Compile Include="Classes\ScaleResolver.cs" />
     <Compile Include="DataModels\LivePositionsDataModel.cs" />

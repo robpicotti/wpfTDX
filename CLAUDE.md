@@ -483,7 +483,27 @@ visible marker). This also drives the arrow colour and the dashed connector.
 
 ## Fund Risk & Performance (`winFundRisk`)
 
-MainWindow's Fund Risk opens a read-only LiveCharts dashboard. It uses POST `/fund_risk_funds` and `/fund_risk_history` in TAPI; deploy/restart the API before using the screen. Fund choices come from risk_metrics. Daily mode selects the latest runtime per valuationDate; intraday selects the latest runtime per Dates observation within a trading date. Limits come from each historical row. Headline cards show VaR, stress, drawdown, gross leverage and daily P&L; MTM/cumulative return appear in a secondary strip. Liquidity/concentration/allocation are in expandable details. Money is labelled in fund accounting units because risk_metrics has no currency column. Auto-refresh is optional at 60 seconds; it never creates risk observations. Missing metrics remain unavailable.
+MainWindow's Fund Risk opens a read-only LiveCharts dashboard. Risk uses POST
+`/fund_risk_funds` and `/fund_risk_history`; daily net P&L uses `/fund_risk_pnl`,
+the same Pnl factory, benchmark filter, fund base currency and previous-business-day
+close as MTM. Deploy/restart TAPI before using the screen. Daily risk selects the
+latest whole runtime row per valuationDate; intraday keeps Dates observations.
+Risk renders before MTM requests. Daily P&L loads the latest date first, then
+historical weekdays with at most two requests in flight, rendering each result.
+Filters stay usable; replacing/closing a load cancels outstanding client requests
+and prevents stale responses from updating the replacement. Missing endpoint or
+auth errors stop the batch, preserve risk and show an actionable message; absent
+values display Calculating while pending, and unavailable days remain gaps. Daily P&L breakdown appears above the chart, expanded by default and still
+collapsible. Select a trading date for ticker/TAD
+buy-and-hold, new-deal, signed commission and net contributions, plus the difference
+from the saved NAV estimate. Intraday still displays the labelled snapshot NAV estimate.
+The full-width P&L chart overlays +/-1 times each row's recorded daily VaR
+(var * mtm_day1), without intraday time scaling; the card also shows signed P&L/VaR.
+Cumulative return/drawdown and limits remain recorded snapshot values. Optional
+60-second auto-refresh never writes or recalculates risk observations. Category
+charts use integer-spaced, bounds-checked labels and dynamic height; fractional
+LiveCharts bounds can clip edge rows and default labels wrap negative indices.
+Offline client/chart checks: `Tests/check_fund_risk.ps1 -BuildDirectory PATH`.
 
 Date parsing: Json.NET converts ISO API timestamps into JTokenType.Date. Read these directly with Value<DateTime>(); converting a date token through ToString() and reparsing invariantly rejects UK dates with days above 12 and swaps month/day for other dates. This previously hid valid funds and misdated charts on en-GB Windows. Keep the invariant string fallback for unparsed ISO string tokens.
 
@@ -497,3 +517,59 @@ Daily P&L combines one-day columns with fixed-size observation dots: zero-height
 Fund Risk defaults to month-to-date (first of the current London month through today). The existing `/get_hostenv` endpoint supplies the machine environment: `prod` selects TenDSelect, case-insensitively, when it is in the available risk funds; otherwise the first fund is selected. Switching funds preserves the chosen dates. No new Python endpoint is needed.
 
 VaR and stress headline cards show both their stored percentage and the currency amount (percentage times the same row's mtm_day1). risk_metrics has no currency code, so amounts are labelled in fund currency without guessing a symbol. Daily chart axes use weekday indices: Saturday/Sunday valuation dates are omitted and Friday/Monday are adjacent; missing weekdays still retain gaps. Intraday timestamps and raw observation/export data are unchanged.
+
+## System Trades (`winSystemTrades`)
+
+MainWindow's alphabetically placed System Trades link opens a model-trade
+grid. `SystemTradesService` reads `/system_trades_options` and paginates
+`/system_trades` through TAPI; refresh starts at offset zero and deduplicates IDs.
+Defaults are TenDSelect, unreviewed, all lifecycle states. Fund/ticker filters are
+exact names (blank means all); text filters apply on the next 15-second refresh or with Enter. Review/lifecycle dropdowns apply immediately. The selected row shows
+stored entry qualification evidence and review metadata. Times display in UTC using
+DateTimeOffset parsing. Capture-disabled status also means lifecycle updates pause.
+The window refreshes every 15 seconds; the timer pauses while opening/reviewing a trade
+and stops on close. Refresh retains displayed rows until a new response succeeds,
+including after network failures, and preserves the selected trade by ID.
+Double-click a trade row (or use Review selected trade) to open a modal editor with server-supplied decisions/reasons,
+custom rejection text and an editable reviewer name defaulting to Windows username.
+Each editor first reloads the row. Saves send only review fields and the expected
+version; success replaces the row (removing it when its applied filter no longer
+matches). A 409 or uncertain save reloads current state without automatic resubmit;
+failed reconciliation blocks saving until explicit reload succeeds. No order actions.
+Deployment/table registration follows trading/docs/SYSTEM_TRADES.md. Offline client
+checks: `Tests/check_system_trades.ps1 -BuildDirectory PATH_TO_BUILT_CLIENT`; the
+fixture API binds only loopback and uses synthetic data, never live TAPI or SQL.
+
+## Expired position closeout
+
+Positions right-click closeout calls `/closeout_expired`. The Python TPM helper
+must include `transactions.invalid_tx=0` and `tapi_positions.sub_tickername`.
+Both records are validated through Table and written in one session transaction;
+errors propagate to TAPI rather than returning false success. TDX checks HTTP and
+JSON success, keeps the row on failure and prevents concurrent closeout clicks.
+Restart TAPI after deploying Python changes. Offline regression:
+`python -m unittest trading.test_scripts.TPM.test_closeout_expired` from scripts/.
+
+
+System Trades accepted reviews include Exit Decision (System/Discretionary).
+Discretionary requires a reason, finite price and explicit UTC timestamp, on/after
+entry and not future. The service sends separate discretionary_exit_* fields via
+the same versioned review endpoint; conflicts/reloads include these fields.
+System exit price/time/status remain model values. Choosing System clears current
+discretionary details, while the backend audit keeps earlier versions. Double-click
+accepted rows or use Review / edit selected trade. Main grid and saved-review
+details distinguish system exits from discretionary exits. Deploy Python models,
+run scoped schema sync on the two existing tables and restart TAPI before testing
+the rebuilt client; see trading/docs/SYSTEM_TRADES.md. No registry workbook change.
+
+Discretionary exit UTC entry uses a UK-format calendar picker, hour/minute
+dropdowns, and Use now (UTC). Seconds normalize to 00 when editing/saving. Picker
+components compose UTC directly; never convert the chosen wall time from local
+timezone. No API/schema change is needed for this input control.
+
+System Trades shows an indeterminate progress bar below its filters for every
+list/capture-status request and review-opening lookup. Review dialogs show
+progress during saves, reloads and conflict/uncertain-save reconciliation.
+Dropdown filter changes call ApplyFiltersAsync immediately; changes made
+during an active read queue one latest-filter refresh, skipping outdated rows.
+Text-filter Enter uses the same queue. Timed polling still skips active loads.
